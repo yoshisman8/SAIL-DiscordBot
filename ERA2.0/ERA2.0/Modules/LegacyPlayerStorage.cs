@@ -48,9 +48,20 @@ namespace ERA.Modules
         public async Task GetChar(string name)
         {
             Directory.CreateDirectory(@"Data/Legacy/");
-            if (File.Exists(@"Data/Legacy/"+name+".json") == true)
+            var query = Directory.EnumerateFiles(@"Data/Legacy/","*"+name+"*");
+            if (query.Count() > 1)
             {
-                string sheet = File.ReadAllText("Data/Legacy/" + name + ".json");
+                string msg = "Multiple charactes were found! Please specify which one of the following characters is the one you're looking for:\n";
+                foreach (string q in query)
+                {
+                    LegacyCharacter result = JsonConvert.DeserializeObject<LegacyCharacter>(q);
+                    msg += "`" + result.Name + " ";
+                }
+                await Context.Channel.SendMessageAsync(msg);
+            }
+            else if (query.Count() == 1)
+            {
+                string sheet = File.ReadAllText(query.First());
                 var character = JsonConvert.DeserializeObject<LegacyCharacter>(sheet);
                 await Context.Channel.SendMessageAsync(Context.User.Mention+", Character **"+character.Name+"** (Created by "+character.Owner+"):\n"+character.Sheet);
             }
@@ -67,9 +78,20 @@ namespace ERA.Modules
             var User = Context.User as SocketGuildUser;
             var role = User.Roles.Where(x => x.Id == Dmasters.Id);
             Directory.CreateDirectory(@"Data/Legacy/");
-            if (File.Exists(@"Data/Legacy/" + name + ".json") == true)
+            var query = Directory.EnumerateFiles(@"Data/Legacy/", "*" + name + "*");
+            if (query.Count() > 1)
             {
-                string sheet = File.ReadAllText("Data/Legacy/" + name + ".json");
+                string msg = "Multiple charactes were found! Please specify which one of the following characters is the one you're looking for:\n";
+                foreach (string q in query)
+                {
+                    LegacyCharacter result = JsonConvert.DeserializeObject<LegacyCharacter>(q);
+                    msg += "`" + result.Name + " ";
+                }
+                await Context.Channel.SendMessageAsync(msg);
+            }
+            else if (query.Count() == 1)
+            {
+                string sheet = File.ReadAllText(query.First());
                 var character = JsonConvert.DeserializeObject<LegacyCharacter>(sheet);
 
                 if (character.Owner == Context.User.ToString() || role != null)
