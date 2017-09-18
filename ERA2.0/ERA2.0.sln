@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.15
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ERA", "ERA\ERA.csproj", "{E9AA5055-43BC-4631-BF00-BB1FA9C7E4B5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ERA2.0", "ERA2.0\ERA2.0.csproj", "{C0A67173-3613-408E-B233-80504961E7D3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E9AA5055-43BC-4631-BF00-BB1FA9C7E4B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E9AA5055-43BC-4631-BF00-BB1FA9C7E4B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E9AA5055-43BC-4631-BF00-BB1FA9C7E4B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E9AA5055-43BC-4631-BF00-BB1FA9C7E4B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0A67173-3613-408E-B233-80504961E7D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0A67173-3613-408E-B233-80504961E7D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0A67173-3613-408E-B233-80504961E7D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0A67173-3613-408E-B233-80504961E7D3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {39E6355C-9DD5-435D-A130-D62A8F92A720}
+		SolutionGuid = {1C8E905C-B12F-4810-89E6-206B58A5C5EC}
 	EndGlobalSection
 EndGlobal

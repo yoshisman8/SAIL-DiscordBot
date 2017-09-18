@@ -5,11 +5,22 @@ using Discord.Commands;
 using Discord;
 using Discord.WebSocket;
 using System.Threading.Tasks;
-using LiteDB;
 using System.Linq;
 
 namespace ERA.Modules
 {
+    public class Testclass
+    {
+        public int Id { get; set; }
+        public string Text { get; set; }
+        public List<TestSubClass> List { get; set;  }
+        public Dictionary<string,string> Dictionary { get; set; }
+    }
+    public class TestSubClass
+    {
+        public string Needlessthing { get; set; }
+        public ulong Longboi { get; set; }
+    }
     public class TestModule : ModuleBase<SocketCommandContext>
     {
         [Command("ping")]
@@ -48,16 +59,17 @@ namespace ERA.Modules
                 await Context.Channel.SendMessageAsync("`You cannot use this Command!`");
             }
         }
-        [Command("hug")]
-        public async Task hug(IUser user)
-        {
-            IDMChannel dMChannel = await user.GetOrCreateDMChannelAsync();
-            await dMChannel.SendMessageAsync(Context.User.ToString()+" Sent you a hug! https://cdn.discordapp.com/attachments/314937091874095116/359130427136671744/de84426f25e6bf383afa8b5118b85770.gif");
-        }
         [Command("beep")]
-        public async Task beepboop()
+        public async Task Beepboop()
         {
             await Context.Channel.SendMessageAsync("boop!");
+        }
+        [Command("hug")]
+        public async Task Hug(IUser user)
+        {
+            IDMChannel dMChannel = await user.GetOrCreateDMChannelAsync();
+            await Context.Channel.SendMessageAsync("Hug sent successfully!");
+            await dMChannel.SendMessageAsync(Context.User.ToString()+ " Sent you a hug!/n https://cdn.discordapp.com/attachments/314937091874095116/359130427136671744/de84426f25e6bf383afa8b5118b85770.gif");
         }
     }
 }

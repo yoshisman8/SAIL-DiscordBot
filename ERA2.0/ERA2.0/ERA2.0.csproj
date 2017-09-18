@@ -6,9 +6,14 @@
     <StartupObject></StartupObject>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>TRACE</DefineConstants>
-  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="data\**" />
+    <Compile Remove="Legacy\**" />
+    <EmbeddedResource Remove="data\**" />
+    <EmbeddedResource Remove="Legacy\**" />
+    <None Remove="data\**" />
+    <None Remove="Legacy\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Remove="game.txt" />

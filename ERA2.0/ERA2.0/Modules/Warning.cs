@@ -92,8 +92,6 @@ namespace ERA.Modules
             }
         }
         [Command("Support")]
-        [Alias("AdminDM")]
-        [Summary("Send a message to adming staff anonymously. \nUsage: `$Support <Type> <Message>` \nType can me either 'S' for Suggestion or 'R' for Report/Complaint.")]
         public async Task Report(char type, [Remainder] string report)
         {
             ITextChannel adminChannel = Context.Guild.GetTextChannel(324474414609727488);
