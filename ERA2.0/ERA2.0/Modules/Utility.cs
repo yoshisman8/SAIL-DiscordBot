@@ -69,7 +69,7 @@ namespace ERA.Modules
         {
             IDMChannel dMChannel = await user.GetOrCreateDMChannelAsync();
             await Context.Channel.SendMessageAsync("Hug sent successfully!");
-            await dMChannel.SendMessageAsync(Context.User.ToString()+ " Sent you a hug!/n https://cdn.discordapp.com/attachments/314937091874095116/359130427136671744/de84426f25e6bf383afa8b5118b85770.gif");
+            await dMChannel.SendMessageAsync(Context.User.ToString()+ " Sent you a hug!\n https://cdn.discordapp.com/attachments/314937091874095116/359130427136671744/de84426f25e6bf383afa8b5118b85770.gif");
         }
     }
 }

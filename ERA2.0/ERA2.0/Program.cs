@@ -30,7 +30,7 @@ namespace ERABOT
 
             string game = File.ReadAllText("game.txt");
 
-            Directory.CreateDirectory("data/");
+            Directory.CreateDirectory(@"Data/");
 
             await _client.LoginAsync(TokenType.Bot, token);
 
