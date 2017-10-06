@@ -18,7 +18,7 @@ public class Diceroller : ModuleBase<SocketCommandContext>
     public async Task DieRoll([Remainder]string input)
     {
         string result = Dice.Roll(input);
-        await Context.Channel.SendMessageAsync(Context.User.Mention+", Your Roll: " + result);
+        await Context.Channel.SendMessageAsync(Context.User.Mention + ", Your Roll: " + result);
     }
 }
 public static class Dice

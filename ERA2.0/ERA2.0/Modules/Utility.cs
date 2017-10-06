@@ -31,9 +31,7 @@ namespace ERA.Modules
         [Command("Xsend")]
         public async Task Sendtoroom(ITextChannel channel, [Remainder] string message)
         {
-            var User = Context.User as SocketGuildUser;
-            var role = User.Roles.Where(x => x.Id == 356143807026298892);
-            if (role != null) {
+            if (Context.Channel.Id == 364657346443739136 || Context.Channel.Id == 314912846037254144 || Context.Channel.Id == 312226206328029186) {
                 var builder = new EmbedBuilder()
                     .WithDescription(message)
                     .WithColor(new Color(0x000000))
@@ -56,7 +54,7 @@ namespace ERA.Modules
             }
             else
             {
-                await Context.Channel.SendMessageAsync("`You cannot use this Command!`");
+                await Context.Channel.SendMessageAsync("`You cannot use this Command on this channel!`");
             }
         }
         [Command("beep")]
@@ -68,7 +66,7 @@ namespace ERA.Modules
         public async Task Hug(IUser user)
         {
             IDMChannel dMChannel = await user.GetOrCreateDMChannelAsync();
-            await Context.Channel.SendMessageAsync("Hug sent successfully!");
+            await Context.Channel.SendMessageAsync(Context.User.Mention+", Hug sent successfully!");
             await dMChannel.SendMessageAsync(Context.User.ToString()+ " Sent you a hug!\n https://cdn.discordapp.com/attachments/314937091874095116/359130427136671744/de84426f25e6bf383afa8b5118b85770.gif");
         }
     }

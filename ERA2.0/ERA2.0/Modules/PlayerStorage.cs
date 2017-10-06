@@ -27,14 +27,14 @@ namespace ERABOT.Modules
                 string msg = "Multiple characters with similar names were found! Please specify which one is your character: ";
                 foreach (string x in query)
                 {
-                    Player result = JsonConvert.DeserializeObject<Player>(x);
+                    Actor result = JsonConvert.DeserializeObject<Actor>(x);
                     msg += "`" + result.Name + "` ";
                 }
                 await Context.Channel.SendMessageAsync(msg);
             }
             else
             {
-                Player plr = JsonConvert.DeserializeObject<Player>(query.First());
+                Actor plr = JsonConvert.DeserializeObject<Actor>(query.First());
                 if (plr.Approved == false)
                 {
                     await Context.Channel.SendMessageAsync("```diff\n- WARNING: THIS CHARACTER HAS NOT BEEN APPROVED BY A " +
@@ -52,7 +52,7 @@ namespace ERABOT.Modules
         {
             Directory.CreateDirectory(@"Data/Players/");
 
-            Player plr = new Player();
+            Actor plr = new Actor();
 
             IDMChannel dm = await Context.User.GetOrCreateDMChannelAsync();
 
@@ -138,14 +138,14 @@ namespace ERABOT.Modules
 
                 if (stats.Sum() != 18) { await msg.DeleteAsync(); continue; }
 
-                plr.STR = stats[0];
-                plr.AGI = stats[1];
-                plr.ACC = stats[2];
-                plr.CON = stats[3];
-                plr.TEC = stats[4];
-                plr.SYN = stats[5];
-                plr.MaxHP = 10 + ModifierGet(plr.CON);
-                plr.CurrHP = plr.MaxHP;
+                plr.Stats.STR = stats[0];
+                plr.Stats.AGI = stats[1];
+                plr.Stats.ACC = stats[2];
+                plr.Stats.CON = stats[3];
+                plr.Stats.TEC = stats[4];
+                plr.Stats.SYN = stats[5];
+                plr.Stats.MaxHP = 10 + ModifierGet(plr.Stats.CON);
+                plr.Stats.CurrHP = plr.Stats.MaxHP;
 
                 bool y2 = false;
 
@@ -163,7 +163,7 @@ namespace ERABOT.Modules
 
                         Random rnd = new Random();
 
-                        plr.Money = rnd.Next(1, 100);
+                        plr.Inventory.Money = rnd.Next(1, 100);
                         
                         await dm.SendMessageAsync("`Welcome to the E.R.A. Program, " + plr.Name + "!`");
 
@@ -205,14 +205,14 @@ namespace ERABOT.Modules
                     string msg = "Multiple characters with similar names were found! Please specify which one is your character: ";
                     foreach (string x in query)
                     {
-                        Player result = JsonConvert.DeserializeObject<Player>(x);
+                        Actor result = JsonConvert.DeserializeObject<Actor>(x);
                         msg += "`" + result.Name + "` ";
                     }
                     await Context.Channel.SendMessageAsync(msg);
                 }
                 else
                 {
-                    Player plr = JsonConvert.DeserializeObject<Player>(query.First());
+                    Actor plr = JsonConvert.DeserializeObject<Actor>(query.First());
 
                     plr.Approved = true;
 
@@ -242,14 +242,14 @@ namespace ERABOT.Modules
                     string msg = "Multiple characters with similar names were found! Please specify which one is your character: ";
                     foreach (string y in query)
                     {
-                        Player result = JsonConvert.DeserializeObject<Player>(y);
+                        Actor result = JsonConvert.DeserializeObject<Actor>(y);
                         msg += "`" + result.Name + "` ";
                     }
                     await Context.Channel.SendMessageAsync(msg);
                 }
                 else
                 {
-                    Player plr = JsonConvert.DeserializeObject<Player>(query.First());
+                    Actor plr = JsonConvert.DeserializeObject<Actor>(query.First());
 
                     await Context.Channel.SendMessageAsync("`Are you sure you want to delete " + plr.Name + "? (Y/N)`");
 
@@ -271,8 +271,29 @@ namespace ERABOT.Modules
                 await Context.Channel.SendMessageAsync("`Only Dungeon Masters can remove characters!");
             }
         }
-        public int ModifierGet(int stat) => (int)Math.Floor((double)((decimal)stat / 2));
-        public Embed EmbedPlayer(Player plr)
+        public int ModifierGet(int stat) => (int)Math.Floor((double)(((decimal)stat-10) / 2));
+        public string Statroll()
+        {
+            List<int> returnvalues = new List<int>(6);
+            foreach (int x in returnvalues)
+            {
+                List<int> values = new List<int>();
+                Random random = new Random();
+                for (int count = 0; count < 3; count++)
+                {
+                    values[count] = random.Next(1, 6);
+                }
+                values.Sort();
+                values.RemoveAt(0);
+                foreach (int y in values)
+                {
+                    returnvalues[x] += y;
+                }
+            }
+            string stats = string.Join(", ", returnvalues);
+            return stats;
+        }
+        public Embed EmbedPlayer(Actor plr)
         {
             IUser user = Context.Guild.GetUser(plr.Owner);
             var builder = new EmbedBuilder()
@@ -290,15 +311,15 @@ namespace ERABOT.Modules
                 .WithName("E.R.A. Agent Profile")
                 .WithIconUrl(Context.Client.CurrentUser.GetAvatarUrl());
         })
-        .AddField("Vitals", "["+plr.CurrHP+"/"+plr.MaxHP+"] HP | ["+ListAliments(plr.Aliments)+"]")
-        .AddField("Weapon", plr.Weapon.Name+" ["+plr.Weapon.Hits+"d"+plr.Weapon.Damage+" Damage.]")
-        .AddField("Armor", plr.Armor.Name+" ["+plr.Armor.Defense+" Armor]")
-        .AddInlineField("Strength", plr.STR+" ["+ModifierGet(plr.STR)+"] MOD" )
-        .AddInlineField("Agility", plr.AGI + " [" + ModifierGet(plr.AGI) + "] MOD")
-        .AddInlineField("Accuracy", plr.ACC + " [" + ModifierGet(plr.AGI) + "] MOD")
-        .AddInlineField("Constitution", plr.CON + " [" + ModifierGet(plr.CON) + "] MOD")
-        .AddInlineField("Tech", plr.TEC + " [" + ModifierGet(plr.TEC) + "] MOD")
-        .AddInlineField("Synergy", plr.SYN + " [" + ModifierGet(plr.SYN) + "] MOD");
+        .AddField("Vitals", "["+plr.Stats.CurrHP+"/"+plr.Stats.MaxHP+"] HP | ["+ListAliments(plr.Aliments)+"]")
+        .AddField("Weapon", plr.Weapon.Name+" ["+plr.Weapon.MinDamage+"-"+plr.Weapon.MaxDamage+" Damage.]")
+        .AddField("Armor", plr.Armor.Name+" ["+plr.Armor.MaxDefense+" Armor]")
+        .AddInlineField("Strength", plr.Stats.STR+" ["+ModifierGet(plr.Stats.STR)+"] MOD" )
+        .AddInlineField("Agility", plr.Stats.AGI + " [" + ModifierGet(plr.Stats.AGI) + "] MOD")
+        .AddInlineField("Accuracy", plr.Stats.ACC + " [" + ModifierGet(plr.Stats.AGI) + "] MOD")
+        .AddInlineField("Constitution", plr.Stats.CON + " [" + ModifierGet(plr.Stats.CON) + "] MOD")
+        .AddInlineField("Tech", plr.Stats.TEC + " [" + ModifierGet(plr.Stats.TEC) + "] MOD")
+        .AddInlineField("Synergy", plr.Stats.SYN + " [" + ModifierGet(plr.Stats.SYN) + "] MOD");
             var embed = builder.Build();
             return embed;
         }
@@ -313,29 +334,37 @@ namespace ERABOT.Modules
         }
     }
 }
-public class Player
+public class Actor
 {
     public int Id { get; set; }
     public ulong Owner { get; set; }
     public string Name { get; set; }
     public string Race { get; set; }
     public string Class { get; set; }
+    public Stats Stats { get; set; }
+    public Inventory Inventory { get; set; }
+    public Weapon Weapon { get; set; }
+    public Armor Armor { get; set; }
+    public List<string> Aliments { get; set; }
+    public bool Approved { get; set; }
+    public string ImgURL { get; set; }
+    public string DMnotes { get; set; }
+}
+public class Stats
+{
     public int MaxHP { get; set; }
     public int CurrHP { get; set; }
-    public List<string> Aliments { get; set; }
     public int STR { get; set; }
     public int AGI { get; set; }
     public int ACC { get; set; }
     public int CON { get; set; }
     public int TEC { get; set; }
     public int SYN { get; set; }
-    public Weapon Weapon { get; set; }
-    public Armor Armor { get; set; }
-    public List<Item> Inventory { get; set; }
-    public bool Approved { get; set; }
+}
+public class Inventory
+{
     public int Money { get; set; }
-    public string ImgURL { get; set; }
-    public string DMnotes { get; set; }
+    public List<Item> Items { get; set; }
 }
 public class Item
 {
@@ -351,13 +380,24 @@ public class Weapon
     public string Name { get; set; }
     public string Description { get; set; }
     public string DescriptionDM { get; set; }
-    public int Damage { get; set; }
-    public int Hits { get; set; }
+    public int MaxDamage { get; set; }
+    public int MinDamage { get; set; }
 }
 public class Armor
 {
     public string Name { get; set; }
     public string Description { get; set; }
     public string DescriptionDM { get; set; }
-    public int Defense { get; set; }
+    public int MaxDefense { get; set; }
+    public int CurrDefense { get; set; }
+}
+public class Skill
+{
+    public string Name { get; set; }
+    public string Description { get; set; }
+    public int AP { get; set; }
+    public int Cooldown { get; set; }
+    public int CurrCooldown { get; set; }
+    public bool IsReady { get; set; }
+
 }

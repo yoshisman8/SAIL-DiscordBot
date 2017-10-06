@@ -95,20 +95,8 @@ namespace ERA.Modules
         public async Task Report(char type, [Remainder] string report)
         {
             ITextChannel adminChannel = Context.Guild.GetTextChannel(324474414609727488);
-            switch (type)
-            {
-                case 's':
-                    string x = "Suggestion";
-                    await EmbedReport(report, x, adminChannel);
-                    break;
-                case 'r':
-                    x = "Report/Complaing";
-                    await EmbedReport(report, x, adminChannel);
-                    break;
-                default:
-                    await Context.Channel.SendFileAsync("Invalid report type. Valid types are `s` for Suggestions or `r` for reports and complaints.");
-                    break;
-            }
+            string x = "Suggestion/Report/Complaing";
+            await EmbedReport(report, x, adminChannel);
         }
         public async Task EmbedWarning(Warning warning )
         {
