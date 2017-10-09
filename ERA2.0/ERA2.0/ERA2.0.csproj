@@ -17,7 +17,6 @@
 
   <ItemGroup>
     <Compile Remove="Modules\LANCER.cs" />
-    <Compile Remove="Modules\PlayerStorage.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,7 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Discord.Addons.Interactive" Version="1.0.1" />
     <PackageReference Include="Discord.Net" Version="1.0.2" />
     <PackageReference Include="Discord.Net.Commands" Version="1.0.2" />
     <PackageReference Include="Discord.Net.Core" Version="1.0.2" />

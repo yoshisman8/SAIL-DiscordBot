@@ -6,7 +6,7 @@ using System.IO;
 using LiteDB;
 using Newtonsoft.Json;
 using Microsoft.Extensions.DependencyInjection;
-using Discord.Addons.Interactive;
+
 
 namespace ERABOT
 {
@@ -48,7 +48,6 @@ namespace ERABOT
         {
             return new ServiceCollection()
                 .AddSingleton(_client)
-                .AddSingleton(new InteractiveService(_client))
                 .BuildServiceProvider();
         }
 

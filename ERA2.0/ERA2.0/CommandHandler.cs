@@ -6,8 +6,6 @@ using Discord.Commands;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
-using Discord.Addons.Interactive;
-
 
 namespace ERABOT
 {

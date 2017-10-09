@@ -10,10 +10,13 @@ using Discord;
 using System.Threading.Tasks;
 namespace ERA.Modules
 {
-    
+    public class Warnlist
+    {
+        public ulong Outiler { get; set; }
+        public List<Warning> Warns { get; set; } = new List<Warning>();
+    }
     public class Warning
     {
-        public int Id { get; set; }
         public ulong Issuer { get; set; }
         public DateTime Date { get; set; }
         public ulong Outlier { get; set; }
@@ -23,88 +26,116 @@ namespace ERA.Modules
     {
         [Command("Warn")]
         [Summary("Admin command. Issue Warnings to a person.\nUsage: `$warn <@person> <Reason>`")]
-        public async Task Warn(IUser _Outlier, [Remainder] string _Reason)
+        public async Task Warn(IUser _Outlier = null, [Remainder] string _Reason = "")
         {
-
-            Directory.CreateDirectory(@"Data/warnings/");
-            IRole mods = Context.Guild.GetRole(356143807026298892);
-            IMessageChannel channel = Context.Guild.GetTextChannel(324474414609727488);
-            IDMChannel DM = await Context.User.GetOrCreateDMChannelAsync();
-
-            ulong outlier = Convert.ToUInt64(_Outlier.Id.ToString());
-
-            var warning = new Warning();
-                
-            var User = Context.User as SocketGuildUser;
-            var role = User.Roles.Where(x => x.Id == mods.Id);
-            if (role != null && (Context.Channel == channel || Context.Channel == DM))
+            if (_Outlier == null || _Reason == "")
             {
-                warning.Date = DateTime.Now;
-                warning.Outlier = outlier;
-                warning.Issuer = Convert.ToUInt64(Context.User.Id.ToString());
-                warning.Reason = _Reason;
-                string json = JsonConvert.SerializeObject(warning);
-                File.WriteAllText("Data/Warnings/"+_Outlier.Id+"/"+DateTime.UtcNow+".json", json);
-                await EmbedWarning(warning);
-                var totalwarns = Directory.EnumerateFiles("Data/Warnings/" + _Outlier.Id + "/");
-                if (totalwarns.Count() >= 3)
-                {
-                    await channel.SendMessageAsync(Context.Guild.Owner.Mention + "! " + _Outlier.Mention + " Has 3 warnings!");
-                }
+                await Context.Channel.SendMessageAsync("Incorrect command ussage! Correct ussage is `$Warn <User> <Reason>`.");
             }
             else
             {
-                await Context.Channel.SendMessageAsync("`You dont have permission to use this command or are using it in the incorrect channel!`");
+                Directory.CreateDirectory(@"Data/warnings/");
+                IRole Admins = Context.Guild.GetRole(311989788540665857);
+                IRole trialadmin = Context.Guild.GetRole(364633182357815298);
+                IMessageChannel staffLounge = Context.Guild.GetTextChannel(364657346443739136);
+
+                Warnlist warnlist = new Warnlist();
+                var warning = new Warning();
+
+                if (File.Exists(@"Data/warnings/" + _Outlier.Id.ToString() + ".json"))
+                {
+                    warnlist = JsonConvert.DeserializeObject<Warnlist>(File.ReadAllText(@"Data/warnings/" + _Outlier.Id.ToString() + ".json"));
+                }
+
+                var User = Context.User as SocketGuildUser;
+
+                if ((User.Roles.Contains(trialadmin) == true || User.Roles.Contains(Admins) == true) && Context.Channel == staffLounge)
+                {
+                    warning.Date = DateTime.Now;
+                    warning.Outlier = _Outlier.Id;
+                    warning.Issuer = Convert.ToUInt64(Context.User.Id.ToString());
+                    warning.Reason = _Reason;
+                    warnlist.Outiler = _Outlier.Id;
+                    warnlist.Warns.Add(warning);
+
+                    string json = JsonConvert.SerializeObject(warnlist);
+                    File.WriteAllText(@"Data/warnings/" + _Outlier.Id.ToString() + ".json", json);
+                    await EmbedWarning(warning);
+                    if (warnlist.Warns.Count >= 3)
+                    {
+                        await staffLounge.SendMessageAsync(Context.Guild.Owner.Mention + "! " + _Outlier.Mention + " Has 3 warnings!");
+                    }
+                }
+                else
+                {
+                    await Context.Channel.SendMessageAsync("`You dont have permission to use this command or are using it in the incorrect channel!`");
+                }
             }
         }
         [Command("Warnings")]
         [Alias("Warns")]
         [Summary("Admin command, Display the warnings for a given person.\nUsage: `$warnings <person>`.")]
-        public async Task Warning(IUser user)
+        public async Task Warning(IUser user = null)
         {
-            IDMChannel dMChannel = await Context.User.GetOrCreateDMChannelAsync();
-
-            IMessageChannel adminChannel = Context.Guild.GetTextChannel(324474414609727488);
-                
-            var User = Context.User as SocketGuildUser;
-
-            Directory.CreateDirectory(@"Data/warnings/");
-
-            var warns = Directory.EnumerateFiles("Data/Warnings/" + user.Id+ "/");
-
-            var role = User.Roles.Where(x => x.Id == 356143807026298892);
-
-            if (User != null && Context.Channel == adminChannel)
+            if (user == null)
             {
-                foreach (var x in warns)
-                {
-                    var warn = JsonConvert.DeserializeObject<Warning>(File.ReadAllText(x));
-                    await EmbedWarning(warn);
-                }
-            }
-            else if (User != null && warns == null)
-            {
-                await Context.Channel.SendMessageAsync("`This user has no warnings.`");
+                await Context.Channel.SendMessageAsync("Incorrect command ussage! Correct ussage is `$Warns <user>`");
             }
             else
             {
-                await Context.Channel.SendMessageAsync("`You dont have permission to use this command or are using it in the incorrect channel!`");
+                IRole Admins = Context.Guild.GetRole(311989788540665857);
+                IRole trialadmin = Context.Guild.GetRole(364633182357815298);
+                IMessageChannel staffLounge = Context.Guild.GetTextChannel(364657346443739136);
+
+                var User = Context.User as SocketGuildUser;
+
+                Directory.CreateDirectory(@"Data/warnings/");
+
+                var warnlist = JsonConvert.DeserializeObject<Warnlist>(File.ReadAllText(@"Data/warnings/" + user.Id.ToString() + ".json"));
+
+                if ((User.Roles.Contains(trialadmin) == true || User.Roles.Contains(Admins) == true) && Context.Channel == staffLounge)
+                {
+                    foreach (Warning x in warnlist.Warns)
+                    {
+                        await EmbedWarning(x);
+                    }
+                    if (warnlist.Warns.Count >= 3)
+                    {
+                        await staffLounge.SendMessageAsync(Context.Guild.Owner.Mention + "! " + user.Mention + " Has 3 or more warnings!");
+                    }
+                }
+                else if ((User.Roles.Contains(trialadmin) == true || User.Roles.Contains(Admins) == true) && warnlist.Warns == null)
+                {
+                    await Context.Channel.SendMessageAsync("`This user has no warnings.`");
+                }
+                else
+                {
+                    await Context.Channel.SendMessageAsync("`You dont have permission to use this command or are using it in the incorrect channel!`");
+                }
             }
         }
         [Command("Support")]
-        public async Task Report(char type, [Remainder] string report)
+        public async Task Report([Remainder] string report = "")
         {
-            ITextChannel adminChannel = Context.Guild.GetTextChannel(324474414609727488);
-            string x = "Suggestion/Report/Complaing";
-            await EmbedReport(report, x, adminChannel);
+            if (report == "")
+            {
+                await Context.Channel.SendMessageAsync("Incorrect command ussage! Correct ussage is `$Support <Message>`");
+            }
+            else
+            {
+                SocketGuild server = Context.Client.GetGuild(311970313158262784);
+                IMessageChannel channel = server.GetTextChannel(358635970632876043);
+                await EmbedReport(report, channel);
+            }
         }
         public async Task EmbedWarning(Warning warning )
         {
+            IMessageChannel channel = Context.Guild.GetTextChannel(358635970632876043);
             IUser outlier = Context.Guild.GetUser(warning.Outlier);
             IUser issuer = Context.Guild.GetUser(warning.Issuer);
             var builder = new EmbedBuilder()
                     .WithTitle("Warning form")
-                    .WithDescription("Warning ID#"+warning.Id)
+                    .WithDescription("Warning Issued!")
                     .WithColor(new Color(0xff0000))
                     .WithFooter(footer =>
                     {
@@ -121,20 +152,21 @@ namespace ERA.Modules
                     .AddField("Outlier:", outlier.Mention)
                     .AddField("Warning details:", warning.Reason);
             var embed = builder.Build();
-            await Context.Channel.SendMessageAsync("", embed: embed)
+            await channel.SendMessageAsync("", embed: embed)
             .ConfigureAwait(false);
         }
-        public async Task EmbedReport(string report, string type, ITextChannel channel)
+        public async Task EmbedReport(string report, IMessageChannel channel)
         {
+            SocketGuild server = Context.Client.GetGuild(311970313158262784);
             var builder = new EmbedBuilder()
-            .WithTitle("New "+type)
+            .WithTitle("New Suggestion/Report/Complaint!")
             .WithDescription(report)
             .WithColor(new Color(0x663300))
             .WithTimestamp(DateTime.Now)
         	.WithAuthor(author => {
                  author
                 .WithName("E.R.A. Anonymous report unit")
-                .WithIconUrl(Context.Guild.CurrentUser.GetAvatarUrl());
+                .WithIconUrl(server.CurrentUser.GetAvatarUrl());
             });
             var embed = builder.Build();
             await channel.SendMessageAsync("", embed: embed)

@@ -6,7 +6,6 @@ using System.IO;
 using Discord.Commands;
 using Discord.WebSocket;
 using Discord;
-using Discord.Addons.Interactive;
 using Newtonsoft.Json;
 using System.Linq;
 
@@ -18,7 +17,7 @@ namespace ERA.Modules
         public string Name { get; set; }
         public string Sheet { get; set; }
     }
-    public class LegacyPlayerStorage : InteractiveBase<SocketCommandContext>
+    public class LegacyPlayerStorage : ModuleBase<SocketCommandContext>
     {
         [Command("Addchar")]
         [Alias("Add-Char", "LegacyAdd")]
@@ -74,9 +73,8 @@ namespace ERA.Modules
         [Alias("LegacyDelete", "Del-Char", "delchar")]
         public async Task DelChar(string name)
         {
-            IRole Dmasters = Context.Guild.GetRole(357023942520733696);
+            IRole Dmasters = Context.Guild.GetRole(324320068748181504);
             var User = Context.User as SocketGuildUser;
-            var role = User.Roles.Where(x => x.Id == Dmasters.Id);
             Directory.CreateDirectory(@"Data/Legacy/");
             var query = Directory.EnumerateFiles(@"Data/Legacy/", "*" + name + "*");
             if (query.Count() > 1)
@@ -94,7 +92,7 @@ namespace ERA.Modules
                 string sheet = File.ReadAllText(query.First());
                 var character = JsonConvert.DeserializeObject<LegacyCharacter>(sheet);
 
-                if (character.Owner == Context.User.ToString() || role != null)
+                if (character.Owner == Context.User.ToString() || User.Roles.Contains(Dmasters) == true)
                 { 
                     File.Delete("Data/Legacy/" + name + ".json");
                     await Context.Channel.SendMessageAsync(Context.User.Mention + " Character **" + character.Name + "** deleted!");

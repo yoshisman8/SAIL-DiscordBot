@@ -8,7 +8,6 @@ using Newtonsoft;
 using Discord.Commands;
 using Discord.WebSocket;
 using Discord;
-using Discord.Addons.Interactive;
 using System.Collections;
 
 public class Diceroller : ModuleBase<SocketCommandContext>
