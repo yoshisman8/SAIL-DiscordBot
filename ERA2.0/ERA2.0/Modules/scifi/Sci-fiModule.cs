@@ -8,9 +8,9 @@ using Discord.WebSocket;
 using Discord;
 using Newtonsoft.Json;
 
-namespace ERA20.Modules.Sci_fi
+namespace ERA.Modules.Sci_fi
 {
-    class PlayerStorage: ModuleBase<SocketCommandContext>
+    public class PlayerStorage: ModuleBase<SocketCommandContext>
     {
        [Command("enroll")]
        public async Task Register(string _Name = "", string _Race = "", string _Class = "")
@@ -37,6 +37,51 @@ namespace ERA20.Modules.Sci_fi
                     "\n You can also use $Image <Image URL> to chage the icon image of your sheet.");
             }
         }
+        [Command("addskill")]
+        public async Task Addskill(string _Skill = "", string _Player = "")
+        {
+            var player = new Player();
+            if (_Player == "")
+            {
+                var query = new Query();
+                var files = Directory.EnumerateFiles(@"Data/Sci-fi/Players");
+                foreach (string x in files)
+                {
+
+                    query.Resuts.Add(JsonConvert.DeserializeObject<Player>(x));
+                }
+                var final = query.Resuts.Where(x => x.Owner == Context.User.Id);
+                if (final == null) { await Context.Channel.SendMessageAsync("You dont have a character!"); return; }
+                else
+                {
+                    player = final.First();
+                }
+            }
+            if (_Skill == "")
+            {
+                await Context.Channel.SendMessageAsync("Incorrect commad ussage! Correct ussage is `$Addskill <Skill name>");
+            }
+            else
+            {
+                if (player.Skills.Where(x => x.Name == _Skill).Count() >= 1)
+                {
+                    await Context.Channel.SendMessageAsync("You already have Skill " + _Skill + "!");
+                }
+                else
+                {
+                    player.Skills.Add(new Skill()
+                    {
+                        Name = _Skill,
+                        Level = 1
+                    });
+                    await Context.Channel.SendMessageAsync("Skill " + _Skill + " Added to your character's list successfully!");
+                }
+            }
+        }
+    }
+    public class Query
+    {
+        public List<Player> Resuts { get; set; } = new List<Player> { };
     }
     public class Player
     {

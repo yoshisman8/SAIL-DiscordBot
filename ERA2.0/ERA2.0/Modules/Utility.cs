@@ -51,14 +51,22 @@ namespace ERA.Modules
             await Context.Channel.SendMessageAsync("```fix\nBoom!```\n" + _Victim + " Is now dead.");
         }
         [Command("Ban")]
-        public async Task Ban(IUser _Target)
+        public async Task Ban(string  _Target = "")
         {
             IRole Admins = Context.Guild.GetRole(311989788540665857);
             IRole trialadmin = Context.Guild.GetRole(364633182357815298);
             var User = Context.User as SocketGuildUser;
+            IUser Target = GetUser(_Target);
             if (User.Roles.Contains(Admins) == true || User.Roles.Contains(trialadmin) == true)
             {
-                await Context.Channel.SendMessageAsync(_Target.Mention + " ur banne https://cdn.discordapp.com/attachments/314912846037254144/366611543263019009/ban1.png");
+                if (Target == null)
+                {
+                    await Context.Channel.SendMessageAsync(_Target+ " ur banne https://cdn.discordapp.com/attachments/314912846037254144/366611543263019009/ban1.png");
+                }
+                else
+                {
+                    await Context.Channel.SendMessageAsync(Target.Mention + " ur banne https://cdn.discordapp.com/attachments/314912846037254144/366611543263019009/ban1.png");
+                }
             }
             else
             {
@@ -76,11 +84,31 @@ namespace ERA.Modules
             await Context.Channel.SendMessageAsync("Im the one who boops! >:c");
         }
         [Command("hug")]
-        public async Task Hug(IUser user)
+        public async Task Hug(string _User)
         {
-            IDMChannel dMChannel = await user.GetOrCreateDMChannelAsync();
-            await Context.Channel.SendMessageAsync(Context.User.Mention+", Hug sent successfully!");
-            await dMChannel.SendMessageAsync(Context.User.ToString()+ " Sent you a hug!\n https://cdn.discordapp.com/attachments/314937091874095116/359130427136671744/de84426f25e6bf383afa8b5118b85770.gif");
+            IUser User = GetUser(_User);
+            if ( User != null)
+            {
+                IDMChannel dMChannel = await User.GetOrCreateDMChannelAsync();
+                await Context.Channel.SendMessageAsync(Context.User.Mention + ", Hug sent successfully!");
+                await dMChannel.SendMessageAsync(Context.User.ToString() + " Sent you a hug!\n https://cdn.discordapp.com/attachments/314937091874095116/359130427136671744/de84426f25e6bf383afa8b5118b85770.gif");
+            }
+            else
+            {
+                await Context.Channel.SendMessageAsync("I can't find this user!");
+            }
         }
+        public ITextChannel GetTextChannel(string Name)
+        {
+            var channel = Context.Guild.Channels.Where(x => x.Name.ToLower() == Name);
+            return channel.First() as ITextChannel;
+        }
+        public IUser GetUser(string name)
+        {
+            var user = Context.Guild.Users.Where(x => x.Username.ToLower().Contains(name));
+            return user.First() as IUser;
+        }
+
     }
+
 }
