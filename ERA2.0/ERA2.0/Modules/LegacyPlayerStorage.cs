@@ -47,21 +47,25 @@ namespace ERA.Modules
         public async Task GetChar(string name)
         {
             Directory.CreateDirectory(@"Data/Legacy/");
-            var query = Directory.EnumerateFiles(@"Data/Legacy/","*"+name+"*");
+            var files = Directory.EnumerateFiles(@"Data/Legacy/");
+            List<LegacyCharacter> db = new List<LegacyCharacter> { };
+            foreach (string x in files)
+            {
+                db.Add(JsonConvert.DeserializeObject<LegacyCharacter>(File.ReadAllText(x)));
+            }
+            var query = db.Where(x => x.Name.ToLower() == name.ToLower());
             if (query.Count() > 1)
             {
-                string msg = "Multiple charactes were found! Please specify which one of the following characters is the one you're looking for:\n";
-                foreach (string q in query)
+                string msg = "Multiple charactes were found! Please specify which one of the following characters is the one you're looking for: ";
+                foreach (LegacyCharacter q in query)
                 {
-                    LegacyCharacter result = JsonConvert.DeserializeObject<LegacyCharacter>(q);
-                    msg += "`" + result.Name + " ";
+                    msg += "`" + q.Name + "` ";
                 }
                 await Context.Channel.SendMessageAsync(msg);
             }
             else if (query.Count() == 1)
             {
-                string sheet = File.ReadAllText(query.First());
-                var character = JsonConvert.DeserializeObject<LegacyCharacter>(sheet);
+                var character = query.First();
                 await Context.Channel.SendMessageAsync(Context.User.Mention+", Character **"+character.Name+"** (Created by "+character.Owner+"):\n"+character.Sheet);
             }
             else
@@ -76,21 +80,25 @@ namespace ERA.Modules
             IRole Dmasters = Context.Guild.GetRole(324320068748181504);
             var User = Context.User as SocketGuildUser;
             Directory.CreateDirectory(@"Data/Legacy/");
-            var query = Directory.EnumerateFiles(@"Data/Legacy/", "*" + name + "*");
+            var files = Directory.EnumerateFiles(@"Data/Legacy/");
+            List<LegacyCharacter> db = new List<LegacyCharacter> { };
+            foreach (string x in files)
+            {
+                db.Add(JsonConvert.DeserializeObject<LegacyCharacter>(File.ReadAllText(x)));
+            }
+            var query = db.Where(x => x.Name.ToLower() == name.ToLower());
             if (query.Count() > 1)
             {
-                string msg = "Multiple charactes were found! Please specify which one of the following characters is the one you're looking for:\n";
-                foreach (string q in query)
+                string msg = "Multiple charactes were found! Please specify which one of the following characters is the one you're looking for: ";
+                foreach (LegacyCharacter q in query)
                 {
-                    LegacyCharacter result = JsonConvert.DeserializeObject<LegacyCharacter>(q);
-                    msg += "`" + result.Name + " ";
+                    msg += "`" + q.Name + "` ";
                 }
                 await Context.Channel.SendMessageAsync(msg);
             }
             else if (query.Count() == 1)
             {
-                string sheet = File.ReadAllText(query.First());
-                var character = JsonConvert.DeserializeObject<LegacyCharacter>(sheet);
+                var character = query.First();
 
                 if (character.Owner == Context.User.ToString() || User.Roles.Contains(Dmasters) == true)
                 { 

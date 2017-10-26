@@ -10,10 +10,12 @@ using Discord.WebSocket;
 using Discord;
 using System.Collections;
 
+[Name("Dice Roller")]
+[Summary("Rolls Dice, simple as that.")]
 public class Diceroller : ModuleBase<SocketCommandContext>
 {
     [Command("Roll")]
-    [Alias("roll")]
+    [Summary("Rolls a die on a xdy expression format. \nUsage: `$Roll <dice expression>` \nNote: All dice must be XdY (ie: 1d20/2d5/4d8) the bot can't parse 'd20' or just '20'.")]
     public async Task DieRoll([Remainder]string input)
     {
         string result = Dice.Roll(input);

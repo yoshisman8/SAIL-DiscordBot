@@ -260,3 +260,9 @@ paket-files/
 __pycache__/
 *.pyc
 /ERA2.0/ERA2.0/data/warnings
+/ERA2.0/ERA2.0/game.txt
+/ERA2.0/ERA2.0/token.txt
+/ERA2.0/ERA2.0/Data
+/ERA2.0/game.txt
+/ERA2.0/token.txt
+/ERA2.0/ERA2.0/_configuration.json

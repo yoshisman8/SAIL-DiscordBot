@@ -9,14 +9,20 @@ using System.Linq;
 
 namespace ERA.Modules
 {
+    [Name("Miscellaneus")]
+    [Summary("Random or otherwise fun commands with little real use.")]
     public class TestModule : ModuleBase<SocketCommandContext>
     {
-        [Command("ping")]
-        public async Task Pinger()
+        [Command("status")]
+        [RequireUserPermission(GuildPermission.ManageGuild)]
+        [Summary("Set the bot's 'Playing' status. Usage: `$Status <text>`")]
+        public async Task StatusSet([Remainder] string _text)
         {
-            await Context.Channel.SendMessageAsync("I can hear you loud and clear, " + Context.User.Mention+"!");
+            await Context.Client.SetGameAsync(_text);
         }
         [Command("Xsend")]
+        [RequireUserPermission(GuildPermission.ManageRoles)]
+        [Summary("Sends a message to specific channel under ERA's name. Ussage: $Xsend <Channel> <Message>")]
         public async Task Sendtoroom(ITextChannel channel, [Remainder] string message)
         {
             var User = Context.User as SocketGuildUser;
@@ -46,12 +52,17 @@ namespace ERA.Modules
             }
         }
         [Command ("modkill")]
-        public async Task Modkill(string _Victim)
+        [Summary("'Kills' Someone. Usage: `$modkill <target>`")]
+        [RequireUserPermission(GuildPermission.ManageRoles)]
+        public async Task Modkill([Remainder] string _Victim)
         {
             await Context.Channel.SendMessageAsync("```fix\nBoom!```\n" + _Victim + " Is now dead.");
         }
         [Command("Ban")]
-        public async Task Ban(string  _Target = "")
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.ManageRoles)]
+        [Summary("'Bans' someone. Ussage: `$Ban <name>`")]
+        public async Task Ban([Remainder] string  _Target)
         {
             IRole Admins = Context.Guild.GetRole(311989788540665857);
             IRole trialadmin = Context.Guild.GetRole(364633182357815298);
@@ -84,7 +95,9 @@ namespace ERA.Modules
             await Context.Channel.SendMessageAsync("Im the one who boops! >:c");
         }
         [Command("hug")]
-        public async Task Hug(string _User)
+        [RequireContext(ContextType.Guild)]
+        [Summary("Sends a hug to someone! Usage: `$Hug <name>`")]
+        public async Task Hug([Remainder] string _User)
         {
             IUser User = GetUser(_User);
             if ( User != null)
@@ -100,12 +113,12 @@ namespace ERA.Modules
         }
         public ITextChannel GetTextChannel(string Name)
         {
-            var channel = Context.Guild.Channels.Where(x => x.Name.ToLower() == Name);
+            var channel = Context.Guild.Channels.Where(x => x.Name.ToLower() == Name.ToLower());
             return channel.First() as ITextChannel;
         }
         public IUser GetUser(string name)
         {
-            var user = Context.Guild.Users.Where(x => x.Username.ToLower().Contains(name));
+            var user = Context.Guild.Users.Where(x => x.Username.ToLower().Contains(name.ToLower()));
             return user.First() as IUser;
         }
 
