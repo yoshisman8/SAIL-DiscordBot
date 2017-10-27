@@ -13,20 +13,20 @@ namespace ERA.Modules
 {
     public class PlayerStorage: InteractiveBase<SocketCommandContext>
     {
-        [Command("Player")]
-        [RequireContext(ContextType.DM)]
-        [Summary("Loads the player sheet editor menu. Usage: `$Player`. **Can only be used by DMing the bot directly.**")]
-        public async Task Register(string _Name)
-        {
-            Directory.CreateDirectory(@"Data/Players/");
-        }
-        [Command("Player")]
-        [RequireContext(ContextType.DM)]
-        [Summary("Displays a player sheet. Usage: `$Player <name>`.")]
-        public async Task LoadPlayer(string _Name)
-        {
+        //[Command("Player")]
+        //[RequireContext(ContextType.DM)]
+        //[Summary("Loads the player sheet editor menu. Usage: `$Player`. **Can only be used by DMing the bot directly.**")]
+        //public async Task Register(string _Name)
+        //{
+        //    Directory.CreateDirectory(@"Data/Players/");
+        //}
+        //[Command("Player")]
+        //[RequireContext(ContextType.DM)]
+        //[Summary("Displays a player sheet. Usage: `$Player <name>`.")]
+        //public async Task LoadPlayer(string _Name)
+        //{
 
-        }
+        //}
 
         public Embed BuildSheet(Player player)
         {
