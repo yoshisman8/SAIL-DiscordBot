@@ -155,14 +155,14 @@ namespace ERA20.Modules
             string t5 = "";
             for (int x = 0; x < 5; x++)
             {
-                t5 += "• " + db.Wiki[x]+"/n";
+                t5 += "• " + db.Wiki[x].Name+"\n";
             }
             builder.AddInlineField(":chart_with_upwards_trend: Most Visited Entries", t5);
             db.Wiki.OrderBy(e => e.LastModified);
             t5 = "";
             for (int x = 0; x < 5; x++)
             {
-                t5 += "• " + db.Wiki[x] + "/n";
+                t5 += "• " + db.Wiki[x].Name + "\n";
             }
             builder.AddInlineField(":clock4: Last modified articles", t5);
             var embed = builder.Build();
