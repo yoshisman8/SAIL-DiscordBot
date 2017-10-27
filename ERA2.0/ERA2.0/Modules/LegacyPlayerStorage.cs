@@ -54,7 +54,7 @@ namespace ERA.Modules
                 db.Add(JsonConvert.DeserializeObject<LegacyCharacter>(File.ReadAllText(x)));
             }
             var query = db.Where(x => x.Name.ToLower() == name.ToLower());
-            if (query.Count() > 1)
+            if (query.Count() > 1 && query.First().Name.ToLower() != name)
             {
                 string msg = "Multiple charactes were found! Please specify which one of the following characters is the one you're looking for: ";
                 foreach (LegacyCharacter q in query)
@@ -74,7 +74,7 @@ namespace ERA.Modules
             }
         }
         [Command("DeleteChar")]
-        [Alias("LegacyDelete", "Del-Char", "delchar")]
+        [Alias("LegacyDelete", "Del-Char", "Delchar")]
         public async Task DelChar(string name)
         {
             IRole Dmasters = Context.Guild.GetRole(324320068748181504);
@@ -87,7 +87,7 @@ namespace ERA.Modules
                 db.Add(JsonConvert.DeserializeObject<LegacyCharacter>(File.ReadAllText(x)));
             }
             var query = db.Where(x => x.Name.ToLower() == name.ToLower());
-            if (query.Count() > 1)
+            if (query.Count() > 1 && query.First().Name.ToLower() != name)
             {
                 string msg = "Multiple charactes were found! Please specify which one of the following characters is the one you're looking for: ";
                 foreach (LegacyCharacter q in query)
