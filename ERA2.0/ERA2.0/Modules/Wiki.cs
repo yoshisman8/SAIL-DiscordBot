@@ -187,7 +187,13 @@ namespace ERA20.Modules
         }
         public List<Entry> Query(string _Name)
         {
-            var db = this.LoadWiki();
+            var db = new WikiDb();
+            Directory.CreateDirectory(@"Data/Wiki/");
+            var folder = Directory.EnumerateFiles(@"Data/Wiki/");
+            foreach (string x in folder)
+            {
+                db.Wiki.Add(JsonConvert.DeserializeObject<Entry>(File.ReadAllText(x)));
+            }
             var Query = db.Wiki.Where(x => x.Name.ToLower().Contains(_Name.ToLower()));
             return Query.OrderBy(x => x.Name) as List<Entry>;
         }

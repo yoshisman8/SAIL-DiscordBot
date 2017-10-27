@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using System;
+using System.Collections.Generic;
 
 namespace Example
 {
@@ -29,10 +30,27 @@ namespace Example
             _discord.MessageReceived += OnMessageReceivedAsync;
             _discord.UserJoined += _discord_UserJoined;
             _discord.MessageUpdated += OnMessageUpdate;
+            _discord.UserLeft += OnUserLeft;
+        }
+
+        private async Task OnUserLeft(SocketGuildUser u)
+        {
+            SocketGuild Guild = _discord.GetGuild(311970313158262784);
+            IMessageChannel Fax = Guild.GetTextChannel(358635970632876043);
+            var builder = new EmbedBuilder()
+               .WithAuthor(_discord.CurrentUser)
+               .WithColor(new Color(255, 0, 0))
+               .WithTitle(u.Username + " Left!")
+               .WithThumbnailUrl(u.GetAvatarUrl())
+               .WithCurrentTimestamp();
+            await Fax.SendMessageAsync("", embed: builder.Build());
         }
 
         private async Task OnMessageUpdate(Cacheable<IMessage, ulong> original, SocketMessage edit, ISocketMessageChannel channel)
         {
+            var command = channel.GetMessagesAsync(edit, Direction.After, 2,CacheMode.AllowDownload) as List<IMessage>;
+            var query = command.Find(x => x.Author == _discord.CurrentUser);
+            await query.DeleteAsync();
             await OnMessageReceivedAsync(edit);
         }
 
@@ -42,11 +60,18 @@ namespace Example
             IRole Admin = Guild.GetRole(311989788540665857);
             IRole TrialAdmin = Guild.GetRole(364633182357815298);
             IMessageChannel ReceptionDesk = Guild.GetTextChannel(311974698839703562);
-            IMessageChannel Rules = Guild.GetTextChannel(349026777852542986);
+            IMessageChannel Fax = Guild.GetTextChannel(358635970632876043);
 
             var msg = await ReceptionDesk.SendMessageAsync("Welcome to the server " + u.Mention + "! \nPLease wait here while either a "+ Admin.Mention +" or a "+ TrialAdmin.Mention +" gives" +
                 "you the Spectator role! \n In the meantime, make sure to read the rules on #rules-of-the-den!");
             await Task.Delay(TimeSpan.FromMinutes(5));
+            var builder = new EmbedBuilder()
+                .WithAuthor(_discord.CurrentUser)
+                .WithColor(new Color(0, 255, 0))
+                .WithTitle(u.Username + " Joined!")
+                .WithThumbnailUrl(u.GetAvatarUrl())
+                .WithCurrentTimestamp();
+            await Fax.SendMessageAsync("", embed: builder.Build());
             await msg.DeleteAsync();
         }
 
@@ -65,9 +90,7 @@ namespace Example
 
                 if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
                 {     // If not successful, reply with the error.
-                    var raw = msg.Content.Split()[0].IndexOf(_config["prefix"]);
-                    var cmd = _commands.Search(context, raw).Commands.GetEnumerator().Current;
-                    await context.Channel.SendMessageAsync("Something went wrong, this is the info on the command you wanted to use: `" +cmd.Command.Summary+"`.");
+                    await context.Channel.SendMessageAsync("Something went wrong! Use `$Help <command>` to see how that command works and get more help!");
                 }
             }
         }
