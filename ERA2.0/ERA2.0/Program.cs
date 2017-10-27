@@ -1,56 +1,52 @@
-﻿using System;
-using Discord;
+﻿using Discord;
+using Discord.Commands;
+using Discord.Addons.Interactive;
 using Discord.WebSocket;
-using System.Threading.Tasks;
-using System.IO;
-using LiteDB;
-using Newtonsoft.Json;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Threading.Tasks;
 
-
-namespace ERABOT
+namespace Example
 {
-
     public class Program
     {
-        static void Main(string[] args)
-        => new Program().StartAsync().GetAwaiter().GetResult();
+        public static void Main(string[] args)
+            => new Program().StartAsync().GetAwaiter().GetResult();
 
-        private DiscordSocketClient _client;
-
-        private CommandHandler _handler;
+        private IConfigurationRoot _config;
 
         public async Task StartAsync()
         {
-            _client = new DiscordSocketClient();
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile(@"_configuration.json");    // Begin building the configuration file  
+            _config = builder.Build();                  // Build the configuration file
+            var services = new ServiceCollection()      // Begin building the service provider
+                .AddSingleton(new DiscordSocketClient(new DiscordSocketConfig     // Add the discord client to the service provider
+                {
+                    LogLevel = LogSeverity.Verbose,
+                    MessageCacheSize = 1000     // Tell Discord.Net to cache 1000 messages per channel
+                }))
+                .AddSingleton(new CommandService(new CommandServiceConfig     // Add the command service to the service provider
+                {
+                    DefaultRunMode = RunMode.Async,     // Force all commands to run async
+                    LogLevel = LogSeverity.Verbose
+                }))
+                .AddSingleton<CommandHandler>()     // Add remaining services to the provider
+                .AddSingleton<LoggingService>()     
+                .AddSingleton<StartupService>()
+                .AddSingleton<InteractiveService>()
+                .AddSingleton<Random>()             // You get better random with a single instance than by creating a new one every time you need it
+                .AddSingleton(_config);
 
-            _handler = new CommandHandler();
-            
-            string token = File.ReadAllText("token.txt");
+            var provider = services.BuildServiceProvider();     // Create the service provider
 
-            string game = File.ReadAllText("game.txt");
+            provider.GetRequiredService<LoggingService>();      // Initialize the logging service, startup service, and command handler
+            await provider.GetRequiredService<StartupService>().StartAsync();
+            provider.GetRequiredService<CommandHandler>();
 
-            Directory.CreateDirectory(@"Data/");
-
-            await _client.LoginAsync(TokenType.Bot, token);
-
-            await _client.StartAsync();
-
-            var services = ConfigureServices();
-
-            await _handler.InitializeAsync(services);
-
-            await _client.SetGameAsync(game);
-            
-            await Task.Delay(-1);
+            await Task.Delay(-1);     // Prevent the application from closing
         }
-        private IServiceProvider ConfigureServices()
-        {
-            return new ServiceCollection()
-                .AddSingleton(_client)
-                .BuildServiceProvider();
-        }
-
     }
-
 }

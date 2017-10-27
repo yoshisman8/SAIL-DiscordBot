@@ -26,6 +26,7 @@ namespace ERA.Modules
     {
         [Command("Warn")]
         [Summary("Admin command. Issue Warnings to a person.\nUsage: `$warn <@person> <Reason>`")]
+        [RequireUserPermission(GuildPermission.ManageRoles)]
         public async Task Warn(string _Outlier = null, [Remainder] string _Reason = "")
         {
             IUser Outlier = GetUser(_Outlier);
@@ -76,6 +77,7 @@ namespace ERA.Modules
         [Command("Warnings")]
         [Alias("Warns")]
         [Summary("Admin command, Display the warnings for a given person.\nUsage: `$warnings <person>`.")]
+        [RequireUserPermission(GuildPermission.ManageRoles)]
         public async Task Warning(string _User = null)
         {
             IUser user = GetUser(_User);
@@ -117,13 +119,10 @@ namespace ERA.Modules
             }
         }
         [Command("Support")]
+        [RequireContext(ContextType.DM)]
+        [Summary("Sends an Annonymous message to the Admin's feedback channel. Usage: `$Support <Message>`")]
         public async Task Report([Remainder] string report = "")
         {
-            if (report == "")
-            {
-                await Context.Channel.SendMessageAsync("Incorrect command ussage! Correct ussage is `$Support <Message>`");
-            }
-            else
             {
                 SocketGuild server = Context.Client.GetGuild(311970313158262784);
                 IMessageChannel channel = server.GetTextChannel(358635970632876043);
@@ -176,12 +175,12 @@ namespace ERA.Modules
         }
         public ITextChannel GetTextChannel(string Name)
         {
-            var channel = Context.Guild.Channels.Where(x => x.Name.ToLower() == Name);
+            var channel = Context.Guild.Channels.Where(x => x.Name.ToLower() == Name.ToLower());
             return channel.First() as ITextChannel;
         }
         public IUser GetUser(string name)
         {
-            var user = Context.Guild.Users.Where(x => x.Username.ToLower().Contains(name));
+            var user = Context.Guild.Users.Where(x => x.Username.ToLower().Contains(name.ToLower()));
             return user.First() as IUser;
         }
     }

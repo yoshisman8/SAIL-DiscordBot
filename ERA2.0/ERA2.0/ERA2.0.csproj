@@ -25,14 +25,23 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Modules\PlayerStorage.cs" />
+    <None Include="Modules\Wiki.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Discord.Addons.Interactive" Version="1.0.1" />
     <PackageReference Include="Discord.Net" Version="1.0.2" />
     <PackageReference Include="Discord.Net.Commands" Version="1.0.2" />
     <PackageReference Include="Discord.Net.Core" Version="1.0.2" />
     <PackageReference Include="Discord.Net.WebSocket" Version="1.0.2" />
-    <PackageReference Include="LiteDB" Version="4.0.0-beta2" />
+    <PackageReference Include="LiteDB" Version="4.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="2.0.0" />
     <PackageReference Include="Microsoft.NETCore.Targets" Version="2.0.0" />
-    <PackageReference Include="NETStandard.Library" Version="2.0.0" />
+    <PackageReference Include="NETStandard.Library" Version="2.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
 
