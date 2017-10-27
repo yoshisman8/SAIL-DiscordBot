@@ -122,18 +122,18 @@ namespace ERA.Modules
         public List<Trait> Traits { get; set; } = new List<Trait> { };
         public List<Item> Inventory { get; set; } = new List<Item> { };
 
-        public List<Player> GetPlayer(string _query)
+        public IEnumerable<Player> GetPlayer(string _query)
         {
             Directory.CreateDirectory(@"Data/Players/");
             var folder = Directory.EnumerateFiles(@"Data/Players/");
-            List<Player> players = new List<Player> { };
+            IList<Player> players = new List<Player> { };
             foreach (string X in folder)
             {
                 players.Add(JsonConvert.DeserializeObject<Player>(File.ReadAllText(X)));
             }
             var query = players.Where(x => x.Name.ToLower().Contains(_query.ToLower()));
-            query.OrderBy(x => x.Name);
-            return query as List<Player>;
+            var query2 = query.OrderByDescending(x => x.Name);
+            return query2;
         }
     }
     public class Gear

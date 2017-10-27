@@ -151,18 +151,18 @@ namespace ERA20.Modules
                 .WithAuthor(Context.User)
                 .WithCurrentTimestamp()
                 .WithColor(new Color(255, 255, 255));
-            db.Wiki.OrderBy(e => e.Visits);
+            var dbview = db.Wiki.OrderBy(e => e.Visits) as WikiDb;
             string t5 = "";
             for (int x = 0; x < 5; x++)
             {
-                t5 += "• " + db.Wiki[x].Name+"\n";
+                t5 += "• " + dbview.Wiki[x].Name+"\n";
             }
             builder.AddInlineField(":chart_with_upwards_trend: Most Visited Entries", t5);
-            db.Wiki.OrderBy(e => e.LastModified);
+            var wikirecent = db.Wiki.OrderBy(e => e.LastModified) as WikiDb;
             t5 = "";
             for (int x = 0; x < 5; x++)
             {
-                t5 += "• " + db.Wiki[x].Name + "\n";
+                t5 += "• " + wikirecent.Wiki[x].Name + "\n";
             }
             builder.AddInlineField(":clock4: Last modified articles", t5);
             var embed = builder.Build();
@@ -171,7 +171,7 @@ namespace ERA20.Modules
     }
     public class WikiDb
     {
-        public List<Entry> Wiki { get; set; } = new List<Entry> { };
+        public IList<Entry> Wiki { get; set; } = new List<Entry> { };
 
         public WikiDb LoadWiki()
         {
@@ -185,7 +185,7 @@ namespace ERA20.Modules
 
             return db;
         }
-        public List<Entry> Query(string _Name)
+        public IEnumerable<Entry> Query(string _Name)
         {
             var db = new WikiDb();
             Directory.CreateDirectory(@"Data/Wiki/");
@@ -195,7 +195,8 @@ namespace ERA20.Modules
                 db.Wiki.Add(JsonConvert.DeserializeObject<Entry>(File.ReadAllText(x)));
             }
             var Query = db.Wiki.Where(x => x.Name.ToLower().Contains(_Name.ToLower()));
-            return Query.OrderBy(x => x.Name) as List<Entry>;
+            var qsort = Query.OrderByDescending(x => x.Name);
+            return qsort;
         }
     }
     public class Entry

@@ -29,7 +29,7 @@ namespace Example
 
             _discord.MessageReceived += OnMessageReceivedAsync;
             _discord.UserJoined += _discord_UserJoined;
-            _discord.MessageUpdated += OnMessageUpdate;
+            //_discord.MessageUpdated += OnMessageUpdate;
             _discord.UserLeft += OnUserLeft;
         }
 
@@ -46,13 +46,13 @@ namespace Example
             await Fax.SendMessageAsync("", embed: builder.Build());
         }
 
-        private async Task OnMessageUpdate(Cacheable<IMessage, ulong> original, SocketMessage edit, ISocketMessageChannel channel)
-        {
-            var command = channel.GetMessagesAsync(edit, Direction.After, 2,CacheMode.AllowDownload) as List<IMessage>;
-            var query = command.Find(x => x.Author == _discord.CurrentUser);
-            await query.DeleteAsync();
-            await OnMessageReceivedAsync(edit);
-        }
+        //private async Task OnMessageUpdate(Cacheable<IMessage, ulong> original, SocketMessage edit, ISocketMessageChannel channel)
+        //{
+        //    var command = channel.GetMessagesAsync(edit, Direction.After, 2,CacheMode.AllowDownload) as List<IMessage>;
+        //    var query = command.Find(x => x.Author == _discord.CurrentUser);
+        //    await query.DeleteAsync();
+        //    await OnMessageReceivedAsync(edit);
+        //}
 
         private async Task _discord_UserJoined(SocketGuildUser u)
         {
