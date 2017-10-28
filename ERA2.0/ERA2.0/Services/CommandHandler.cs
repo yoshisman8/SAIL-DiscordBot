@@ -46,7 +46,7 @@ namespace Example
                 Quote quote = new Quote
                 {
                     Content = msg.Content,
-                    Date = DateTime.Now,
+                    Date = msg.Timestamp.DateTime,
                     Channel = c.Id,
                     User = msg.Author.Id
                 };
