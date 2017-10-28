@@ -86,7 +86,7 @@ namespace ERA.Modules
         [Command("Boop")]
         public async Task Boobbeep()
         {
-            await Context.Channel.SendMessageAsync("Im the one who boops! >:c");
+            await Context.Channel.SendMessageAsync("I'm the one who boops! >:c");
         }
         [Command("Hug")]
         [RequireContext(ContextType.Guild)]

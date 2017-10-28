@@ -9,7 +9,7 @@ using Discord;
 using Newtonsoft.Json;
 using System.Linq;
 
-namespace ERA20.Modules
+namespace ERA.Modules
 {
     [Name("Wiki")]
     [Summary("Commands related to the In-Server Wiki for storing lore™ and other important information.")]
@@ -151,18 +151,18 @@ namespace ERA20.Modules
                 .WithAuthor(Context.User)
                 .WithCurrentTimestamp()
                 .WithColor(new Color(255, 255, 255));
-            var dbview = db.Wiki.OrderBy(e => e.Visits) as WikiDb;
+            var dbview = db.Wiki.OrderByDescending(e => e.Visits);
             string t5 = "";
             for (int x = 0; x < 5; x++)
             {
-                t5 += "• " + dbview.Wiki[x].Name+"\n";
+                t5 += "• " + dbview.ToList()[x].Name+"\n";
             }
             builder.AddInlineField(":chart_with_upwards_trend: Most Visited Entries", t5);
-            var wikirecent = db.Wiki.OrderBy(e => e.LastModified) as WikiDb;
+            var wikirecent = db.Wiki.OrderByDescending(e => e.LastModified);
             t5 = "";
             for (int x = 0; x < 5; x++)
             {
-                t5 += "• " + wikirecent.Wiki[x].Name + "\n";
+                t5 += "• " + wikirecent.ToList()[x].Name+ "\n";
             }
             builder.AddInlineField(":clock4: Last modified articles", t5);
             var embed = builder.Build();
@@ -185,17 +185,17 @@ namespace ERA20.Modules
 
             return db;
         }
-        public IEnumerable<Entry> Query(string _Name)
+        public IOrderedEnumerable<Entry> Query(string _Name)
         {
-            var db = new WikiDb();
+            List<Entry> db = new List<Entry>() { };
             Directory.CreateDirectory(@"Data/Wiki/");
             var folder = Directory.EnumerateFiles(@"Data/Wiki/");
             foreach (string x in folder)
             {
-                db.Wiki.Add(JsonConvert.DeserializeObject<Entry>(File.ReadAllText(x)));
+                db.Add(JsonConvert.DeserializeObject<Entry>(File.ReadAllText(x)));
             }
-            var Query = db.Wiki.Where(x => x.Name.ToLower().Contains(_Name.ToLower()));
-            var qsort = Query.OrderByDescending(x => x.Name);
+            var Query = db.Where(x => x.Name.ToLower().StartsWith(_Name.ToLower()));
+            var qsort = Query.OrderBy(x => x.Name);
             return qsort;
         }
     }

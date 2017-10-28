@@ -16,6 +16,19 @@ namespace ERA.Modules
         public string Owner { get; set; }
         public string Name { get; set; }
         public string Sheet { get; set; }
+
+        public IOrderedEnumerable<LegacyCharacter> Query(string _Query)
+        {
+            Directory.CreateDirectory(@"Data/Legacy/");
+            var files = Directory.EnumerateFiles(@"Data/Legacy/");
+            List<LegacyCharacter> db = new List<LegacyCharacter> { };
+            foreach (string x in files)
+            {
+                db.Add(JsonConvert.DeserializeObject<LegacyCharacter>(File.ReadAllText(x)));
+            }
+            var query = db.Where(x => x.Name.ToLower().StartsWith(_Query.ToLower())).OrderBy(x => x.Name);
+            return query;
+        }
     }
     public class LegacyPlayerStorage : ModuleBase<SocketCommandContext>
     {
@@ -46,14 +59,7 @@ namespace ERA.Modules
         [Alias("LegacyChar")]
         public async Task GetChar(string name)
         {
-            Directory.CreateDirectory(@"Data/Legacy/");
-            var files = Directory.EnumerateFiles(@"Data/Legacy/");
-            List<LegacyCharacter> db = new List<LegacyCharacter> { };
-            foreach (string x in files)
-            {
-                db.Add(JsonConvert.DeserializeObject<LegacyCharacter>(File.ReadAllText(x)));
-            }
-            var query = db.Where(x => x.Name.ToLower() == name.ToLower());
+            var query = new LegacyCharacter().Query(name);
             if (query.Count() > 1 && query.First().Name.ToLower() != name)
             {
                 string msg = "Multiple charactes were found! Please specify which one of the following characters is the one you're looking for: ";
@@ -86,7 +92,7 @@ namespace ERA.Modules
             {
                 db.Add(JsonConvert.DeserializeObject<LegacyCharacter>(File.ReadAllText(x)));
             }
-            var query = db.Where(x => x.Name.ToLower() == name.ToLower());
+            var query = new LegacyCharacter().Query(name);
             if (query.Count() > 1 && query.First().Name.ToLower() != name)
             {
                 string msg = "Multiple charactes were found! Please specify which one of the following characters is the one you're looking for: ";

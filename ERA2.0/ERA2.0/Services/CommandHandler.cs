@@ -1,9 +1,12 @@
 ﻿using Discord.Commands;
 using Discord;
 using Discord.WebSocket;
+using System.Linq;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using System;
+using System.IO;
 using System.Collections.Generic;
 
 namespace Example
@@ -29,8 +32,28 @@ namespace Example
 
             _discord.MessageReceived += OnMessageReceivedAsync;
             _discord.UserJoined += _discord_UserJoined;
-            //_discord.MessageUpdated += OnMessageUpdate;
+            _discord.MessageUpdated += OnMessageUpdate;
             _discord.UserLeft += OnUserLeft;
+            _discord.ReactionAdded += OnReact;
+        }
+
+        private async Task OnReact(Cacheable<IUserMessage, ulong> m, ISocketMessageChannel c, SocketReaction r)
+        {
+            var msg = await m.DownloadAsync();
+            if(r.Emote.Name == "🗣")
+            {
+                Directory.CreateDirectory(@"Data/Quotes/");
+                Quote quote = new Quote
+                {
+                    Content = msg.Content,
+                    Date = DateTime.Now,
+                    Channel = c.Id,
+                    User = msg.Author.Id
+                };
+                string json = JsonConvert.SerializeObject(quote);
+                File.WriteAllText(@"Data/Quotes/" + msg.Id + ".json", json);
+            }
+            await msg.AddReactionAsync(new Emoji("💽"));
         }
 
         private async Task OnUserLeft(SocketGuildUser u)
@@ -46,13 +69,22 @@ namespace Example
             await Fax.SendMessageAsync("", embed: builder.Build());
         }
 
-        //private async Task OnMessageUpdate(Cacheable<IMessage, ulong> original, SocketMessage edit, ISocketMessageChannel channel)
-        //{
-        //    var command = channel.GetMessagesAsync(edit, Direction.After, 2,CacheMode.AllowDownload) as List<IMessage>;
-        //    var query = command.Find(x => x.Author == _discord.CurrentUser);
-        //    await query.DeleteAsync();
-        //    await OnMessageReceivedAsync(edit);
-        //}
+        private async Task OnMessageUpdate(Cacheable<IMessage, ulong> original, SocketMessage edit, ISocketMessageChannel channel)
+        {
+            var msg = edit as SocketUserMessage;
+            int argPos = 0;     // Check if the message has a valid command prefix
+            if (msg.HasStringPrefix(_config["prefix"], ref argPos) || msg.HasMentionPrefix(_discord.CurrentUser, ref argPos))
+            {
+                var command = await channel.GetMessagesAsync(edit, Direction.After, 3, CacheMode.AllowDownload).Flatten();
+                IUser bot = _discord.CurrentUser;
+                var query = command.Where(x => x.Author.Id == bot.Id);
+                if (query.Count() != 0)
+                {
+                    await query.First().DeleteAsync();
+                    await OnMessageReceivedAsync(edit);
+                }
+            }
+        }
 
         private async Task _discord_UserJoined(SocketGuildUser u)
         {
@@ -62,9 +94,8 @@ namespace Example
             IMessageChannel ReceptionDesk = Guild.GetTextChannel(311974698839703562);
             IMessageChannel Fax = Guild.GetTextChannel(358635970632876043);
 
-            var msg = await ReceptionDesk.SendMessageAsync("Welcome to the server " + u.Mention + "! \nPLease wait here while either a "+ Admin.Mention +" or a "+ TrialAdmin.Mention +" gives" +
-                "you the Spectator role! \n In the meantime, make sure to read the rules on #rules-of-the-den!");
-            await Task.Delay(TimeSpan.FromMinutes(5));
+            var msg = await ReceptionDesk.SendMessageAsync("Welcome to the server " + u.Mention + "! \nPlease wait here while either a "+ Admin.Mention +" or a "+ TrialAdmin.Mention +" gives" +
+                "you the Audience role! \nIn the meantime, make sure to read the rules on <#349026777852542986>!");
             var builder = new EmbedBuilder()
                 .WithAuthor(_discord.CurrentUser)
                 .WithColor(new Color(0, 255, 0))
@@ -72,6 +103,7 @@ namespace Example
                 .WithThumbnailUrl(u.GetAvatarUrl())
                 .WithCurrentTimestamp();
             await Fax.SendMessageAsync("", embed: builder.Build());
+            await Task.Delay(TimeSpan.FromMinutes(3));
             await msg.DeleteAsync();
         }
 
