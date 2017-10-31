@@ -52,8 +52,16 @@ namespace Example
                 };
                 string json = JsonConvert.SerializeObject(quote);
                 File.WriteAllText(@"Data/Quotes/" + msg.Id + ".json", json);
+                await msg.AddReactionAsync(new Emoji("💽"));
             }
-            await msg.AddReactionAsync(new Emoji("💽"));
+            else if (r.Emote.Name == "🔥")
+            {
+                await msg.AddReactionAsync(new Emoji("🚒"));
+            }
+            else if (r.Emote.Equals(Emote.Parse("<:fifihype:315182065169596417>")))
+            {
+                await msg.AddReactionAsync(Emote.Parse("<:fifihype:315182065169596417>"));
+            }
         }
 
         private async Task OnUserLeft(SocketGuildUser u)
@@ -124,6 +132,14 @@ namespace Example
                 {     // If not successful, reply with the error.
                     await context.Channel.SendMessageAsync("Something went wrong! Use `$Help <command>` to see how that command works and get more help!");
                 }
+            }
+            if (msg.Content.ToLower().StartsWith("hmmm"))
+            {
+                await msg.AddReactionAsync(Emote.Parse("<:Wyrthis:354398518586114049>"));
+            }
+            if (msg.Content.ToLower().Contains("robot") || msg.Content.ToLower().Contains("beep boop") || msg.Content.ToLower().Contains("beepboop") || msg.Content.ToLower().Contains("beep"))
+            {
+                await msg.AddReactionAsync(Emote.Parse("<:RynnLurk:365983787932319745>"));
             }
         }
     }

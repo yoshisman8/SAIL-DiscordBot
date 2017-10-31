@@ -120,6 +120,20 @@ namespace ERA.Modules
                 }
             }
         }
+        [Command("Wikilist")]
+        [Alias("Wlist","Wiki-list")]
+        [Summary("Receive a list of **all** existing wiki entries in your DMs. Useful for debugging or just when looking for an article you don't remember.")]
+        public async Task Wlist()
+        {
+            var DMchannel = await Context.User.GetOrCreateDMChannelAsync();
+            var db = new WikiDb().LoadWiki();
+            string msg = "Here's a list of all currently existing Wiki articles: ";
+            foreach (var x in db.Wiki)
+            {
+                msg = "`" + x.Name + "` ";
+            }
+            await DMchannel.SendMessageAsync(msg);
+        }
         public Embed EntryBuilder(Entry _Entry)
         {
             IUser User = Context.Guild.GetUser(_Entry.Creator);

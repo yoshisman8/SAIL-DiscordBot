@@ -30,7 +30,7 @@ namespace ERA.Modules
         public async Task Warn(string _Outlier = null, [Remainder] string _Reason = "")
         {
             IUser Outlier = GetUser(_Outlier);
-            if (Outlier == null || _Reason == "")
+            if (Outlier is null || _Reason == "")
             {
                 await Context.Channel.SendMessageAsync("Incorrect command ussage! Correct ussage is `$Warn <User> <Reason>`.");
             }
@@ -181,7 +181,8 @@ namespace ERA.Modules
         public IUser GetUser(string name)
         {
             var user = Context.Guild.Users.Where(x => x.Username.ToLower().Contains(name.ToLower()));
-            return user.First() as IUser;
+            if (user.Count() == 0) { return null; }
+            else { return user.First() as IUser; }
         }
     }
 
