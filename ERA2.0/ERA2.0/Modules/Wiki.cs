@@ -130,7 +130,7 @@ namespace ERA.Modules
             string msg = "Here's a list of all currently existing Wiki articles: ";
             foreach (var x in db.Wiki)
             {
-                msg = "`" + x.Name + "` ";
+                msg += "`" + x.Name + "` ";
             }
             await DMchannel.SendMessageAsync(msg);
         }

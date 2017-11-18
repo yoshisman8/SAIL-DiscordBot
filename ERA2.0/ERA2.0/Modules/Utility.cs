@@ -144,6 +144,18 @@ namespace ERA.Modules
                 code.Delete();
             }
         }
+        [Command("Codes")]
+        [Summary("Shows all the currently stored pause codes.")]
+        public async Task GetAllCodes()
+        {
+            var codes = new PauseCode().GetAllCodes();
+            string msg = "Here are all the pause codes available as of right now: ";
+            foreach (PauseCode x in codes)
+            {
+                msg += "`" + x.Code + "` ";
+            }
+            await ReplyAsync(msg);
+        }
         [Command("Avatar")]
         [RequireContext(ContextType.Guild)]
         [Summary("Returns someone's avatar URL. Usage: `$Avatar <User>`. You dont have to mention the user")]
@@ -210,6 +222,17 @@ namespace ERA.Modules
             public void Delete()
             {
                 File.Delete(@"Data/Codes/" + Code + ".json");
+            }
+            public List<PauseCode> GetAllCodes()
+            {
+                Directory.CreateDirectory(@"Data/Codes/");
+                var files = Directory.EnumerateFiles(@"Data/Codes/");
+                List<PauseCode> Codes = new List<PauseCode> { };
+                foreach (string x in files)
+                {
+                    Codes.Add(JsonConvert.DeserializeObject<PauseCode>(File.ReadAllText(x)));
+                }
+                return Codes;
             }
         }
     }

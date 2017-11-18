@@ -77,7 +77,7 @@ namespace ERA.Modules
         [Command("Warnings")]
         [Alias("Warns")]
         [Summary("Admin command, Display the warnings for a given person.\nUsage: `$warnings <person>`.")]
-        [RequireUserPermission(GuildPermission.ManageRoles)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
         public async Task Warning(string _User = null)
         {
             IUser user = GetUser(_User);
@@ -89,6 +89,7 @@ namespace ERA.Modules
             {
                 IRole Admins = Context.Guild.GetRole(311989788540665857);
                 IRole trialadmin = Context.Guild.GetRole(364633182357815298);
+                IRole moderator = Context.Guild.GetRole(381478446104313856);
                 IMessageChannel staffLounge = Context.Guild.GetTextChannel(364657346443739136);
 
                 var User = Context.User as SocketGuildUser;
@@ -97,7 +98,7 @@ namespace ERA.Modules
 
                 var warnlist = JsonConvert.DeserializeObject<Warnlist>(File.ReadAllText(@"Data/warnings/" + user.Id.ToString() + ".json"));
 
-                if ((User.Roles.Contains(trialadmin) == true || User.Roles.Contains(Admins) == true) && Context.Channel == staffLounge)
+                if ((User.Roles.Contains(trialadmin) == true || User.Roles.Contains(Admins) == true || User.Roles.Contains(moderator)) && Context.Channel == staffLounge)
                 {
                     foreach (Warning x in warnlist.Warns)
                     {

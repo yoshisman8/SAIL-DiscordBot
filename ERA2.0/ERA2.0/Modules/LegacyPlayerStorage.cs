@@ -11,6 +11,7 @@ using System.Linq;
 
 namespace ERA.Modules
 {
+    [Name("Legacy Character Storage")]
     public class LegacyCharacter
     {
         public string Owner { get; set; }
