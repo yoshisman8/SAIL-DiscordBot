@@ -5,6 +5,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using LiteDB;
 using System.Threading.Tasks;
 
 namespace Example
@@ -38,7 +39,8 @@ namespace Example
                 .AddSingleton<StartupService>()
                 .AddSingleton<InteractiveService>()
                 .AddSingleton<Random>()             // You get better random with a single instance than by creating a new one every time you need it
-                .AddSingleton(_config);
+                .AddSingleton(_config)
+                .AddSingleton(new ConnectionString(@"Data\Database.db"));
 
             var provider = services.BuildServiceProvider();     // Create the service provider
 

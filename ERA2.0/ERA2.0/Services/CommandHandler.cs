@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Collections.Generic;
-
+using LiteDB;
 namespace Example
 {
     public class CommandHandler
@@ -17,6 +17,8 @@ namespace Example
         private readonly CommandService _commands;
         private readonly IConfigurationRoot _config;
         private readonly IServiceProvider _provider;
+
+        public LiteDatabase Database { get; set; }
 
         // DiscordSocketClient, CommandService, IConfigurationRoot, and IServiceProvider are injected automatically from the IServiceProvider
         public CommandHandler(
@@ -36,6 +38,7 @@ namespace Example
             _discord.UserLeft += OnUserLeft;
             _discord.ReactionAdded += OnReact;
         }
+
 
         private async Task OnReact(Cacheable<IUserMessage, ulong> m, ISocketMessageChannel c, SocketReaction r)
         {
