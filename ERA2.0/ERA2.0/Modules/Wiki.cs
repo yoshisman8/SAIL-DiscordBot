@@ -9,7 +9,7 @@ using Discord;
 using Newtonsoft.Json;
 using System.Linq;
 
-namespace ERA.Modules
+namespace ERA20.Modules
 {
     [Name("Wiki")]
     [Summary("Commands related to the In-Server Wiki for storing lore™ and other important information.")]

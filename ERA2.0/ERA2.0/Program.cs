@@ -8,7 +8,7 @@ using System;
 using LiteDB;
 using System.Threading.Tasks;
 
-namespace Example
+namespace ERA20
 {
     public class Program
     {
@@ -35,18 +35,18 @@ namespace Example
                     LogLevel = LogSeverity.Verbose
                 }))
                 .AddSingleton<CommandHandler>()     // Add remaining services to the provider
-                .AddSingleton<LoggingService>()     
+                .AddSingleton<LoggingService>()
                 .AddSingleton<StartupService>()
                 .AddSingleton<InteractiveService>()
                 .AddSingleton<Random>()             // You get better random with a single instance than by creating a new one every time you need it
                 .AddSingleton(_config)
-                .AddSingleton(new ConnectionString(@"Data\Database.db"));
+                .AddSingleton(new LiteDatabase(@"Data\Database.db"));
 
             var provider = services.BuildServiceProvider();     // Create the service provider
 
-            provider.GetRequiredService<LoggingService>();      // Initialize the logging service, startup service, and command handler
+            provider.GetRequiredService<LoggingService>();
+            provider.GetRequiredService<CommandHandler>(); // Initialize the logging service, startup service, and command handler
             await provider.GetRequiredService<StartupService>().StartAsync();
-            provider.GetRequiredService<CommandHandler>();
 
             await Task.Delay(-1);     // Prevent the application from closing
         }

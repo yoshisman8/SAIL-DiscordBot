@@ -21,7 +21,7 @@ namespace ERA20.Modules.Classes
         {
             foreach(BattleActor x in Actors)
             {
-                x.TurnOrder = Random.Next(1, Actors.Count());
+                x.TurnOrder = Random.Next(1, 20);
             }
             Actors = Actors.OrderBy(x => x.TurnOrder).ToList();
             var col = Database.GetCollection<Battle>("Battles");

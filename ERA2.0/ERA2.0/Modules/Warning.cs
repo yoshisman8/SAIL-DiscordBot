@@ -8,7 +8,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Discord;
 using System.Threading.Tasks;
-namespace ERA.Modules
+namespace ERA20.Modules
 {
     public class Warnlist
     {

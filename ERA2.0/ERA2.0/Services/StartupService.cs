@@ -5,24 +5,28 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using LiteDB;
 
-namespace Example
+namespace ERA20
 {
     public class StartupService
     {
         private readonly DiscordSocketClient _discord;
         private readonly CommandService _commands;
         private readonly IConfigurationRoot _config;
+        private LiteDatabase _database;
 
         // DiscordSocketClient, CommandService, and IConfigurationRoot are injected automatically from the IServiceProvider
         public StartupService(
             DiscordSocketClient discord,
             CommandService commands,
-            IConfigurationRoot config)
+            IConfigurationRoot config,
+            LiteDatabase database)
         {
             _config = config;
             _discord = discord;
             _commands = commands;
+            _database = database;
         }
 
         public async Task StartAsync()

@@ -9,7 +9,7 @@ using Discord;
 using Newtonsoft.Json;
 using System.Linq;
 
-namespace ERA.Modules
+namespace ERA20.Modules
 {
     [Name("Legacy Character Storage")]
     public class LegacyCharacter
@@ -33,8 +33,9 @@ namespace ERA.Modules
     }
     public class LegacyPlayerStorage : ModuleBase<SocketCommandContext>
     {
-        [Command("Addchar")]
-        [Alias("Add-Char", "LegacyAdd")]
+        [Command("LegacyAdd")]
+        [Alias("LAdd-Char", "LChar")]
+        [Summary("Adds a character to the legacy Character Database (Json files). Usage `$LAddchar <Name> <Sheet>`.")]
         public async Task Addchar(string name, [Remainder] string sheet)
         {
             Directory.CreateDirectory(@"Data/Legacy/");
@@ -56,8 +57,9 @@ namespace ERA.Modules
                 await Context.Channel.SendMessageAsync(Context.User.Mention+", Character **" + Char.Name + "** Created Successfully!");
             }
         }
-        [Command("Char")]
-        [Alias("LegacyChar")]
+        [Command("LegacyChar")]
+        [Alias("LChar")]
+        [Summary("Finds a character on the Legacy Character Database (Json files). Usage: `$LegacyChar <Name>`.")]
         public async Task GetChar(string name)
         {
             var query = new LegacyCharacter().Query(name);
@@ -80,8 +82,9 @@ namespace ERA.Modules
                 await Context.Channel.SendMessageAsync(Context.User.Mention+"This Character does not exist!");
             }
         }
-        [Command("DeleteChar")]
-        [Alias("LegacyDelete", "Del-Char", "Delchar")]
+        [Command("LegacyDelete")]
+        [Alias("LDeleteChar", "LDel-Char", "LDelchar")]
+        [Summary("Removes a character from the Legacy Character Database (Json files). `$LegacyDelete <name>`.")]
         public async Task DelChar(string name)
         {
             IRole Dmasters = Context.Guild.GetRole(324320068748181504);

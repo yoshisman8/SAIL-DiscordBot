@@ -16,7 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Modules\DergNet.cs" />
     <Compile Remove="Modules\LANCER.cs" />
+    <Compile Remove="Modules\PlayerStorage.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +28,7 @@
 
   <ItemGroup>
     <None Include="Modules\Wiki.cs" />
+    <None Include="Program.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,7 +9,7 @@ using Discord;
 using Newtonsoft.Json;
 using System.Linq;
 
-namespace ERA.Modules
+namespace ERA20.Modules
 {
     public class Quoting : ModuleBase<SocketCommandContext>
     {

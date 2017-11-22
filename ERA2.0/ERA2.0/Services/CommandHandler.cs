@@ -9,28 +9,31 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using LiteDB;
-namespace Example
+using System.Reflection;
+
+namespace ERA20
 {
     public class CommandHandler
     {
         private readonly DiscordSocketClient _discord;
         private readonly CommandService _commands;
         private readonly IConfigurationRoot _config;
-        private readonly IServiceProvider _provider;
-
-        public LiteDatabase Database { get; set; }
+        private IServiceProvider _provider;
+        private LiteDatabase _database;
 
         // DiscordSocketClient, CommandService, IConfigurationRoot, and IServiceProvider are injected automatically from the IServiceProvider
         public CommandHandler(
             DiscordSocketClient discord,
             CommandService commands,
             IConfigurationRoot config,
-            IServiceProvider provider)
+            IServiceProvider provider,
+            LiteDatabase database)
         {
             _discord = discord;
             _commands = commands;
             _config = config;
             _provider = provider;
+            _database = database;
 
             _discord.MessageReceived += OnMessageReceivedAsync;
             _discord.UserJoined += _discord_UserJoined;
@@ -38,7 +41,6 @@ namespace Example
             _discord.UserLeft += OnUserLeft;
             _discord.ReactionAdded += OnReact;
         }
-
 
         private async Task OnReact(Cacheable<IUserMessage, ulong> m, ISocketMessageChannel c, SocketReaction r)
         {

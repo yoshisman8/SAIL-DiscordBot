@@ -9,7 +9,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
-namespace ERA.Modules
+namespace ERA20.Modules
 {
     [Name("Miscellaneus")]
     [Summary("Random or otherwise fun commands with little real use.")]
