@@ -24,6 +24,10 @@ namespace ERA20.Modules.Classes
                 return I;
             }
         }
+        public Inventory(LiteDatabase _Database)
+        {
+            Database = _Database;
+        }
 
         public void Add(Item Item)
         {
@@ -37,21 +41,21 @@ namespace ERA20.Modules.Classes
                 Items.Add(Item);
             }
         }
-        public Item Use(string Item)
+        public Item Use(Item Item)
         {
-            var I = Items.FindIndex(x => x.Name.ToLower().StartsWith(Item.ToLower()));
+            var I = Items.FindIndex(x => x.ItemId == Item.ItemId);
             return Items.ElementAt(I);
         }
-        public Item Consume(string Item)
+        public Item Consume(Item Item, int Ammount)
         {
-            if (Items.Exists(x => x.Name.ToLower().StartsWith(Item.ToLower())))
+            if (Items.Exists(x => x.ItemId == Item.ItemId))
             {
-                var I = Items.FindIndex(x => x.Name.ToLower().StartsWith(Item.ToLower()));
-                Items.ElementAt(I).Quantity--;
+                var I = Items.FindIndex(x => x.ItemId == Item.ItemId);
+                Items.ElementAt(I).Quantity -= Ammount;
                 var r = Items.ElementAt(I);
                 if (Items.ElementAt(I).Quantity == 0)
                 {
-                    Item.Remove(I);
+                    Items.RemoveAt(I);
                 }
                 return r;
             }
@@ -60,19 +64,17 @@ namespace ERA20.Modules.Classes
                 throw new Exception("This item could not be found!");
             }
         }
-        public void Give(Item item, Character character, bool Override = false)
+        public void Give(BaseItem item, Character character, bool Override = false)
         {
-            var chars = Database.GetCollection<Character>("Characters");
             var items = Database.GetCollection<Item>("Items");
-            var T = chars.FindOne(x => x.Name == character.Name);
             if (Override == true)
             {
-                T.Inventory.Add(item);
+                character.Inventory.Add(item as Item);
             }
             else
             {
-                var I = Items.FindIndex(x => x.Name == item.Name);
-                T.Inventory.Add(Items.ElementAt(I));
+                var I = Items.FindIndex(x => x.ItemId == item.ItemId);
+                character.Inventory.Add(Items.ElementAt(I));
                 Items.RemoveAt(I);
             }
         }
@@ -103,9 +105,18 @@ namespace ERA20.Modules.Classes
             var col = Database.GetCollection<BaseItem>("Items");
             col.Delete(ItemId);
         }
+        public BaseItem(LiteDatabase _Database)
+        {
+            Database = _Database;
+        }
     }
     public class Item : BaseItem
     {
+        public Item(LiteDatabase _Database) : base(_Database)
+        {
+            Database = _Database;
+        }
+
         public int Quantity { get; set; } = 1;
     }
 }

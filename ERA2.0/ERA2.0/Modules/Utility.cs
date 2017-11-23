@@ -2,6 +2,7 @@
 using Discord;
 using Discord.WebSocket;
 using System.Linq;
+using LiteDB;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -15,6 +16,25 @@ namespace ERA20.Modules
     [Summary("Random or otherwise fun commands with little real use.")]
     public class TestModule : ModuleBase<SocketCommandContext>
     {
+        public LiteDatabase Database { get; set; }
+
+        [Command("Test")]
+        public async Task Test([Remainder] string text)
+        {
+            try
+            {
+                var col = Database.GetCollection<string>("Test");
+                col.Insert(text);
+                
+                //var x = col.FindOne(y => y == text);
+                await ReplyAsync("Saved " + text + " Successfully!");
+            }
+            catch (Exception e)
+            {
+                await ReplyAsync(e.ToString());
+            }
+
+        }
         [Command("Status")]
         [RequireUserPermission(GuildPermission.ManageGuild)]
         [Summary("Set the bot's 'Playing' status. Usage: `$Status <text>`")]

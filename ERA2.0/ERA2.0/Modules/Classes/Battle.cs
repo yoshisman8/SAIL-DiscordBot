@@ -17,6 +17,11 @@ namespace ERA20.Modules.Classes
         public string Name { get; set; }
         public List<BattleActor> Actors { get; set; } = new List<BattleActor>() { };
 
+        public Battle(LiteDatabase _Database)
+        {
+            Database = _Database;
+        }
+
         public void GenerateTurns()
         {
             foreach(BattleActor x in Actors)
@@ -49,6 +54,11 @@ namespace ERA20.Modules.Classes
     }
     class BattleActor : Actor
     {
+        public BattleActor(LiteDatabase _database) : base(_database)
+        {
+            Database = _database;
+        }
+
         public int TurnOrder { get; set; }
     }
 }

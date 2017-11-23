@@ -1,41 +1,34 @@
-﻿using Discord.Commands;
-using Discord;
-using Discord.WebSocket;
-using System.Linq;
-using Microsoft.Extensions.Configuration;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using System;
-using System.IO;
-using System.Collections.Generic;
-using LiteDB;
+﻿using System;
 using System.Reflection;
+using System.Threading.Tasks;
+using Discord;
+using System.IO;
+using Discord.Commands;
+using Discord.WebSocket;
+using LiteDB;
+using Newtonsoft.Json;
+using Microsoft.Extensions.Configuration;
+using System.Linq;
 
-namespace ERA20
+namespace DiscordBot.Services
 {
-    public class CommandHandler
+    public class CommandHandlingService
     {
         private readonly DiscordSocketClient _discord;
         private readonly CommandService _commands;
-        private readonly IConfigurationRoot _config;
+        private IConfiguration _config;
         private IServiceProvider _provider;
         private LiteDatabase _database;
 
-        // DiscordSocketClient, CommandService, IConfigurationRoot, and IServiceProvider are injected automatically from the IServiceProvider
-        public CommandHandler(
-            DiscordSocketClient discord,
-            CommandService commands,
-            IConfigurationRoot config,
-            IServiceProvider provider,
-            LiteDatabase database)
+        public CommandHandlingService(IServiceProvider provider, DiscordSocketClient discord,IConfiguration config, CommandService commands, LiteDatabase database)
         {
             _discord = discord;
             _commands = commands;
-            _config = config;
             _provider = provider;
             _database = database;
+            _config = config;
 
-            _discord.MessageReceived += OnMessageReceivedAsync;
+            _discord.MessageReceived += MessageReceived;
             _discord.UserJoined += _discord_UserJoined;
             _discord.MessageUpdated += OnMessageUpdate;
             _discord.UserLeft += OnUserLeft;
@@ -45,7 +38,7 @@ namespace ERA20
         private async Task OnReact(Cacheable<IUserMessage, ulong> m, ISocketMessageChannel c, SocketReaction r)
         {
             var msg = await m.DownloadAsync();
-            if(r.Emote.Name == "🗣")
+            if (r.Emote.Name == "🗣")
             {
                 Directory.CreateDirectory(@"Data/Quotes/");
                 Quote quote = new Quote
@@ -94,7 +87,7 @@ namespace ERA20
                 if (query.Count() != 0)
                 {
                     await query.First().DeleteAsync();
-                    await OnMessageReceivedAsync(edit);
+                    await MessageReceived(edit);
                 }
             }
         }
@@ -107,7 +100,7 @@ namespace ERA20
             IMessageChannel ReceptionDesk = Guild.GetTextChannel(311974698839703562);
             IMessageChannel Fax = Guild.GetTextChannel(358635970632876043);
 
-            var msg = await ReceptionDesk.SendMessageAsync("Welcome to the server " + u.Mention + "! \nPlease wait here while either a "+ Admin.Mention +" or a "+ TrialAdmin.Mention +" gives" +
+            var msg = await ReceptionDesk.SendMessageAsync("Welcome to the server " + u.Mention + "! \nPlease wait here while either a " + Admin.Mention + " or a " + TrialAdmin.Mention + " gives" +
                 "you the Audience role! \nIn the meantime, make sure to read the rules on <#349026777852542986>!");
             var builder = new EmbedBuilder()
                 .WithAuthor(_discord.CurrentUser)
@@ -120,15 +113,22 @@ namespace ERA20
             await msg.DeleteAsync();
         }
 
-        private async Task OnMessageReceivedAsync(SocketMessage s)
+        public async Task InitializeAsync(IServiceProvider provider)
         {
-            var msg = s as SocketUserMessage;     // Ensure the message is from a user/bot
-            if (msg == null) return;
-            if (msg.Author == _discord.CurrentUser) return;     // Ignore self when checking commands
-            
-            var context = new SocketCommandContext(_discord, msg);     // Create the command context
+            _provider = provider;
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
+            // Add additional initialization code here...
+        }
 
-            int argPos = 0;     // Check if the message has a valid command prefix
+        private async Task MessageReceived(SocketMessage rawMessage)
+        {
+            // Ignore system messages and messages from bots
+            if (!(rawMessage is SocketUserMessage message)) return;
+            if (message.Source != MessageSource.User) return;
+            var msg = rawMessage as SocketUserMessage;
+            int argPos = 0;
+            var context = new SocketCommandContext(_discord, message);
+
             if (msg.HasStringPrefix(_config["prefix"], ref argPos) || msg.HasMentionPrefix(_discord.CurrentUser, ref argPos))
             {
                 var result = await _commands.ExecuteAsync(context, argPos, _provider);     // Execute the command
@@ -136,6 +136,10 @@ namespace ERA20
                 if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
                 {     // If not successful, reply with the error.
                     await context.Channel.SendMessageAsync("Something went wrong! Use `$Help <command>` to see how that command works and get more help!");
+                }
+                if (!result.IsSuccess && result.Error == CommandError.UnknownCommand)
+                {     // If not successful, reply with the error.
+                    await msg.AddReactionAsync(Emote.Parse("<:RynnQuestion:365983788724912128>"));
                 }
             }
             if (msg.Content.ToLower().StartsWith("hmmm"))
@@ -147,5 +151,6 @@ namespace ERA20
                 await msg.AddReactionAsync(Emote.Parse("<:RynnLurk:365983787932319745>"));
             }
         }
+
     }
 }

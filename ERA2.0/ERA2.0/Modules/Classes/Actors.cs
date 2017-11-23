@@ -9,8 +9,10 @@ using System.Threading.Tasks;
 
 namespace ERA20.Modules.Classes
 {
-    public class Actor : Second_Edition
+    public class Actor 
     {
+        [BsonIgnore]
+        public static LiteDatabase Database { get; set; }
 
         public string Name { get; set; }
         public string ImageUrl { get; set; } = "https://cdn.discordapp.com/attachments/314912846037254144/373911023754805250/32438.png";
@@ -48,10 +50,19 @@ namespace ERA20.Modules.Classes
                 throw new Exception("This character is not afflicted with this!");
             }
         }
+        public Actor(LiteDatabase _database)
+        {
+            Database = _database;
+        }
     }
 
     public class Character : Actor
     {
+        public Character(LiteDatabase _database) : base(_database)
+        {
+            Database = _database;
+        }
+
         public ObjectId CharacterId { get; set; }
         public string Class { get; set; }
         public string Race { get; set; }
@@ -61,7 +72,7 @@ namespace ERA20.Modules.Classes
         public Trait ITrait { get; set; } = new Trait();
         public List<Trait> Traits { get; set; } = new List<Trait>() { };
         public List<Skill> Skills { get; set; } = new List<Skill>() { };
-        public Inventory Inventory { get; set; } = new Inventory();
+        public Inventory Inventory { get; set; } = new Inventory(Database);
         public double Money { get; set; } = 0;
         public ulong Owner { get; set; }
 

@@ -21,7 +21,6 @@ namespace ERA20.Modules
         [Command]
         public async Task Char(string Name)
         {
-
             var Char = new Character().GetCharacter(Name);
 
             if (Char == null)
@@ -102,19 +101,7 @@ namespace ERA20.Modules
                 await ReplyAsync("You are not the owner of this character!");
             }
         }
-        [Command("Test")]
-        public async Task Test()
-        {
-            try
-            {
-                var col = Database.GetCollection<string>("Testcol");
-            }
-            catch (Exception e)
-            {
-                await ReplyAsync(e.ToString());
-            }
-            
-        }
+        
     }
     
     internal class Builders

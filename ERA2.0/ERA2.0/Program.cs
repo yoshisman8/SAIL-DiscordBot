@@ -1,54 +1,66 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.Addons.Interactive;
-using Discord.WebSocket;
+﻿using System;
+using System.IO;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
+using Discord;
+using Discord.Addons.Interactive;
+using Discord.Commands;
+using Discord.WebSocket;
+using DiscordBot.Services;
 using LiteDB;
-using System.Threading.Tasks;
 
-namespace ERA20
+namespace DiscordBot
 {
-    public class Program
+    class Program
     {
-        public static void Main(string[] args)
-            => new Program().StartAsync().GetAwaiter().GetResult();
+        static void Main(string[] args)
+            => new Program().MainAsync().GetAwaiter().GetResult();
 
-        private IConfigurationRoot _config;
+        private DiscordSocketClient _client;
+        private IConfiguration _config;
 
-        public async Task StartAsync()
+        public async Task MainAsync()
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile(@"_configuration.json");    // Begin building the configuration file  
-            _config = builder.Build();                  // Build the configuration file
-            var services = new ServiceCollection()      // Begin building the service provider
-                .AddSingleton(new DiscordSocketClient(new DiscordSocketConfig     // Add the discord client to the service provider
-                {
-                    LogLevel = LogSeverity.Verbose,
-                    MessageCacheSize = 1000     // Tell Discord.Net to cache 1000 messages per channel
-                }))
-                .AddSingleton(new CommandService(new CommandServiceConfig     // Add the command service to the service provider
-                {
-                    DefaultRunMode = RunMode.Async,     // Force all commands to run async
-                    LogLevel = LogSeverity.Verbose
-                }))
-                .AddSingleton<CommandHandler>()     // Add remaining services to the provider
-                .AddSingleton<LoggingService>()
-                .AddSingleton<StartupService>()
+            _client = new DiscordSocketClient();
+            _config = BuildConfig();
+
+            var services = ConfigureServices();
+            services.GetRequiredService<LogService>();
+            await services.GetRequiredService<CommandHandlingService>().InitializeAsync(services);
+
+            await _client.LoginAsync(TokenType.Bot, _config["tokens:discord"]);
+            await _client.SetGameAsync(_config["status"]);
+            await _client.StartAsync();
+
+            await Task.Delay(-1);
+        }
+
+        private IServiceProvider ConfigureServices()
+        {
+            return new ServiceCollection()
+                // Base
+                .AddSingleton(_client)
+                .AddSingleton<CommandService>()
+                .AddSingleton<CommandHandlingService>()
                 .AddSingleton<InteractiveService>()
-                .AddSingleton<Random>()             // You get better random with a single instance than by creating a new one every time you need it
+                // Logging
+                
+                .AddSingleton<LogService>()
+                // Extra
                 .AddSingleton(_config)
-                .AddSingleton(new LiteDatabase(@"Data\Database.db"));
+                .AddSingleton(new LiteDatabase(@"Data/Database.db"))
+                .AddSingleton<Random>()
+                // Add additional services here...
+                .BuildServiceProvider();
+        }
 
-            var provider = services.BuildServiceProvider();     // Create the service provider
-
-            provider.GetRequiredService<LoggingService>();
-            provider.GetRequiredService<CommandHandler>(); // Initialize the logging service, startup service, and command handler
-            await provider.GetRequiredService<StartupService>().StartAsync();
-
-            await Task.Delay(-1);     // Prevent the application from closing
+        private IConfiguration BuildConfig()
+        {
+            return new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile(@"_configuration.json")
+                .Build();
         }
     }
 }
