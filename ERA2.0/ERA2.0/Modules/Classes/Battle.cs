@@ -12,12 +12,12 @@ namespace ERA20.Modules.Classes
         public Random Random { get; set; }
         [BsonIgnore]
         public LiteDatabase Database { get; set; }
-
-        public ObjectId BattleId { get; set; }  
+        [BsonId]
+        public int BattleId { get; set; }  
         public string Name { get; set; }
         public List<BattleActor> Actors { get; set; } = new List<BattleActor>() { };
 
-        public Battle(LiteDatabase _Database)
+        public void PassInstance(LiteDatabase _Database)
         {
             Database = _Database;
         }
@@ -54,11 +54,6 @@ namespace ERA20.Modules.Classes
     }
     class BattleActor : Actor
     {
-        public BattleActor(LiteDatabase _database) : base(_database)
-        {
-            Database = _database;
-        }
-
         public int TurnOrder { get; set; }
     }
 }

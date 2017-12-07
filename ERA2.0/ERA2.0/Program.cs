@@ -45,7 +45,7 @@ namespace DiscordBot
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<InteractiveService>()
                 // Logging
-                
+                .AddLogging()
                 .AddSingleton<LogService>()
                 // Extra
                 .AddSingleton(_config)

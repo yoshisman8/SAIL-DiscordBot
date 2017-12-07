@@ -18,39 +18,9 @@ namespace ERA20.Modules.Classes
         public string ImageUrl { get; set; } = "https://cdn.discordapp.com/attachments/314912846037254144/373911023754805250/32438.png";
         public int MaxStress { get; set; } = 3;
         public int Stress { get; set; } = 0;
-        public List<Affliction> Afflictions = new List<Affliction>() { };
+        public List<Affliction> Afflictions { get; set; } = new List<Affliction> { };
 
-        public void Afflict(string Affliction, string Description, Emoji emoji = null)
-        {
-            var A = new Affliction
-            {
-                Name = Affliction,
-                Description = Description,
-            };
-            if (emoji == null)
-            {
-                Afflictions.Add(A);
-                return;
-            }
-            else
-            {
-                A.Emoji = emoji;
-                Afflictions.Add(A);
-                return;
-            }
-        }
-        public void RemAffliction(string affliction)
-        {
-            if (Afflictions.Exists(x => x.Name.ToLower() == Name.ToLower()))
-            {
-                Afflictions.RemoveAll(x => x.Name.ToLower() == Name.ToLower());
-            }
-            else
-            {
-                throw new Exception("This character is not afflicted with this!");
-            }
-        }
-        public Actor(LiteDatabase _database)
+        public void PassInstance(LiteDatabase _database)
         {
             Database = _database;
         }
@@ -58,12 +28,9 @@ namespace ERA20.Modules.Classes
 
     public class Character : Actor
     {
-        public Character(LiteDatabase _database) : base(_database)
-        {
-            Database = _database;
-        }
 
-        public ObjectId CharacterId { get; set; }
+        [BsonId]
+        public int CharacterId { get; set; }
         public string Class { get; set; }
         public string Race { get; set; }
         public string Description { get; set; } = "";
@@ -72,16 +39,10 @@ namespace ERA20.Modules.Classes
         public Trait ITrait { get; set; } = new Trait();
         public List<Trait> Traits { get; set; } = new List<Trait>() { };
         public List<Skill> Skills { get; set; } = new List<Skill>() { };
-        public Inventory Inventory { get; set; } = new Inventory(Database);
+        public Inventory Inventory { get; set; } = new Inventory();
         public double Money { get; set; } = 0;
         public ulong Owner { get; set; }
 
-        public IEnumerable<Character> GetCharacter(string Name)
-        {
-            var col = Database.GetCollection<Character>("Characters");
-            var A = col.Find(x => x.Name.ToLower().StartsWith(Name.ToLower()));
-            return A;
-        }
 
         public void Update()
         {
@@ -92,6 +53,7 @@ namespace ERA20.Modules.Classes
         {
             var col = Database.GetCollection<Character>("Characters");
             col.Insert(this);
+            col.EnsureIndex(x => x.Name);
         }
         public void Delete()
         {
@@ -133,7 +95,14 @@ namespace ERA20.Modules.Classes
                 Target.Money += Math.Abs(Amount);
             }
         }
-        
+
+        public IEnumerable<Character> GetCharacter(string name)
+        {
+            var col = Database.GetCollection<Character>("Characters");
+            col.EnsureIndex("Name", "LOWER($.Name)");
+            var C = col.Find(Query.StartsWith("Name",name.ToLower()));
+            return C;
+        }
     }
     public class Trait
     {
@@ -142,24 +111,13 @@ namespace ERA20.Modules.Classes
     }
     public class Skill
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
         public int Level { get; set; } = 1;
-        public Emoji Emote { get; set; } = new Emoji("⭐");
-
-        public void LevelUp()
-        {
-            if (Level == 5)
-            {
-                throw new Exception("This skill is already mastered!");
-            }
-            Level++;
-        }
     }
     public class Affliction
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public Emoji Emoji { get; set; } = new Emoji("⚠");
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
     }
 }

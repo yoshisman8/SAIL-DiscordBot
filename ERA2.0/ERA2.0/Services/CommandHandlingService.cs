@@ -30,7 +30,6 @@ namespace DiscordBot.Services
 
             _discord.MessageReceived += MessageReceived;
             _discord.UserJoined += _discord_UserJoined;
-            _discord.MessageUpdated += OnMessageUpdate;
             _discord.UserLeft += OnUserLeft;
             _discord.ReactionAdded += OnReact;
         }
@@ -75,22 +74,6 @@ namespace DiscordBot.Services
             await Fax.SendMessageAsync("", embed: builder.Build());
         }
 
-        private async Task OnMessageUpdate(Cacheable<IMessage, ulong> original, SocketMessage edit, ISocketMessageChannel channel)
-        {
-            var msg = edit as SocketUserMessage;
-            int argPos = 0;     // Check if the message has a valid command prefix
-            if (msg.HasStringPrefix(_config["prefix"], ref argPos) || msg.HasMentionPrefix(_discord.CurrentUser, ref argPos))
-            {
-                var command = await channel.GetMessagesAsync(edit, Direction.After, 3, CacheMode.AllowDownload).Flatten();
-                IUser bot = _discord.CurrentUser;
-                var query = command.Where(x => x.Author.Id == bot.Id);
-                if (query.Count() != 0)
-                {
-                    await query.First().DeleteAsync();
-                    await MessageReceived(edit);
-                }
-            }
-        }
 
         private async Task _discord_UserJoined(SocketGuildUser u)
         {
@@ -135,7 +118,7 @@ namespace DiscordBot.Services
 
                 if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
                 {     // If not successful, reply with the error.
-                    await context.Channel.SendMessageAsync("Something went wrong! Use `$Help <command>` to see how that command works and get more help!");
+                    await msg.AddReactionAsync(Emote.Parse("<:RynnQuestion:365983788724912128>"));
                 }
                 if (!result.IsSuccess && result.Error == CommandError.UnknownCommand)
                 {     // If not successful, reply with the error.

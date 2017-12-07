@@ -177,12 +177,13 @@ namespace ERA20.Modules
             await ReplyAsync(msg);
         }
         [Command("Avatar")]
+        [Alias("Avi","Icon")]
         [RequireContext(ContextType.Guild)]
         [Summary("Returns someone's avatar URL. Usage: `$Avatar <User>`. You dont have to mention the user")]
         public async Task Avatar([Remainder] string User)
         {
-            var user = GetUser(User);
-            await Context.Channel.SendMessageAsync(user.GetAvatarUrl());
+            var user = GetUser(User);            
+            await Context.Channel.SendMessageAsync(user.GetAvatarUrl().Replace("?size=128", ""));
         }
         public ITextChannel GetTextChannel(string Name)
         {
