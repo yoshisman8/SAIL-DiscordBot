@@ -524,6 +524,7 @@ namespace ERA20.Modules
             var trait = character.Traits.Find(x => x.Name.ToLower().StartsWith(Name.ToLower()));
             if (trait == null) { await ReplyAsync("You dont have this trait!"); return; }
             character.Traits.Remove(trait);
+            character.Update();
             await ReplyAsync("Removed Trait **" + trait.Name + "**!");
         }
     }
