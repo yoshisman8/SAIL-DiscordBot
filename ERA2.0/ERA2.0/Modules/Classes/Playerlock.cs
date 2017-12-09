@@ -22,6 +22,8 @@ namespace ERA20.Modules.Classes
             {
                 var P = col
                     .Include(x => x.Character)
+                    .Include(x => x.Character.Equipment)
+                    .Include(x => x.Character.Inventory.Items)
                     .FindOne(x => x.User == playerID);
                 return P;
             }

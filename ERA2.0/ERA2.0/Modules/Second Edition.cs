@@ -20,15 +20,21 @@ namespace ERA20.Modules
         [Command]
         public async Task Current()
         {
+            var col = Database.GetCollection<Character>("Characters");
             var player = new Playerlock(Database).GetPlayer(Context.User.Id);
+            var C = col
+                .Include(x => x.Equipment)
+                .Include(x => x.Inventory.Items)
+                .FindById(player.Character.CharacterId);
+            C.Inventory.buildInv(Database);
+            C.NullBGone(Database);
             if (player == null)
             {
                 await ReplyAsync("You are not locked into any character! Use `$Lock <Character name>` To lock into one!\n" +
 "Or if you haven't, make a new character with `$Character Create <Name> <Race> <Class>`!");
                 return;
             }
-            var Char = player.Character;
-            await ReplyAsync("", embed: new Builders().BuildSheet(Char, Context));
+            await ReplyAsync("", embed: new Builders().BuildSheet(C, Context));
         }
 
         [Command]
@@ -45,8 +51,7 @@ namespace ERA20.Modules
                 .Include(x => x.Inventory.Items)
                 .Include(x => x.Equipment)
                 .Find(x => x.Name.StartsWith(Name.ToLower()));
-
-            if (Char.Count() > 1 && Char.First().Name.ToLower() != Name.ToLower())
+            if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
                 foreach (Character X in Char)
@@ -57,9 +62,12 @@ namespace ERA20.Modules
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
-            else if (Char.Count() == 1)
+            else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
-                await ReplyAsync("", embed: new Builders().BuildSheet(Char.First(), Context));
+                var C = Char.First();
+                C.Inventory.buildInv(Database);
+                C.NullBGone(Database);
+                await ReplyAsync("", embed: new Builders().BuildSheet(C, Context));
             }
         }
 
@@ -112,7 +120,7 @@ namespace ERA20.Modules
             if (!col.Exists(x => x.Name == Name.ToLower())) { await ReplyAsync("This character doesn't exist!"); return; }
 
             var C = col.Find(x => x.Name.StartsWith(Name.ToLower()));
-            if (C.Count() > 1 && C.First().Name.ToLower() != Name.ToLower())
+            if (C.Count() > 1 && !C.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
                 foreach (Character X in C)
@@ -123,7 +131,7 @@ namespace ERA20.Modules
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
-            else if (C.Count() == 1 && (C.First().Owner == user.Id || roles != null))
+            else if ((C.Count() == 1 || C.ToList().Exists(x => x.Name.ToLower() == Name.ToLower())) && (C.First().Owner == user.Id || roles != null))
             {
                 var x = C.First();
                 x.PassInstance(Database);
@@ -187,9 +195,9 @@ namespace ERA20.Modules
         public string Buildequip(Character player)
         {
             string msg = "";
-            foreach (Item x in player.Equipment)
+            foreach (BaseItem x in player.Equipment)
             {
-                msg += "* " + x.BaseItem.Name + "\n";
+                msg += "* " + x.Name + "\n";
             }
             if (msg.Length == 0) { return "None! Use `$Equip <Item>` to Equip an item!"; }
             return msg;
@@ -371,11 +379,12 @@ namespace ERA20.Modules
                 "- Race `Race <New Race>` \n" +
                 "- Image `Image <Image URL>`\n" +
                 "- Description `Description <Character Description>`\n" +
-                "- Physical Trait(s) `Trait <Name> <Description>`.\n" +
+                "- Physical Trait(s) `PTrait <Name> <Description>`.\n" +
+                "- Max stress `Stress <number>`"+
                 "***REMEMBER***: You can only use this commands if you have a character locked (Use `$Lock` to verify).");
         }
         [Command("Name")]
-        public async Task Name(string Name)
+        public async Task Name( string Name)
         {
             var character = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
             character.Name = Name;
@@ -384,7 +393,7 @@ namespace ERA20.Modules
             await ReplyAsync("You changed this character's name to **" + Name + "**!");
         }
         [Command("Class")]
-        public async Task Class(string Name)
+        public async Task Class( string Name)
         {
             var character = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
             character.Class = Name;
@@ -393,7 +402,7 @@ namespace ERA20.Modules
             await ReplyAsync("You changed this character's class to **" + Name + "**!");
         }
         [Command("Race")]
-        public async Task Race(string Name)
+        public async Task Race( string Name)
         {
             var character = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
             character.Race = Name;
@@ -402,7 +411,7 @@ namespace ERA20.Modules
             await ReplyAsync("You changed this character's Race to **" + Name + "**!");
         }
         [Command("Image")]
-        public async Task Img(string Name)
+        public async Task Img( string Name)
         {
             var character = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
             character.ImageUrl = Name;
@@ -411,7 +420,7 @@ namespace ERA20.Modules
             await ReplyAsync("You changed this character's Image URL!");
         }
         [Command("Description"), Alias("Desc")]
-        public async Task Desc(string Name)
+        public async Task Desc( string Name)
         {
             var character = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
             character.Description = Name;
@@ -419,8 +428,8 @@ namespace ERA20.Modules
             character.Update();
             await ReplyAsync("You changed this character's Description!");
         }
-        [Command("Trait")]
-        public async Task Trait(string Name, [Remainder] string Description)
+        [Command("PTrait")]
+        public async Task Trait(string Name,  string Description)
         {
             var character = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
             character.ITrait.Name = Name;
@@ -428,6 +437,15 @@ namespace ERA20.Modules
             character.PassInstance(Database);
             character.Update();
             await ReplyAsync("You changed this character's Physical Trait!");
+        }
+        [Command("Stress")]
+        public async Task stress(int value)
+        {
+            var character = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
+            character.MaxStress = Math.Abs(value);
+            character.PassInstance(Database);
+            character.Update();
+            await ReplyAsync("You changed this character's max stress!");
         }
     }
 
@@ -481,7 +499,7 @@ namespace ERA20.Modules
                 "Or `$Trait Remove <Name>` To remove a trait!");
         }
         [Command("Add")]
-        public async Task Add(string Name, [Remainder] string Descriotion)
+        public async Task Add(string Name,  string Descriotion)
         {
             var character = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
             character.PassInstance(Database);
@@ -533,7 +551,7 @@ namespace ERA20.Modules
                 .Include(x => x.Equipment)
                 .Find(x => x.Name.StartsWith(Name.ToLower()));
 
-            if (Char.Count() > 1)
+            if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
                 foreach (Character X in Char)
@@ -544,14 +562,14 @@ namespace ERA20.Modules
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
-            else if (Char.Count() == 1)
+            else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 await ReplyAsync("", embed: new Builders().AfflictionBuilder(Char.First()));
             }
         }
         [Command("Give")]
         [RequireUserPermission(GuildPermission.ManageMessages)]
-        public async Task Give(string Name, string Aff, [Remainder] string Description)
+        public async Task Give(string Name, string Aff,  string Description)
         {
             var col = Database.GetCollection<Character>("Characters");
             if (!col.Exists(x => x.Name == Name.ToLower()))
@@ -565,7 +583,7 @@ namespace ERA20.Modules
                 .Include(x => x.Equipment)
                 .Find(x => x.Name.StartsWith(Name.ToLower()));
 
-            if (Char.Count() > 1 && Char.First().Name.ToLower() != Name.ToLower())
+            if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
                 foreach (Character X in Char)
@@ -576,7 +594,7 @@ namespace ERA20.Modules
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
-            else if (Char.Count() == 1)
+            else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 var c = col
                 .Include(x => x.Inventory.Items)
@@ -620,7 +638,7 @@ namespace ERA20.Modules
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
-            else if (Char.Count() == 1)
+            else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 var c = Char.First();
                 var affs = c.Afflictions.Where(x => x.Name.ToLower().Contains(Aff.ToLower()));
@@ -683,7 +701,7 @@ namespace ERA20.Modules
         }
     }
 
-    [Group("Skills")]
+    [Group("Skills"), Alias("Skill", "S")]
     public class SkillMGR : ModuleBase<SocketCommandContext>
     {
         public LiteDatabase Database { get; set; }
@@ -725,7 +743,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Learn"), Alias("Add")]
-        public async Task Learn(string Name, [Remainder] string Description)
+        public async Task Learn(string Name,  string Description)
         {
             var C = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
             if (C.Skills.Exists(x => x.Name.ToLower() == Name.ToLower()))
@@ -773,7 +791,7 @@ namespace ERA20.Modules
             }
         }
         [Command("LevelUp"), Alias("Level-Up", "LU")]
-        public async Task LU(string Name)
+        public async Task LU( string Name)
         {
             var C = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
             C.PassInstance(Database);
@@ -865,13 +883,13 @@ namespace ERA20.Modules
         }
         [Command("Delete"), Alias("Del", "Remove", "Rem")]
         [RequireUserPermission(GuildPermission.ManageMessages)]
-        public async Task rem(string Name)
+        public async Task rem( string Name)
         {
             var col = Database.GetCollection<BaseItem>("Items");
             col.EnsureIndex("Name", "LOWER($.Name)");
             var c = col.Find(x => x.Name.StartsWith(Name.ToLower()));
 
-            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
+            if (c.Count() == 0)
             {
                 await ReplyAsync("This item does not exist in the databse!");
             }
@@ -886,15 +904,16 @@ namespace ERA20.Modules
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
-            else
+            else if (c.Count() == 1 || c.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
+                var I = c.First();
                 col.Delete(x => x.ItemId == c.First().ItemId);
-                await ReplyAsync("Item **" + c.First().Name + "** was siccessfully deleted from the database!");
+                await ReplyAsync("Item **" + I.Name + "** was siccessfully deleted from the database!");
             }
         }
         [Command("Edit")]
         [RequireUserPermission(GuildPermission.ManageMessages)]
-        public async Task Edit(string Name, string Property, string Value)
+        public async Task Edit(string Name, string Property,  string Value)
         {
             var col = Database.GetCollection<BaseItem>("Items");
             col.EnsureIndex("Name", "LOWER($.Name)");
@@ -922,20 +941,24 @@ namespace ERA20.Modules
                 {
                     case "name":
                         I.Name = Value;
+                        col.Update(I);
                         await ReplyAsync("Item name changed to **" + Value + "**!");
                         break;
                     case "description":
                         I.Description = Value;
+                        col.Update(I);
                         await ReplyAsync("Item description changed!");
                         break;
                     case "image":
                         I.ImageUrl = Value;
+                        col.Update(I);
                         await ReplyAsync("Item's Image URL changed!");
                         break;
                     default:
                         await ReplyAsync("Invalid property to change! The properties you can change are `Name`, `Description` or `Image`");
                         break;
                 }
+                
             }
         }
         [Command("Give")]
@@ -954,7 +977,7 @@ namespace ERA20.Modules
                 .Include(x => x.Equipment)
                 .Find(x => x.Name.StartsWith(Name.ToLower()));
 
-            if (Char.Count() > 1 && Char.First().Name.ToLower() != Name.ToLower())
+            if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
                 foreach (Character X in Char)
@@ -965,7 +988,7 @@ namespace ERA20.Modules
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
-            else if (Char.Count() == 1)
+            else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 var c = Char.First();
 
@@ -990,12 +1013,13 @@ namespace ERA20.Modules
                 }
                 else
                 {
-                    var IG = I.First().AsItem();
-                    IG.Quantity = Ammount;
                     c.PassInstance(Database);
-                    c.Inventory.Add(IG);
-                    c.Update();
-                    await ReplyAsync("You gave **" + c.Name + "** " + Ammount + " **" + IG.Name + "**(s)!");
+                    c.Inventory.Add(new Item()
+                    {
+                        BaseItem = I.First()
+                    },Ammount);
+                    col.Update(c);
+                    await ReplyAsync("You gave **" + c.Name + "** " + Ammount + " **" + I.First().Name + "**(s)!");
                 }
             }
         }
@@ -1015,7 +1039,7 @@ namespace ERA20.Modules
                 .Include(x => x.Equipment)
                 .Find(x => x.Name.StartsWith(Name.ToLower()));
 
-            if (Char.Count() > 1 && Char.First().Name.ToLower() != Name.ToLower())
+            if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
                 foreach (Character X in Char)
@@ -1026,15 +1050,15 @@ namespace ERA20.Modules
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
-            else if (Char.Count() == 1)
+            else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 var c = Char.First();
-
+                c.Inventory.buildInv(Database);
                 var col2 = Database.GetCollection<BaseItem>("Items");
                 col2.EnsureIndex("Name", "LOWER($.Name)");
                 var I = col2.Find(x => x.Name.StartsWith(Item.ToLower()));
 
-                if (!col.Exists(x => x.Name.StartsWith(Item.ToLower())))
+                if (!col2.Exists(x => x.Name.StartsWith(Item.ToLower())))
                 {
                     await ReplyAsync("This item does not exist in the databse!");
                 }
@@ -1050,13 +1074,12 @@ namespace ERA20.Modules
                     await ReplyAsync(msg2);
                 }
                 else
-                {
-                    var IG = I.First().AsItem();
-                    IG.Quantity = Ammount;
+                { 
+                    if (!c.Inventory.Items.Exists(x => x.BaseItem.ItemId == I.First().ItemId)) { await ReplyAsync(c.Name + " doesn't have the item " + I.First().Name + " in their inventory!"); return; }
                     c.PassInstance(Database);
-                    c.Inventory.Consume(IG, Ammount);
+                    c.Inventory.Consume(I.First(), Ammount);
                     c.Update();
-                    await ReplyAsync("You Took away "+Ammount+" **" + IG.Name + "** from **" + c.Name + "**!");
+                    await ReplyAsync("You Took away "+Ammount+" **" + I.First().Name + "** from **" + c.Name + "**!");
                 }
             }
         }
@@ -1076,7 +1099,7 @@ namespace ERA20.Modules
                 .Include(x => x.Equipment)
                 .Find(x => x.Name.StartsWith(Name.ToLower()));
 
-            if (Char.Count() > 1 && Char.First().Name.ToLower() != Name.ToLower())
+            if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
                 foreach (Character X in Char)
@@ -1087,13 +1110,255 @@ namespace ERA20.Modules
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
-            else if (Char.Count() == 1)
+            else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 var c = Char.First();
                 c.PassInstance(Database);
                 c.Inventory.Items.Clear();
                 c.Update();
                 await ReplyAsync("Purged " + c.Name + "'s Inventory!");
+            }
+        }
+    }
+    public class PlayerToPlayer : ModuleBase<SocketCommandContext>
+    {
+        public LiteDatabase Database { get; set; }
+
+        [Command("Gift"), Alias("Give")]
+        [Summary("Gives another player an item from your currently-locked character's inventory. Usage: `$Gift <Character> <Item> <Amount>`. (Amount defaults to 1 if nothing is specified)")]
+        public async Task Give(string Player, string Item, int Quantity = 1)
+        {
+            Quantity = Math.Abs(Quantity);
+            var col = Database.GetCollection<Character>("Characters");
+            if (!col.Exists(x => x.Name == Player.ToLower()))
+            {
+                await ReplyAsync("I couldn't find this player on the Database!");
+                return;
+            }
+
+            var Char = col
+                .Include(x => x.Inventory.Items)
+                .Include(x => x.Equipment)
+                .Find(x => x.Name.StartsWith(Player.ToLower()));
+            if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Player.ToLower()))
+            {
+                string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
+                foreach (Character X in Char)
+                {
+                    msg += "`" + X.Name + "`, ";
+                }
+                var msg2 = msg.Substring(0, msg.Length - 1);
+                msg2 += ".";
+                await ReplyAsync(msg2);
+            }
+            else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Player.ToLower()))
+            {
+                var C = Char.First();
+                C.Inventory.buildInv(Database);
+                C.PassInstance(Database);
+                var items = Database.GetCollection<BaseItem>("Items");
+                var me = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
+                me.Inventory.buildInv(Database);
+                me.PassInstance(Database);
+
+                if (!me.Inventory.Items.Exists(x => x.BaseItem.Name.ToLower().StartsWith(Item.ToLower())))
+                {
+                    await ReplyAsync("You don't have this item in your inventory!");
+                    return;
+                }
+                var I = me.Inventory.Items.Find(x => x.BaseItem.Name.ToLower().StartsWith(Item.ToLower()));
+                if (I.Quantity < Quantity)
+                {
+                    await ReplyAsync("You dont have this many " + I.BaseItem.Name + "s!");
+                    return;
+                }
+                me.Inventory.Consume(I.BaseItem, Quantity);
+                C.Inventory.Add(I, Quantity);
+                me.Update();
+                C.Update();
+                await ReplyAsync(me.Name+" gave **" + C.Name + "** " + Quantity + " **" + I.BaseItem.Name + "**(s)!");
+            }
+        }
+        [Command("Use"), Alias("Consume", "Toss","Discard")]
+        [Summary("Use, Consume, Toss or otherwise spend an item by a defined ammount. Usage: `$Use <Item> <Amount>`. (Amount defaults to 1 if not specified)")]
+        public async Task Discard(string Item, int Ammount = 1)
+        {
+            Ammount = Math.Abs(Ammount);
+            var me = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
+            me.Inventory.buildInv(Database);
+            me.PassInstance(Database);
+            if (!me.Inventory.Items.Exists(x => x.BaseItem.Name.ToLower().StartsWith(Item.ToLower())))
+            {
+                await ReplyAsync(me.Name+" doesn't have this item in their inventory!");
+                return;
+            }
+            var I = me.Inventory.Items.Find(x => x.BaseItem.Name.ToLower().StartsWith(Item.ToLower()));
+            if (I.Quantity < Ammount)
+            {
+                await ReplyAsync(me.Name+" doesn't have this many " + I.BaseItem.Name + "s!");
+                return;
+            }
+            me.Inventory.Consume(I.BaseItem, Ammount);
+            me.Update();
+            await ReplyAsync(me.Name+" used up " + Ammount + " of their **" + I.BaseItem.Name + "**(s)!", embed: new Builders().ItemBuilder(I.BaseItem));
+        }
+        [Command("Pay"), Alias("Spend")]
+        [Summary("Spend money on something or transfer money to someone! Usage: `$Pay <Amount> [Player]` The player parameter is optional, if non is specified, you'll simply spend the amount indicated.")]
+        public async Task Spend(double Amount, string Name = null)
+        {
+            Amount = Math.Abs(Amount);
+            Amount = Math.Round(Amount, 2);
+            var me = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
+            me.Inventory.buildInv(Database);
+            me.PassInstance(Database);
+            if (me.Money < Amount)
+            {
+                await ReplyAsync(me.Name+" doesn't have this much money!");
+            }
+            if (Name != null)
+            {
+                var col = Database.GetCollection<Character>("Characters");
+                if (!col.Exists(x => x.Name == Name.ToLower()))
+                {
+                    await ReplyAsync("I couldn't find this player on the Database!");
+                    return;
+                }
+
+                var Char = col
+                    .Include(x => x.Inventory.Items)
+                    .Include(x => x.Equipment)
+                    .Find(x => x.Name.StartsWith(Name.ToLower()));
+                if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+                {
+                    string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
+                    foreach (Character X in Char)
+                    {
+                        msg += "`" + X.Name + "`, ";
+                    }
+                    var msg2 = msg.Substring(0, msg.Length - 1);
+                    msg2 += ".";
+                    await ReplyAsync(msg2);
+                }
+                else if (Char.Count() == 1|| Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+                {
+                    var C = Char.First();
+                    C.PassInstance(Database);
+                    C.Money += Math.Round(Amount, 2);
+                    me.Money -= Amount;
+                    me.Update();
+                    C.Update();
+                    await ReplyAsync(me.Name+" gave **" + C.Name + "** $" + Amount+".");
+                }
+            }
+            else
+            {
+                me.Money -= Amount;
+                me.Update();
+                await ReplyAsync(me.Name+" spent $" + Amount + ".");
+            }
+        }
+        [Command("Equip"), Alias("Wear","Put-On")]
+        [Summary("Put one of your items on as an equip. Usage: `$Equip <Item>`")]
+        public async Task Equip(string Item)
+        {
+            var me = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
+            me.Inventory.buildInv(Database);
+            me.PassInstance(Database);
+            if (!me.Inventory.Items.Exists(x => x.BaseItem.Name.ToLower().StartsWith(Item.ToLower())))
+            {
+                await ReplyAsync(me.Name+" doesn't have this item in their inventory!");
+                return;
+            }
+            var I = me.Inventory.Items.Find(x => x.BaseItem.Name.ToLower().StartsWith(Item.ToLower()));
+            me.Equip(I.BaseItem);
+            me.Update();
+            await ReplyAsync(me.Name+" equiped their " + I.BaseItem.Name + ".");
+        }
+        [Command("Unequip"), Alias("DeEquip", "De-Equip", "re-un-de-equip")]
+        [Summary("Takes off a piece of equipment. Usage: `$Unequip <Item>`")]
+        public async Task Unequip(string Item)
+        {
+            var me = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
+            me.Inventory.buildInv(Database);
+            me.PassInstance(Database);
+            if (!me.Equipment.Exists(x => x.Name.ToLower().StartsWith(Item.ToLower())))
+            {
+                await ReplyAsync(me.Name+" doesn't have this item in their Equipment list!");
+                return;
+            }
+            else
+            {
+                var I = me.Equipment.Find(x => x.Name.ToLower().StartsWith(Item.ToLower()));
+                me.DeEquip(I);
+                me.Update();
+                await ReplyAsync(me.Name+" unequiped their " + I.Name + ".");
+            }
+        }
+        [Command("Stress")]
+        [Summary("Add or remove stress to a character! Use negative numbers to remove stress. Usage: `$Stress <character> <Amount>`.")]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        public async Task Stress(string Name, int amount)
+        {
+            var col = Database.GetCollection<Character>("Characters");
+            var Char = col
+                .Include(x => x.Inventory.Items)
+                .Include(x => x.Equipment)
+                .Find(x => x.Name.StartsWith(Name.ToLower()));
+            if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
+                foreach (Character X in Char)
+                {
+                    msg += "`" + X.Name + "`, ";
+                }
+                var msg2 = msg.Substring(0, msg.Length - 1);
+                msg2 += ".";
+                await ReplyAsync(msg2);
+            }
+            else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                var C = Char.First();
+                C.Inventory.buildInv(Database);
+                C.PassInstance(Database);
+                if (C.MaxStress-C.Stress < amount || C.Stress + amount < 0)
+                {
+                    await ReplyAsync("This character can't get any more stressed!");
+                    return;
+                }
+                C.Stress += amount;
+                C.Update();
+                await ReplyAsync("**" + C.Name + "** has gained " + amount + " stress!");
+            }
+        }
+        [Command("Reward"), Alias("DMPay")]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [Summary("Give a player a sum of money. Usage: `$Reward <player> <Amount>`")]
+        public async Task Pay(string Name, int Amount)
+        {
+            var col = Database.GetCollection<Character>("Characters");
+            var Char = col
+                .Include(x => x.Inventory.Items)
+                .Include(x => x.Equipment)
+                .Find(x => x.Name.StartsWith(Name.ToLower()));
+            if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
+                foreach (Character X in Char)
+                {
+                    msg += "`" + X.Name + "`, ";
+                }
+                var msg2 = msg.Substring(0, msg.Length - 1);
+                msg2 += ".";
+                await ReplyAsync(msg2);
+            }
+            else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                var C = Char.First();
+                C.Inventory.buildInv(Database);
+                C.PassInstance(Database);
+                C.Money += Amount;
+                C.Update();
+                await ReplyAsync("**" + C.Name + "** was rewarded with $" + Amount + "!");
             }
         }
     }

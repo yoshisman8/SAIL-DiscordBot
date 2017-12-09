@@ -13,7 +13,7 @@ namespace ERA20.Modules.Classes
         [BsonIgnore]
         public LiteDatabase Database { get; set; }
         [BsonId]
-        public int BattleId { get; set; }  
+        public int BattleId { get; set; }
         public string Name { get; set; }
         public List<BattleActor> Actors { get; set; } = new List<BattleActor>() { };
 
@@ -24,7 +24,7 @@ namespace ERA20.Modules.Classes
 
         public void GenerateTurns()
         {
-            foreach(BattleActor x in Actors)
+            foreach (BattleActor x in Actors)
             {
                 x.TurnOrder = Random.Next(1, 20);
             }

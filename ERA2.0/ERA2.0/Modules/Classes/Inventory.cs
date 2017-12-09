@@ -14,20 +14,44 @@ namespace ERA20.Modules.Classes
 
         public List<Item> Items { get; set; } = new List<Item>() { };
 
+
         public void PassInstance(LiteDatabase _Database)
         {
             Database = _Database;
         }
-        public void Add(Item Item)
+        public void buildInv(LiteDatabase database)
+        {
+            Database = database;
+            var col = Database.GetCollection<BaseItem>("Items");
+            foreach (Item x in Items)
+            {
+                x.BaseItem = col.FindById(x.BaseItem.ItemId);
+            }
+            var I = Items.ToList();
+            foreach (Item x in Items)
+            {
+                if (x.BaseItem == null)
+                {
+                    I.Remove(x);
+                }
+            }
+            Items = I;
+        }
+
+
+        public void Add(Item Item, int quantity)
         {
             if (Items.Exists(x => x.BaseItem.ItemId == Item.BaseItem.ItemId))
             {
                 var i = Items.FindIndex(x => x.BaseItem.ItemId == Item.BaseItem.ItemId);
-                Items.ElementAt(i).Quantity += Item.Quantity;
+                Items[i].Quantity += quantity;
+                return;
             }
             else
             {
+                Item.Quantity = quantity;
                 Items.Add(Item);
+                return;
             }
         }
         public Item Use(Item Item)
@@ -35,12 +59,12 @@ namespace ERA20.Modules.Classes
             var I = Items.FindIndex(x => x.BaseItem.ItemId == Item.BaseItem.ItemId);
             return Items.ElementAt(I);
         }
-        public Item Consume(Item Item, int Ammount)
+        public Item Consume(BaseItem Item, int Ammount)
         {
-            if (Items.Exists(x => x.BaseItem.ItemId == Item.BaseItem.ItemId))
+            if (Items.Exists(x => x.BaseItem.ItemId == Item.ItemId))
             {
-                var I = Items.FindIndex(x => x.BaseItem.ItemId == Item.BaseItem.ItemId);
-                Items.ElementAt(I).Quantity -= Ammount;
+                var I = Items.FindIndex(x => x.BaseItem.ItemId == Item.ItemId);
+                Items[I].Quantity -= Ammount;
                 var r = Items.ElementAt(I);
                 if (Items.ElementAt(I).Quantity == 0)
                 {
@@ -53,7 +77,17 @@ namespace ERA20.Modules.Classes
                 return null;
             }
         }
-
+        //public Item AsItem(BaseItem Base)
+        //{
+        //    Item item = new Item()
+        //    {
+        //        Name = Base.Name,
+        //        Description = Base.Description,
+        //        ImageUrl = Base.ImageUrl,
+        //        ItemId = Base.ItemId
+        //    };
+        //    return item;
+        //}
     }
     public class BaseItem
     {
@@ -69,5 +103,14 @@ namespace ERA20.Modules.Classes
         [BsonRef("Items")]
         public BaseItem BaseItem { get; set; }
         public int Quantity { get; set; } = 1;
+    }
+    public class ItemEx
+    {
+        public int Item { get; set; }
+        public int Quantity { get; set; } = 1;
+
+        [BsonIgnore]
+        public BaseItem BaseItem { get; set; }
+
     }
 }

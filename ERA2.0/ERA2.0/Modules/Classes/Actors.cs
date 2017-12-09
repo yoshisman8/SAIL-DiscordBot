@@ -35,7 +35,7 @@ namespace ERA20.Modules.Classes
         public string Race { get; set; }
         public string Description { get; set; } = "";
         [BsonRef("Items")]
-        public List<Item> Equipment { get; set; } = new List<Item>() { };
+        public List<BaseItem> Equipment { get; set; } = new List<BaseItem>() { };
         public Trait ITrait { get; set; } = new Trait();
         public List<Trait> Traits { get; set; } = new List<Trait>() { };
         public List<Skill> Skills { get; set; } = new List<Skill>() { };
@@ -60,40 +60,45 @@ namespace ERA20.Modules.Classes
             var col = Database.GetCollection<Character>("Characters");
             col.Delete(CharacterId);
         }
-        public void Equip(Item item)
+        public void Equip(BaseItem Item)
         {
-
-            var I = Inventory.Items.FindIndex(x => x.ItemId == item.ItemId);
-            Equipment.Add(Inventory.Items.ElementAt(I));
-            Inventory.Items.RemoveAt(I);
+            Equipment.Add(Item);
+            Inventory.Consume(Item, 1);
             var col = Database.GetCollection<Character>("Characters");
             col.Update(this);
         }
-        public void DeEquip(Item item)
+        public void DeEquip(BaseItem item)
         {
-            var I = Equipment.FindIndex(x => x.ItemId == item.ItemId);
-            Inventory.Add(Equipment.ElementAt(I));
-            Equipment.RemoveAt(I);
+            Inventory.Add(new Item()
+            {
+                BaseItem = item
+            }, 1);
+            Equipment.Remove(item);
             var col = Database.GetCollection<Character>("Characters");
             col.Update(this);
         }
-        public void Pay(int Amount, Character Target, bool Override = false)
+        public void NullBGone(LiteDatabase database)
         {
-            
-            if (Money < Math.Abs(Amount))
+            Database = database;
+            var col = Database.GetCollection<BaseItem>("Items");
+            var Equips = new List<BaseItem>() { };
+            foreach (BaseItem x in this.Equipment)
             {
-                throw new Exception("You don't have this much money!");
+                if (col.Exists(y => y.ItemId == x.ItemId))
+                {
+                    Equips.Add(col.FindOne(y => y.ItemId == x.ItemId));
+                }
             }
-            else if (Override == true)
+            var Items = new Inventory();
+            foreach (Item x in Inventory.Items)
             {
-                Money -= Math.Abs(Amount);
-                return;
-            } 
-            else
-            {
-                Money -= Math.Abs(Amount);
-                Target.Money += Math.Abs(Amount);
+                if (col.Exists(y => y.ItemId == x.BaseItem.ItemId))
+                {
+                    Items.Add(new Item() { BaseItem = col.FindOne(y => y.ItemId == x.BaseItem.ItemId) }, x.Quantity);
+                }
             }
+            Equipment = Equips;
+            Update();
         }
 
         public IEnumerable<Character> GetCharacter(string name)
