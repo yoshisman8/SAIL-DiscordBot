@@ -523,6 +523,8 @@ namespace ERA20.Modules
             character.PassInstance(Database);
             var trait = character.Traits.Find(x => x.Name.ToLower().StartsWith(Name.ToLower()));
             if (trait == null) { await ReplyAsync("You dont have this trait!"); return; }
+            character.Traits.Remove(trait);
+            await ReplyAsync("Removed Trait **" + trait.Name + "**!");
         }
     }
 
