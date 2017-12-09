@@ -289,6 +289,26 @@ namespace ERA20.Modules
             }
             return builder.Build();
         }
+        public Embed StorageBuilder(Storage Storage)
+        {
+            var builder = new EmbedBuilder()
+                .WithTitle(Storage.Name)
+                .WithDescription(Storage.Description)
+                .WithUrl(Storage.ImageURL)
+                .AddField("Items Stored", BuildSInv(Storage))
+                .WithThumbnailUrl(Storage.ImageURL);
+            return builder.Build();
+        }
+        private string BuildSInv(Storage Storage)
+        {
+            string msg = "";
+            msg += "\\💰 $" + Math.Round(Storage.Money, 2) + "\n";
+            foreach (Item x in Storage.Inventory.Items)
+            {
+                msg += "* " + x.BaseItem.Name + " x" + x.Quantity + "\n";
+            }
+            return msg;
+        }
     }
 
     [Group("Lock")]
@@ -315,7 +335,7 @@ namespace ERA20.Modules
             var DMs = Context.Guild.GetRole(324320068748181504);
 
             var col = Database.GetCollection<Character>("Characters");
-            if (!col.Exists(x => x.Name == Name.ToLower()))
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
             {
                 await ReplyAsync("I couldn't find this player on the Database!");
                 return;
@@ -1133,7 +1153,7 @@ namespace ERA20.Modules
         {
             Quantity = Math.Abs(Quantity);
             var col = Database.GetCollection<Character>("Characters");
-            if (!col.Exists(x => x.Name == Player.ToLower()))
+            if (!col.Exists(x => x.Name.StartsWith(Player.ToLower())))
             {
                 await ReplyAsync("I couldn't find this player on the Database!");
                 return;
@@ -1221,7 +1241,7 @@ namespace ERA20.Modules
             if (Name != null)
             {
                 var col = Database.GetCollection<Character>("Characters");
-                if (!col.Exists(x => x.Name == Name.ToLower()))
+                if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
                 {
                     await ReplyAsync("I couldn't find this player on the Database!");
                     return;
@@ -1284,6 +1304,7 @@ namespace ERA20.Modules
             var me = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
             me.Inventory.buildInv(Database);
             me.PassInstance(Database);
+
             if (!me.Equipment.Exists(x => x.Name.ToLower().StartsWith(Item.ToLower())))
             {
                 await ReplyAsync(me.Name+" doesn't have this item in their Equipment list!");
@@ -1307,6 +1328,11 @@ namespace ERA20.Modules
                 .Include(x => x.Inventory.Items)
                 .Include(x => x.Equipment)
                 .Find(x => x.Name.StartsWith(Name.ToLower()));
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
+            {
+                await ReplyAsync("I couldn't find this player on the Database!");
+                return;
+            }
             if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
@@ -1362,6 +1388,329 @@ namespace ERA20.Modules
                 C.Money += Amount;
                 C.Update();
                 await ReplyAsync("**" + C.Name + "** was rewarded with $" + Amount + "!");
+            }
+        }
+        [Command("Store")]
+        [Summary("Stores an item in a Storage. Usage: `$Store <Storage Name> <Item> <amount, defaults to 1>")]
+        public async Task Store(string Name, string Item, int amount = 1)
+        {
+            amount = Math.Abs(amount);
+            var me = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
+            me.Inventory.buildInv(Database);
+            me.PassInstance(Database);
+            var col = Database.GetCollection<Storage>("Storages");
+            col.EnsureIndex("Name", "LOWER($.Name)");
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
+            {
+                await ReplyAsync("This storage doesn't exist!");
+            }
+            var get = col.Find(Query.StartsWith("Name", Name.ToLower()));
+
+            if (get.Count() > 1 && !get.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                string msg = "Multiple Storages where found with this search! Please specify from one of the following: \n";
+                foreach (Storage X in get)
+                {
+                    msg += "`" + X.Name + "`, ";
+                }
+                var msg2 = msg.Substring(0, msg.Length - 2);
+                msg2 += ".";
+                await ReplyAsync(msg2);
+            }
+            else if (get.Count() == 1 || get.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                var Sto = get.First();
+                Sto.Inventory.buildInv(Database);
+                if (!me.Inventory.Items.Exists(x => x.BaseItem.Name.ToLower().StartsWith(Item.ToLower())))
+                {
+                    await ReplyAsync("You don't have this item in your inventory!");
+                    return;
+                }
+                var I = me.Inventory.Items.Find(x => x.BaseItem.Name.ToLower().StartsWith(Item.ToLower()));
+                if (I.Quantity < amount)
+                {
+                    await ReplyAsync("You dont have this many " + I.BaseItem.Name + "s!");
+                    return;
+                }
+                me.Inventory.Consume(I.BaseItem, amount);
+                Sto.Inventory.Add(I, amount);
+                me.Update();
+                col.Update(Sto);
+                await ReplyAsync(me.Name +" Stored " + amount + " **" + I.BaseItem.Name + "**(s) on storage **" + Sto.Name + "**!");
+            }
+        }
+        [Command("Take")]
+        [Summary("Takes an item out of a Storage. Usage: `$Take <Storage name> <Item> <amount, defaults to 1>`")]
+        public async Task take(string Name, string Item, int amount = 1)
+        {
+            amount = Math.Abs(amount);
+            var me = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
+            me.Inventory.buildInv(Database);
+            me.PassInstance(Database);
+            var col = Database.GetCollection<Storage>("Storages");
+            col.EnsureIndex("Name", "LOWER($.Name)");
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
+            {
+                await ReplyAsync("This storage doesn't exist!");
+            }
+            var get = col.Find(Query.StartsWith("Name", Name.ToLower()));
+
+            if (get.Count() > 1 && !get.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                string msg = "Multiple Storages where found with this search! Please specify from one of the following: \n";
+                foreach (Storage X in get)
+                {
+                    msg += "`" + X.Name + "`, ";
+                }
+                var msg2 = msg.Substring(0, msg.Length - 2);
+                msg2 += ".";
+                await ReplyAsync(msg2);
+            }
+            else if (get.Count() == 1 || get.ToList().Exists(x => x.Name.ToLower().ToLower() == Name.ToLower()))
+            {
+                var Sto = get.First();
+                Sto.Inventory.buildInv(Database);
+                if (!Sto.Inventory.Items.Exists(x => x.BaseItem.Name.ToLower().StartsWith(Item.ToLower())))
+                {
+                    await ReplyAsync("This storage doesn't have this item in its inventory!");
+                    return;
+                }
+                var I = Sto.Inventory.Items.Find(x => x.BaseItem.Name.ToLower().StartsWith(Item.ToLower()));
+                if (I.Quantity < amount)
+                {
+                    await ReplyAsync("This storage doesn't have this many " + I.BaseItem.Name + "s!");
+                    return;
+                }
+                me.Inventory.Add(I, amount);
+                Sto.Inventory.Consume(I.BaseItem, amount);
+                me.Update();
+                col.Update(Sto);
+                await ReplyAsync(me.Name+" Withdrew " + amount + " **" + I.BaseItem.Name + "**(s) from storage **" + Sto.Name + "**!");
+            }
+        }
+
+        [Command("Deposit")]
+        [Summary("Deposits money into a storage. Usage: `$Deposit <storage name> <amount>`")]
+        public async Task Deposit(string Name, double Amount)
+        {
+            Amount = Math.Abs(Amount);
+            Amount = Math.Round(Amount, 2);
+            var me = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
+            me.Inventory.buildInv(Database);
+            me.PassInstance(Database);
+            var col = Database.GetCollection<Storage>("Storages");
+            col.EnsureIndex("Name", "LOWER($.Name)");
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
+            {
+                await ReplyAsync("This storage doesn't exist!");
+            }
+            var get = col.Find(Query.StartsWith("Name", Name.ToLower()));
+
+            if (get.Count() > 1 && !get.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                string msg = "Multiple Storages where found with this search! Please specify from one of the following: \n";
+                foreach (Storage X in get)
+                {
+                    msg += "`" + X.Name + "`, ";
+                }
+                var msg2 = msg.Substring(0, msg.Length - 2);
+                msg2 += ".";
+                await ReplyAsync(msg2);
+            }
+            else if (get.Count() == 1 || get.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                if (me.Money < Amount)
+                {
+                    await ReplyAsync(me.Name + " doesn't have this much money!");
+                }
+                else
+                {
+                    var sto = get.First();
+                    sto.Money += Amount;
+                    me.Money -= Amount;
+                    me.Update();
+                    col.Update(sto);
+                    await ReplyAsync(me.Name + " Deposited $" + Amount + " on storage **" + sto.Name + "**!");
+                }
+            }
+        }
+        [Command("Withdraw")]
+        [Summary("Withdraws money into a storage. Usage: `$Withdraw <storage name> <amount>`")]
+        public async Task Withdraw(string Name, double Amount)
+        {
+            Amount = Math.Abs(Amount);
+            Amount = Math.Round(Amount, 2);
+            var me = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
+            me.Inventory.buildInv(Database);
+            me.PassInstance(Database);
+            var col = Database.GetCollection<Storage>("Storages");
+            col.EnsureIndex("Name", "LOWER($.Name)");
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
+            {
+                await ReplyAsync("This storage doesn't exist!");
+            }
+            var get = col.Find(Query.StartsWith("Name", Name.ToLower()));
+
+            if (get.Count() > 1 && !get.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                string msg = "Multiple Storages where found with this search! Please specify from one of the following: \n";
+                foreach (Storage X in get)
+                {
+                    msg += "`" + X.Name + "`, ";
+                }
+                var msg2 = msg.Substring(0, msg.Length - 2);
+                msg2 += ".";
+                await ReplyAsync(msg2);
+            }
+            else if (get.Count() == 1 || get.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                var sto = get.First();
+                if (sto.Money < Amount)
+                {
+                    await ReplyAsync(sto.Name + " doesn't have this much money!");
+                }
+                else
+                {
+                    sto.Money -= Amount;
+                    me.Money += Amount;
+                    me.Update();
+                    col.Update(sto);
+                    await ReplyAsync(me.Name + " Withdrew $" + Amount + " from storage **" + sto.Name + "**!");
+                }
+            }
+        }
+
+    }
+    [Group("Storage")]
+    public class StorageMGR : ModuleBase<SocketCommandContext>
+    {
+        public LiteDatabase Database { get; set; }
+        [Command]
+        public async Task Get(string Name)
+        {
+            var col = Database.GetCollection<Storage>("Storages");
+            col.EnsureIndex("Name", "LOWER($.Name)");
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
+            {
+                await ReplyAsync("This storage doesn't exist!");
+            }
+            var get = col.Find(Query.StartsWith("Name", Name.ToLower()));
+
+            if (get.Count() > 1 && !get.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                string msg = "Multiple Storages where found with this search! Please specify from one of the following: \n";
+                foreach (Storage X in get)
+                {
+                    msg += "`" + X.Name + "`, ";
+                }
+                var msg2 = msg.Substring(0, msg.Length - 2);
+                msg2 += ".";
+                await ReplyAsync(msg2);
+            }
+            else if (get.Count() == 1 || get.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                var Sto = get.First();
+                Sto.Inventory.buildInv(Database);
+                await ReplyAsync("", embed: new Builders().StorageBuilder(Sto));
+            }
+        }
+        [Command("Create"), Alias("Add")]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        public async Task Make(string Name, string Description = "", string ImageUrl = "")
+        {
+            var col = Database.GetCollection<Storage>("Storages");
+            col.EnsureIndex("Name", "LOWER($.Name)");
+            if (col.Exists(x => x.Name.StartsWith(Name.ToLower())))
+            {
+                await ReplyAsync("This storage Already exist!");
+            }
+            var Sto = new Storage()
+            {
+                Name = Name,
+                Description = Description,
+                ImageURL = ImageUrl
+            };
+            col.Insert(Sto);
+            await ReplyAsync("Storage **" + Sto.Name + "** created successfully! Players can now store items here with `$Store <Storage name> <Item> <Quantity>`");
+        }
+        [Command("Delete"), Alias("Del", "Remove", "rem")]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        public async Task del(string Name)
+        {
+            var col = Database.GetCollection<Storage>("Storages");
+            col.EnsureIndex("Name", "LOWER($.Name)");
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
+            {
+                await ReplyAsync("This storage doesn't exist!");
+            }
+            var get = col.Find(Query.StartsWith("Name", Name.ToLower()));
+
+            if (get.Count() > 1 && !get.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                string msg = "Multiple Storages where found with this search! Please specify from one of the following: \n";
+                foreach (Storage X in get)
+                {
+                    msg += "`" + X.Name + "`, ";
+                }
+                var msg2 = msg.Substring(0, msg.Length - 2);
+                msg2 += ".";
+                await ReplyAsync(msg2);
+            }
+            else if (get.Count() == 1 || get.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                var Sto = get.First();
+                col.Delete(Query.EQ("StorageId",Sto.StorageId));
+                await ReplyAsync("Storage **"+Sto.Name+"** deleted from the database successfully!");
+            }
+        }
+        [Command("Edit")]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        public async Task Edit(string Name, string Property, string Value)
+        {
+            var col = Database.GetCollection<Storage>("Storages");
+            col.EnsureIndex("Name", "LOWER($.Name)");
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
+            {
+                await ReplyAsync("This storage doesn't exist!");
+            }
+            var get = col.Find(Query.StartsWith("Name", Name.ToLower()));
+
+            if (get.Count() > 1 && !get.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                string msg = "Multiple Storages where found with this search! Please specify from one of the following: \n";
+                foreach (Storage X in get)
+                {
+                    msg += "`" + X.Name + "`, ";
+                }
+                var msg2 = msg.Substring(0, msg.Length - 2);
+                msg2 += ".";
+                await ReplyAsync(msg2);
+            }
+            else if (get.Count() == 1 || get.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            {
+                var I = get.First();
+                I.Inventory.buildInv(Database);
+                switch (Property.ToLower())
+                {
+                    case "name":
+                        I.Name = Value;
+                        col.Update(I);
+                        await ReplyAsync("Storage's name changed to **" + Value + "**!");
+                        break;
+                    case "description":
+                        I.Description = Value;
+                        col.Update(I);
+                        await ReplyAsync("Storage's description changed!");
+                        break;
+                    case "image":
+                        I.ImageURL = Value;
+                        col.Update(I);
+                        await ReplyAsync("Storage's Image URL changed!");
+                        break;
+                    default:
+                        await ReplyAsync("Invalid property to change! The properties you can change are `Name`, `Description` or `Image`");
+                        break;
+                }
             }
         }
     }

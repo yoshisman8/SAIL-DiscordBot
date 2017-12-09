@@ -66,7 +66,7 @@ namespace ERA20.Modules.Classes
                 var I = Items.FindIndex(x => x.BaseItem.ItemId == Item.ItemId);
                 Items[I].Quantity -= Ammount;
                 var r = Items.ElementAt(I);
-                if (Items.ElementAt(I).Quantity == 0)
+                if (Items.ElementAt(I).Quantity <= 0)
                 {
                     Items.RemoveAt(I);
                 }
