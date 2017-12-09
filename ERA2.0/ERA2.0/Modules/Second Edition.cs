@@ -41,7 +41,7 @@ namespace ERA20.Modules
         public async Task Char(string Name)
         {
             var col = Database.GetCollection<Character>("Characters");
-            if (!col.Exists(x => x.Name == Name.ToLower()))
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
             {
                 await ReplyAsync("I couldn't find this player on the Database!");
                 return;
@@ -58,7 +58,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -127,7 +127,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -229,7 +229,7 @@ namespace ERA20.Modules
             {
                 msg += "* " + x.Name + " [" + ToRoman(x.Level) + "]\n";
             }
-            if (msg.Length == 0) { return "None! \nUse `$Skills Learn <Name> <Emote> <Description>` \nTo learn a new Skill!"; }
+            if (msg.Length == 0) { return "None! \nUse `$Skills Learn <Name> <Description>` \nTo learn a new Skill!"; }
             return msg;
         }
         public static string ToRoman(int number)
@@ -330,7 +330,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -464,7 +464,7 @@ namespace ERA20.Modules
         public async Task GetOther(string Name)
         {
             var col = Database.GetCollection<Character>("Characters");
-            if (!col.Exists(x => x.Name == Name.ToLower()))
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
             {
                 await ReplyAsync("I couldn't find this player on the Database!");
                 return;
@@ -482,7 +482,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -543,7 +543,7 @@ namespace ERA20.Modules
         public async Task GetOther(string Name)
         {
             var col = Database.GetCollection<Character>("Characters");
-            if (!col.Exists(x => x.Name == Name.ToLower()))
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
             {
                 await ReplyAsync("I couldn't find this player on the Database!");
                 return;
@@ -561,7 +561,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -575,7 +575,7 @@ namespace ERA20.Modules
         public async Task Give(string Name, string Aff,  string Description)
         {
             var col = Database.GetCollection<Character>("Characters");
-            if (!col.Exists(x => x.Name == Name.ToLower()))
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
             {
                 await ReplyAsync("I couldn't find this player on the Database!");
                 return;
@@ -593,7 +593,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -619,7 +619,7 @@ namespace ERA20.Modules
         public async Task take(string Name, string Aff)
         {
             var col = Database.GetCollection<Character>("Characters");
-            if (!col.Exists(x => x.Name == Name.ToLower()))
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
             {
                 await ReplyAsync("I couldn't find this player on the Database!");
                 return;
@@ -637,7 +637,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -672,7 +672,7 @@ namespace ERA20.Modules
         public async Task Clear(string Name)
         {
             var col = Database.GetCollection<Character>("Characters");
-            if (!col.Exists(x => x.Name == Name.ToLower()))
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
             {
                 await ReplyAsync("I couldn't find this player on the Database!");
                 return;
@@ -690,7 +690,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -718,7 +718,7 @@ namespace ERA20.Modules
         public async Task Getother(string Name)
         {
             var col = Database.GetCollection<Character>("Characters");
-            if (!col.Exists(x => x.Name == Name.ToLower()))
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
             {
                 await ReplyAsync("I couldn't find this player on the Database!");
                 return;
@@ -736,7 +736,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -781,7 +781,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + x.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -811,7 +811,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + x.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -853,7 +853,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + x.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -903,7 +903,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + x.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -933,7 +933,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + x.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -987,7 +987,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -1010,7 +1010,7 @@ namespace ERA20.Modules
                     {
                         msg += "`" + x.Name + "`, ";
                     }
-                    var msg2 = msg.Substring(0, msg.Length - 1);
+                    var msg2 = msg.Substring(0, msg.Length - 2);
                     msg2 += ".";
                     await ReplyAsync(msg2);
                 }
@@ -1049,7 +1049,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -1072,7 +1072,7 @@ namespace ERA20.Modules
                     {
                         msg += "`" + x.Name + "`, ";
                     }
-                    var msg2 = msg.Substring(0, msg.Length - 1);
+                    var msg2 = msg.Substring(0, msg.Length - 2);
                     msg2 += ".";
                     await ReplyAsync(msg2);
                 }
@@ -1109,7 +1109,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -1150,7 +1150,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -1238,7 +1238,7 @@ namespace ERA20.Modules
                     {
                         msg += "`" + X.Name + "`, ";
                     }
-                    var msg2 = msg.Substring(0, msg.Length - 1);
+                    var msg2 = msg.Substring(0, msg.Length - 2);
                     msg2 += ".";
                     await ReplyAsync(msg2);
                 }
@@ -1314,7 +1314,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
@@ -1350,7 +1350,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + X.Name + "`, ";
                 }
-                var msg2 = msg.Substring(0, msg.Length - 1);
+                var msg2 = msg.Substring(0, msg.Length - 2);
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
