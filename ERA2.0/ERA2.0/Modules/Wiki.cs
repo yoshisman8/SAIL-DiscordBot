@@ -31,7 +31,7 @@ namespace ERA20.Modules
                 Directory.CreateDirectory(@"Data/Wiki/");
                 var db = new WikiDb().Query(_Entry);
                 if (db == null) await Context.Channel.SendMessageAsync("No entry on the wiki with that name!");
-                else if (db.Count() > 1 && db.First().Name.ToLower() != _Entry.ToLower())
+                else if (db.Count() > 1 && !db.ToList().Exists(x => x.Name == _Entry.ToLower()))
                 {
                     string msg = "Multiple entries found! Please specify which one of the following is the correct one: ";
                     foreach (Entry X in db)
