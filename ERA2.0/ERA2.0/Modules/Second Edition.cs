@@ -664,10 +664,11 @@ namespace ERA20.Modules
             else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 var c = Char.First();
+                c.PassInstance(Database);
                 var affs = c.Afflictions.Where(x => x.Name.ToLower().Contains(Aff.ToLower()));
                 if (!c.Afflictions.Exists(x => x.Name.ToLower().StartsWith(Aff.ToLower())))
                 {
-                    await ReplyAsync("You are not afflicted by " + Aff + "!");
+                    await ReplyAsync(c.Name+" is not afflicted by " + Aff + "!");
                 }
                 if (affs.Count() > 1 && affs.First().Name.ToLower() != Aff.ToLower())
                 {
@@ -683,6 +684,7 @@ namespace ERA20.Modules
                 else
                 {
                     c.Afflictions.Remove(affs.First());
+                    c.Update();
                     await ReplyAsync(c.Name + " is no longer afflicted with **" + Aff + "**!");
                 }
             }
