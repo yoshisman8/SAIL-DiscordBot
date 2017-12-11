@@ -146,7 +146,7 @@ namespace ERA20.Modules
         
     }
     
-    internal class Builders
+    public class Builders
     {
         public Embed BuildSheet(Character player, SocketCommandContext context)
         {
@@ -167,7 +167,7 @@ namespace ERA20.Modules
             var embed = builder.Build();
             return embed;
         }
-        private string BuildStress(Character character)
+        public string BuildStress(Character character)
         {
             string msg = "";
             int A = character.MaxStress - character.Stress;
@@ -182,7 +182,7 @@ namespace ERA20.Modules
             }
             return msg;
         }
-        private string BuildInv(Character player)
+        public string BuildInv(Character player)
         {
             string msg = "";
             msg += "\\💰 $" + Math.Round(player.Money, 2) + "\n";
@@ -299,7 +299,7 @@ namespace ERA20.Modules
                 .WithThumbnailUrl(Storage.ImageURL);
             return builder.Build();
         }
-        private string BuildSInv(Storage Storage)
+        public string BuildSInv(Storage Storage)
         {
             string msg = "";
             msg += "\\💰 $" + Math.Round(Storage.Money, 2) + "\n";
@@ -400,7 +400,7 @@ namespace ERA20.Modules
                 "- Image `Image <Image URL>`\n" +
                 "- Description `Description <Character Description>`\n" +
                 "- Physical Trait(s) `PTrait <Name> <Description>`.\n" +
-                "- Max stress `Stress <number>`"+
+                "- Max stress `Stress <number>.`\n"+
                 "***REMEMBER***: You can only use this commands if you have a character locked (Use `$Lock` to verify).");
         }
         [Command("Name")]

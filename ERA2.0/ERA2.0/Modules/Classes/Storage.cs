@@ -8,7 +8,7 @@ using LiteDB;
 
 namespace ERA20.Modules.Classes
 {
-    class Storage
+    public class Storage
     {
         [BsonId]
         public int StorageId { get; set; }
