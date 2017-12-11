@@ -1364,7 +1364,7 @@ namespace ERA20.Modules
         [Command("Reward"), Alias("DMPay")]
         [RequireUserPermission(GuildPermission.ManageMessages)]
         [Summary("Give a player a sum of money. Usage: `$Reward <player> <Amount>`")]
-        public async Task Pay(string Name, int Amount)
+        public async Task Pay(string Name, double Amount)
         {
             var col = Database.GetCollection<Character>("Characters");
             var Char = col
