@@ -25,7 +25,7 @@ namespace ERA20.Modules
         [Command("Wiki")]
         [Alias("w")]
         [Summary("Search an entry on the wiki. Usage: `$wiki <entry name>`")]
-        public async Task ShowEntry(string _Entry)
+        public async Task ShowEntry([Remainder] string _Entry)
         {
             {
                 Directory.CreateDirectory(@"Data/Wiki/");
@@ -88,7 +88,7 @@ namespace ERA20.Modules
         [Alias("Wdel","Wiki-Del")]
         [Summary("Deletes a wiki entry. Usage: `$Wikidelete <name>`")]
         [RequireUserPermission(GuildPermission.ManageMessages)]
-        public async Task delete(string _Entry)
+        public async Task delete([Remainder] string _Entry)
         {
             {
                 Directory.CreateDirectory(@"Data/Wiki/");
@@ -122,6 +122,7 @@ namespace ERA20.Modules
         }
         [Command("Wikilist")]
         [Alias("Wlist","Wiki-list")]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
         [Summary("Receive a list of **all** existing wiki entries in your DMs. Useful for debugging or just when looking for an article you don't remember.")]
         public async Task Wlist()
         {
