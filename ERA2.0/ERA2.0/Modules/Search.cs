@@ -9,6 +9,7 @@ using LiteDB;
 using Newtonsoft.Json;
 using ERA20.Modules.Classes;
 using Discord;
+using System.Net;
 
 namespace ERA20.Modules
 {
@@ -145,22 +146,15 @@ namespace ERA20.Modules
         [Command("Wiki"),Alias("Articles", "Entries","Entry","Article")]
         public async Task Wiki([Remainder]string Query)
         {
-            Directory.CreateDirectory(@"Data/Wiki/");
-            List<Entry> db = new List<Entry>() { };
-            Directory.CreateDirectory(@"Data/Wiki/");
-            var folder = Directory.EnumerateFiles(@"Data/Wiki/");
-            foreach (string x in folder)
-            {
-                db.Add(JsonConvert.DeserializeObject<Entry>(File.ReadAllText(x)));
-            }
-            var Result = db.Where(x => x.Name.ToLower().Contains(Query.ToLower()));
+            var db = Database.GetCollection<Entry>("Wiki");
+            var Result = db.Find(x => x.Name.ToLower().Contains(Query.ToLower()));
             var builder = new EmbedBuilder()
                     .WithAuthor("E.R.A. Database Search", Context.Client.CurrentUser.GetAvatarUrl())
                     .WithDescription("Here are some results for your search:")
                     .WithCurrentTimestamp();
             foreach(Entry x in Result)
             {
-                builder.AddField(x.Name, StringCutter(x.Body,200)+"(...)");
+                builder.AddField(x.Name, StringCutter(buildart(x),200)+"(...)");
             }
             await ReplyAsync("", embed: builder.Build());
         }
@@ -210,6 +204,48 @@ namespace ERA20.Modules
         public string StringCutter (string str, int maxLength)
         {
             return str.Substring(0, Math.Min(str.Length, maxLength));
+        }
+        private string buildart(Entry _Entry)
+        {
+            using (var client = new WebClient())
+            {
+                Directory.CreateDirectory(@"Data/Temp/");
+                client.DownloadFile(_Entry.Body, @"Data/Temp/" + _Entry.Name + ".txt");
+            }
+            using (var reader = new StreamReader(@"Data/Temp/" + _Entry.Name + ".txt"))
+            {
+                string line;
+                string body = "";
+                string header = "";
+                string content = "";
+                bool toggle = false;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (line.StartsWith('|') || toggle)
+                    {
+                        if (line.StartsWith('|'))
+                        {
+                            header = line.Remove(0, 1);
+                            toggle = true;
+                        }
+                        else
+                        {
+                            content += line + "\n";
+                        }
+                        if (line.EndsWith('|'))
+                        {
+                            header = "";
+                            content = "";
+                        }
+                    }
+                    else
+                    {
+                        body += line + "\n";
+                    }
+
+                }
+                return body.Remove(body.Length - 1);
+            }
         }
     }  
 }
