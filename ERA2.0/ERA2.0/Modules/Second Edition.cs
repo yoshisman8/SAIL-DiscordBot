@@ -354,7 +354,7 @@ namespace ERA20.Modules
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
-            else if ((Char.Count() == 1 || Char.First().Name.ToLower() == Name.ToLower()) && (Char.First().Owner == Context.User.Id || user.Roles.Contains(DMs)))
+            else if ((Char.Count() == 1) && (Char.First().Owner == Context.User.Id || user.Roles.Contains(DMs)))
             {
                 var cha = Char.First();
                 new Playerlock(Database).Lock(Context.User.Id, cha);
@@ -1013,7 +1013,7 @@ namespace ERA20.Modules
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
-            else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            else if (Char.Count() == 1)
             {
                 var c = Char.First();
 
@@ -1075,7 +1075,7 @@ namespace ERA20.Modules
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
-            else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            else if (Char.Count() == 1)
             {
                 var c = Char.First();
                 c.Inventory.buildInv(Database);
@@ -1135,7 +1135,7 @@ namespace ERA20.Modules
                 msg2 += ".";
                 await ReplyAsync(msg2);
             }
-            else if (Char.Count() == 1 || Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            else if (Char.Count() == 1)
             {
                 var c = Char.First();
                 c.PassInstance(Database);
