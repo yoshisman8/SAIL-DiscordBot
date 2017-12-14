@@ -147,7 +147,7 @@ namespace ERA20.Modules
         public async Task Wiki([Remainder]string Query)
         {
             var db = Database.GetCollection<Entry>("Wiki");
-            var Result = db.Find(x => x.Name.ToLower().Contains(Query.ToLower()));
+            var Result = db.Find(x => x.Name.Contains(Query.ToLower()));
             var builder = new EmbedBuilder()
                     .WithAuthor("E.R.A. Database Search", Context.Client.CurrentUser.GetAvatarUrl())
                     .WithDescription("Here are some results for your search:")
