@@ -68,7 +68,7 @@ namespace DiscordBot.Services
             var builder = new EmbedBuilder()
                .WithAuthor(_discord.CurrentUser)
                .WithColor(new Color(255, 0, 0))
-               .WithTitle(u.Username + " Left!")
+               .WithTitle(u.Mention + " Left!")
                .WithThumbnailUrl(u.GetAvatarUrl())
                .WithCurrentTimestamp();
             await Fax.SendMessageAsync("", embed: builder.Build());
@@ -88,7 +88,7 @@ namespace DiscordBot.Services
             var builder = new EmbedBuilder()
                 .WithAuthor(_discord.CurrentUser)
                 .WithColor(new Color(0, 255, 0))
-                .WithTitle(u.Username + " Joined!")
+                .WithTitle(u.Mention + " Joined!")
                 .WithThumbnailUrl(u.GetAvatarUrl())
                 .WithCurrentTimestamp();
             await Fax.SendMessageAsync("", embed: builder.Build());

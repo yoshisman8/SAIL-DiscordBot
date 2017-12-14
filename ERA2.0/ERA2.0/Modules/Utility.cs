@@ -18,23 +18,6 @@ namespace ERA20.Modules
     {
         public LiteDatabase Database { get; set; }
 
-        [Command("Test")]
-        public async Task Test([Remainder] string text)
-        {
-            try
-            {
-                var col = Database.GetCollection<string>("Test");
-                col.Insert(text);
-                
-                //var x = col.FindOne(y => y == text);
-                await ReplyAsync("Saved " + text + " Successfully!");
-            }
-            catch (Exception e)
-            {
-                await ReplyAsync(e.ToString());
-            }
-
-        }
         [Command("Status")]
         [RequireUserPermission(GuildPermission.ManageGuild)]
         [Summary("Set the bot's 'Playing' status. Usage: `$Status <text>`")]
@@ -42,6 +25,7 @@ namespace ERA20.Modules
         {
             await Context.Client.SetGameAsync(_text);
         }
+
         [Command("Xsend")]
         [RequireUserPermission(GuildPermission.ManageRoles)]
         [RequireContext(ContextType.Guild)]
@@ -74,6 +58,7 @@ namespace ERA20.Modules
                 await Context.Channel.SendMessageAsync("`You cannot use this Command!`");
             }
         }
+
         [Command("Ban")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.ManageRoles)]
@@ -93,16 +78,19 @@ namespace ERA20.Modules
                 await Context.Channel.SendMessageAsync(Target.Mention + " ur banne https://cdn.discordapp.com/attachments/314912846037254144/366611543263019009/ban1.png");
             }
         }
+
         [Command("Beep")]
         public async Task Beepboop()
         {
             await Context.Channel.SendMessageAsync("boop!");
         }
+
         [Command("Boop")]
         public async Task Boobbeep()
         {
             await Context.Channel.SendMessageAsync("I'm the one who boops! >:c");
         }
+
         [Command("Hug")]
         [RequireContext(ContextType.Guild)]
         [Summary("Sends a hug to someone! Usage: `$Hug <name>`")]
@@ -120,6 +108,7 @@ namespace ERA20.Modules
                 await dMChannel.SendMessageAsync(Context.User.ToString() + " Sent you a hug!\n https://cdn.discordapp.com/attachments/314937091874095116/359130427136671744/de84426f25e6bf383afa8b5118b85770.gif");
             }
         }
+
         [Command("Pause")]
         [RequireContext(ContextType.Guild)]
         [Summary("Creates a Pause code for the last 5 messagse sent. Usage: `$Pause <Code>`.")]
@@ -138,6 +127,7 @@ namespace ERA20.Modules
             code.Save();
             await Context.Channel.SendMessageAsync("------------------`Pause code: " + code.Code + "`------------------");
         }
+
         [Command("Resume")]
         [RequireContext(ContextType.Guild)]
         [Summary("Load a Pause code. Usage: `$Resume <Code>`.")]
@@ -164,6 +154,7 @@ namespace ERA20.Modules
                 code.Delete();
             }
         }
+
         [Command("Codes")]
         [Summary("Shows all the currently stored pause codes.")]
         public async Task GetAllCodes()
@@ -176,6 +167,7 @@ namespace ERA20.Modules
             }
             await ReplyAsync(msg);
         }
+
         [Command("Avatar")]
         [Alias("Avi","Icon")]
         [RequireContext(ContextType.Guild)]
@@ -185,16 +177,75 @@ namespace ERA20.Modules
             var user = GetUser(User);            
             await Context.Channel.SendMessageAsync(user.GetAvatarUrl().Replace("?size=128", ""));
         }
+
+        [Command("User"), Alias("Whois","UserStats")]
+        [RequireContext(ContextType.Guild)]
+        public async Task whois(string Name)
+        {
+            var user = GetUser(Name);
+            var builder = new EmbedBuilder()
+                .WithAuthor(Context.Client.CurrentUser)
+                .WithColor(new Color(0, 0, 255))
+                .WithTitle(user.Nickname + " [" + user.Username +"#"+ user.Discriminator+ "]")
+                .WithThumbnailUrl(user.GetAvatarUrl())
+                .WithUrl(user.GetAvatarUrl())
+                .AddInlineField("Id", user.Id)
+                .AddInlineField("Account created at", user.CreatedAt.Month+"/"+user.CreatedAt.Day+"/"+user.CreatedAt.Year)
+                .AddInlineField("Joined the server at", user.JoinedAt.Value.Month + "/" +user.JoinedAt.Value.Day + "/" +user.JoinedAt.Value.Year)
+                .AddInlineField("Roles", Buildroles(user))
+                .AddInlineField("Playing", Gamebuilder(user))
+                .AddInlineField("Other data", miscbuilder(user));
+            await ReplyAsync("", embed: builder.Build());
+        }
+        public string Buildroles(SocketGuildUser User)
+        {
+            string roles = "";
+            foreach (SocketRole X in User.Roles)
+            {
+                roles += X.Mention + ", ";
+            }
+            return roles.Remove(roles.Length - 2) + ".";
+        }
+        public string Gamebuilder(SocketGuildUser user)
+        {
+            
+            if (!user.Game.HasValue)
+            {
+                return "This user isn't playing anything at the moment.";
+            }
+            else
+            {
+                var game = user.Game.Value;
+                if ((game.StreamType == StreamType.Twitch))
+                {
+                    return user.Username + " is streaming **" + game.Name + "** over at " + game.StreamUrl+".";
+                }
+                else
+                {
+                    return user.Username + " Is playing **" + game.Name + "**.";
+                }
+            }
+        }
+        public string miscbuilder(SocketGuildUser user)
+        {
+            string msg = "";
+
+            msg += ((user.IsSelfMuted || user.IsSelfDeafened) || (user.IsMuted || user.IsDeafened)) ? "Mute status: :mute:\n" : "Mute status: :speaker:\n";
+            msg += (user.IsBot) ? "This user is a bot :robot:\n" : "This user is a human :bust_in_silhouette:\n";
+            msg += user.IsSuppressed ? "This user is Suppressed!" : "This user is not suppresed.";
+            return msg;
+
+        }
         public ITextChannel GetTextChannel(string Name)
         {
             var channel = Context.Guild.Channels.Where(x => x.Name.ToLower() == Name.ToLower());
             return channel.First() as ITextChannel;
         }
-        public IUser GetUser(string name)
+        public SocketGuildUser GetUser(string name)
         {
             var user = Context.Guild.Users.Where(x => x.Username.ToLower().Contains(name.ToLower()));
             if (user.Count() == 0) { return null; }
-            else { return user.First() as IUser; }
+            else { return user.First(); }
         }
         
         public class PauseCode
