@@ -220,6 +220,7 @@ namespace ERA20.Modules
                             builder.AddField(header, content.Remove(content.Length - 2));
                             header = "";
                             content = "";
+                            toggle = false;
                         }
                     }
                     else
