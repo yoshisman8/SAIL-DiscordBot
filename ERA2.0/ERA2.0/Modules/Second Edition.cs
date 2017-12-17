@@ -606,7 +606,7 @@ namespace ERA20.Modules
                 .Include(x => x.Equipment)
                 .Find(x => x.Name.StartsWith(Name.ToLower()));
 
-            if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            if (Char.Count() > 1 && !Char.OrderBy(x => x.Name).ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
                 foreach (Character X in Char)
@@ -991,7 +991,7 @@ namespace ERA20.Modules
         public async Task Give(string Name, string Item, int Ammount = 1)
         {
             var col = Database.GetCollection<Character>("Characters");
-            if (!col.Exists(x => x.Name == Name.ToLower()))
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
             {
                 await ReplyAsync("I couldn't find this player on the Database!");
                 return;
@@ -1002,7 +1002,7 @@ namespace ERA20.Modules
                 .Include(x => x.Equipment)
                 .Find(x => x.Name.StartsWith(Name.ToLower()));
 
-            if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            if (Char.Count() > 1 && !Char.OrderBy(x => x.Name).ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
                 foreach (Character X in Char)
@@ -1053,7 +1053,7 @@ namespace ERA20.Modules
         public async Task Take(string Name, string Item, int Ammount = 1)
         {
             var col = Database.GetCollection<Character>("Characters");
-            if (!col.Exists(x => x.Name == Name.ToLower()))
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
             {
                 await ReplyAsync("I couldn't find this player on the Database!");
                 return;
@@ -1064,7 +1064,7 @@ namespace ERA20.Modules
                 .Include(x => x.Equipment)
                 .Find(x => x.Name.StartsWith(Name.ToLower()));
 
-            if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            if (Char.Count() > 1 && !Char.OrderBy(x => x.Name).ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
                 foreach (Character X in Char)
@@ -1113,7 +1113,7 @@ namespace ERA20.Modules
         public async Task empty(string Name)
         {
             var col = Database.GetCollection<Character>("Characters");
-            if (!col.Exists(x => x.Name == Name.ToLower()))
+            if (!col.Exists(x => x.Name.StartsWith(Name.ToLower())))
             {
                 await ReplyAsync("I couldn't find this player on the Database!");
                 return;
@@ -1124,7 +1124,7 @@ namespace ERA20.Modules
                 .Include(x => x.Equipment)
                 .Find(x => x.Name.StartsWith(Name.ToLower()));
 
-            if (Char.Count() > 1 && !Char.ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
+            if (Char.Count() > 1 && !Char.OrderBy(x => x.Name).ToList().Exists(x => x.Name.ToLower() == Name.ToLower()))
             {
                 string msg = "Multiple characters where found with this search! Please specify from one of the following: \n";
                 foreach (Character X in Char)

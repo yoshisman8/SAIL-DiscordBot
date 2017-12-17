@@ -32,6 +32,24 @@ namespace DiscordBot.Services
             _discord.UserJoined += _discord_UserJoined;
             _discord.UserLeft += OnUserLeft;
             _discord.ReactionAdded += OnReact;
+            _discord.GuildMemberUpdated += OnUserUpdate;
+        }
+
+        private async Task OnUserUpdate(SocketGuildUser OldUser, SocketGuildUser NewUser)
+        {
+            SocketGuild Guild = _discord.GetGuild(311970313158262784);
+            var streamerzone = Guild.GetTextChannel(390769178946174976);
+            var role = Guild.GetRole(314934868830191617);
+            var general = Guild.GetTextChannel(311987726872215552);
+            if (NewUser.Game.HasValue && NewUser.Game.Value.StreamType == StreamType.Twitch)
+            {
+                await streamerzone.SendMessageAsync(NewUser.Mention+" Is streaming **"+NewUser.Game.Value.Name+"**!" +
+                    "\nYou can go watch them stream over at "+NewUser.Game.Value.StreamUrl);
+            }
+            if (!OldUser.Roles.Contains(role) && NewUser.Roles.Contains(role))
+            {
+                await general.SendMessageAsync("Welcome our new den member " + NewUser.Mention + "!");
+            }
         }
 
         private async Task OnReact(Cacheable<IUserMessage, ulong> m, ISocketMessageChannel c, SocketReaction r)
@@ -78,6 +96,7 @@ namespace DiscordBot.Services
 
         private async Task _discord_UserJoined(SocketGuildUser u)
         {
+            
             SocketGuild Guild = _discord.GetGuild(311970313158262784);
             IRole Admin = Guild.GetRole(311989788540665857);
             IRole TrialAdmin = Guild.GetRole(364633182357815298);
