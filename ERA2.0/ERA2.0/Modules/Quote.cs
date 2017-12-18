@@ -8,39 +8,36 @@ using Discord.WebSocket;
 using Discord;
 using Newtonsoft.Json;
 using System.Linq;
+using LiteDB;
 
 namespace ERA20.Modules
 {
     public class Quoting : ModuleBase<SocketCommandContext>
     {
+        public LiteDatabase Database { get; set; }
         [Command("Quote")]
         [Alias("Q")]
         [Summary("Finds a quote from the Quote database. Usage: `$Quote <search>`. React with :speaking_head: to add a message to the database.")]
         public async Task FindQuote(string Quote = "")
         {
-            Directory.CreateDirectory(@"Data/Quotes/");
-            var files = Directory.EnumerateFiles(@"Data/Quotes/");
-            List<Quote> db = new List<Quote>() { };
-            foreach (string x in files)
+            var col = Database.GetCollection<Quote>("Quotes");
+            var result = col.FindOne(x => x.Content.Contains(Quote.ToLower()));
+            if (result != null)
             {
-                db.Add(JsonConvert.DeserializeObject<Quote>(File.ReadAllText(x)));
-            }
-            var result = db.Where(x => x.Content.ToLower().Contains(Quote.ToLower()));
-            if (result.Count() != 0)
-            {
-                
-                var quote = result.First();
-                IChannel channel = GetChannel(quote.Channel);
-
+                IMessageChannel channel = GetChannel(result.Channel);
+                var Message = await GetMessageAsync(result.Message);
+                if (Message == null) { await ReplyAsync("This quote contains a null message ID! (Maybe the original message was deleted?)"); return; }
                 if (channel.IsNsfw == Context.Channel.IsNsfw || channel.IsNsfw == false)
                 {
-                    var builder = new EmbedBuilder()
-                        .WithAuthor("E.R.A. Quoting system", Context.Client.CurrentUser.GetAvatarUrl())
-                        .WithDescription(quote.Content + "\n- On " + GetChannel(quote.Channel).Mention)
-                        .WithFooter(GetUser(quote.User).Username, GetUser(quote.User).GetAvatarUrl())
-                        .WithTimestamp(quote.Date)
-                        .WithColor(new Color(0, 153, 153));
-                    await Context.Channel.SendMessageAsync("", embed: builder.Build());
+                    if (Message.Embeds.Count() == 0)
+                    {
+                        await Context.Channel.SendMessageAsync("", embed: EmbedQuote(result));
+                    }
+                    else
+                    {
+                        Embed embed = (Embed)Message.Embeds.First();
+                        await ReplyAsync("```Quote by: " + GetUser(result.User).Username + " on: " + result.Date.ToShortDateString() + result.Date.ToShortTimeString() + "```\n" + result.Content, embed: embed);
+                    }
                 }
                 else
                 {
@@ -50,14 +47,31 @@ namespace ERA20.Modules
             else if (Quote == "")
             {
                 var rnd = new Random();
-                var quote = db.ElementAt(rnd.Next(db.Count));
-                var builder = new EmbedBuilder()
-                    .WithAuthor("E.R.A. Quoting system", Context.Client.CurrentUser.GetAvatarUrl())
-                    .WithDescription(quote.Content + "\n- On " + GetChannel(quote.Channel).Mention)
-                    .WithFooter(GetUser(quote.User).Username, GetUser(quote.User).GetAvatarUrl())
-                    .WithTimestamp(quote.Date)
-                    .WithColor(new Color(0, 153, 153));
-                await Context.Channel.SendMessageAsync("", embed: builder.Build());
+                var quote = col.FindAll().ElementAt(rnd.Next(0,col.Count()));
+
+                IMessageChannel channel = GetChannel(quote.Channel);
+                var Message = await GetMessageAsync(quote.Message);
+                if (Message == null) { await ReplyAsync("This quote contains a null message ID! (Maybe the original message was deleted?)"); return; }
+                if (channel.IsNsfw == Context.Channel.IsNsfw || channel.IsNsfw == false)
+                {
+                    if (Message.Embeds.Count() == 0)
+                    {
+                        await Context.Channel.SendMessageAsync("", embed: EmbedQuote(quote));
+                    }
+                    else
+                    {
+                        Embed embed = (Embed)Message.Embeds.First();
+                        await ReplyAsync("```Quote by: " + GetUser(quote.User).Username + " on: " + quote.Date.ToShortDateString() + quote.Date.ToShortTimeString() + "```\n" + quote.Content, embed: embed);
+                    }
+                }
+                else
+                {
+                    await Context.Channel.SendMessageAsync("This quote is NSFW and thus it can't be sent here!");
+                }
+            }
+            else
+            {
+                await ReplyAsync("There is no quote that contains the word \"" + Quote + "\"");
             }
         }
         public SocketUser GetUser(ulong id)
@@ -70,13 +84,38 @@ namespace ERA20.Modules
             SocketTextChannel channel = Context.Guild.GetTextChannel(id);
             return channel;
         }
+        public async Task<IMessage> GetMessageAsync(ulong id)
+        {
+            IMessage message = null;
+            foreach (SocketTextChannel X in Context.Guild.Channels)
+            {
+                var Y = await X.GetMessageAsync(id);
+                if (Y != null)
+                {
+                    message = Y;
+                    return message;
+                }
+            }
+            return message;
+        }
+        public Embed EmbedQuote (Quote quote)
+        {
+            var builder = new EmbedBuilder()
+                        .WithAuthor("E.R.A. Quoting system", Context.Client.CurrentUser.GetAvatarUrl())
+                        .WithDescription(quote.Content + "\n- On " + GetChannel(quote.Channel).Mention)
+                        .WithFooter(GetUser(quote.User).Username, GetUser(quote.User).GetAvatarUrl())
+                        .WithTimestamp(quote.Date)
+                        .WithColor(new Color(0, 153, 153));
+            return builder.Build();
+        }
     }
 }
 public class Quote : ModuleBase<SocketCommandContext>
 {
-
+    public int QuoteId { get; set; }
     public string Content { get; set; }
     public DateTime Date { get; set; }
+    public ulong Message { get; set; }
     public ulong User { get; set; }
     public ulong Channel { get; set; }
 }

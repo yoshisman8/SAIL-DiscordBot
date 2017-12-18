@@ -9,6 +9,7 @@ using LiteDB;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Configuration;
 using System.Linq;
+using Octokit;
 
 namespace DiscordBot.Services
 {
@@ -19,20 +20,30 @@ namespace DiscordBot.Services
         private IConfiguration _config;
         private IServiceProvider _provider;
         private LiteDatabase _database;
+        private GitHubClient _gitClient;
 
-        public CommandHandlingService(IServiceProvider provider, DiscordSocketClient discord,IConfiguration config, CommandService commands, LiteDatabase database)
+        public CommandHandlingService(IServiceProvider provider, DiscordSocketClient discord,IConfiguration config, CommandService commands, LiteDatabase database, GitHubClient gitHubClient)
         {
             _discord = discord;
             _commands = commands;
             _provider = provider;
             _database = database;
             _config = config;
+            _gitClient = gitHubClient;
 
             _discord.MessageReceived += MessageReceived;
             _discord.UserJoined += _discord_UserJoined;
             _discord.UserLeft += OnUserLeft;
             _discord.ReactionAdded += OnReact;
             _discord.GuildMemberUpdated += OnUserUpdate;
+            _discord.GuildAvailable += OnGuildAvailable; ;
+        }
+
+        private async Task OnGuildAvailable(SocketGuild guild)
+        {
+            var channel = guild.GetTextChannel(311987726872215552);
+            var repo = await _gitClient.Repository.Release.Get("yoshisman8", "E.R.A.-Discord-Bot",0);
+            await channel.SendMessageAsync("E.R.A. Is back online!\nCurrnetly running version `" + repo.TagName + "` on Commit `"+repo.TargetCommitish+"`\n"+repo.Body);
         }
 
         private async Task OnUserUpdate(SocketGuildUser OldUser, SocketGuildUser NewUser)
@@ -57,21 +68,25 @@ namespace DiscordBot.Services
             var msg = await m.DownloadAsync();
             if (r.Emote.Name == "🗣")
             {
-                Directory.CreateDirectory(@"Data/Quotes/");
+                var col = _database.GetCollection<Quote>("Quotes");
                 Quote quote = new Quote
                 {
-                    Content = msg.Content,
                     Date = msg.Timestamp.DateTime,
+                    Content = msg.Content,
                     Channel = c.Id,
-                    User = msg.Author.Id
+                    User = msg.Author.Id,
+                    Message = msg.Id
                 };
-                string json = JsonConvert.SerializeObject(quote);
-                File.WriteAllText(@"Data/Quotes/" + msg.Id + ".json", json);
-                await msg.AddReactionAsync(new Emoji("💽"));
+                if (!col.Exists(x => x.Message == msg.Id))
+                {
+                    col.Insert(quote);
+                    await msg.AddReactionAsync(new Discord.Emoji("💽"));
+                }
+                
             }
             else if (r.Emote.Name == "🔥")
             {
-                await msg.AddReactionAsync(new Emoji("🚒"));
+                await msg.AddReactionAsync(new Discord.Emoji("🚒"));
             }
             else if (r.Emote.Equals(Emote.Parse("<:fifihype:315182065169596417>")))
             {

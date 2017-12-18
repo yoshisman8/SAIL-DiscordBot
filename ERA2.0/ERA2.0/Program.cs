@@ -9,6 +9,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using DiscordBot.Services;
 using LiteDB;
+using Octokit;
 
 namespace DiscordBot
 {
@@ -49,6 +50,7 @@ namespace DiscordBot
                 .AddSingleton<LogService>()
                 // Extra
                 .AddSingleton(_config)
+                .AddSingleton(new GitHubClient( new ProductHeaderValue("ERA")))
                 .AddSingleton(new LiteDatabase(@"Data/Database.db"))
                 .AddSingleton<Random>()
                 // Add additional services here...

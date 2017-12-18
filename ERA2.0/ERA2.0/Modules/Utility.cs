@@ -167,7 +167,33 @@ namespace ERA20.Modules
             }
             await ReplyAsync(msg);
         }
-
+        [Command("Preview")]
+        [RequireContext(ContextType.Guild)]
+        [Summary("Load a Pause code. Usage: `$Resume <Code>`.")]
+        public async Task preview([Remainder] string _Code)
+        {
+            var code = new PauseCode().GetPauseCode(_Code);
+            if (code == null)
+            {
+                await Context.Channel.SendMessageAsync("I couldn't find that code, or multiple codes were found. Please type the *entire* Pause Code for me to look it up!");
+            }
+            else
+            {
+                var dms = await Context.User.GetOrCreateDMChannelAsync();
+                await code.GenerateListAsync(Context);
+                foreach (var x in code.IMessages)
+                {
+                    var builder = new EmbedBuilder()
+                    .WithFooter("E.R.A. Pause Code clerk.", Context.Client.CurrentUser.GetAvatarUrl())
+                    .WithColor(new Color(0, 210, 210))
+                    .WithAuthor(x.Author)
+                    .WithDescription(x.Content + "\n")
+                    .WithTimestamp(x.Timestamp);
+                    await dms.SendMessageAsync("", embed: builder.Build());
+                }
+                await ReplyAsync("You've been DM'd this code for previewing!");
+            }
+        }
         [Command("Avatar")]
         [Alias("Avi","Icon")]
         [RequireContext(ContextType.Guild)]
