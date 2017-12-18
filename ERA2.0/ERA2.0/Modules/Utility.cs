@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Collections.Generic;
+using Octokit;
 
 namespace ERA20.Modules
 {
@@ -17,6 +18,8 @@ namespace ERA20.Modules
     public class TestModule : ModuleBase<SocketCommandContext>
     {
         public LiteDatabase Database { get; set; }
+        public IConfiguration Config { get; set; }
+        public GitHubClient GitHubClient { get; set; }
 
         [Command("Status")]
         [RequireUserPermission(GuildPermission.ManageGuild)]
@@ -25,7 +28,15 @@ namespace ERA20.Modules
         {
             await Context.Client.SetGameAsync(_text);
         }
-
+        [Command("version")]
+        [Summary("Get the current changelog and version number for ERA!")]
+        public async Task getVersion()
+        {
+            var repo = await GitHubClient.Repository.Get("yoshisman8", "E.R.A.-Discord-Bot");
+            var commit = GitHubClient.Repository.Commit.GetAll(repo.Id).Result.ToList().Find(x => x.Sha == Config["version"]);
+            await ReplyAsync("Currnetly running commit `" + commit.Sha.Substring(0, 7) + "`. Changelog:\n```" + commit.Commit.Message+"```");
+        }
+       
         [Command("Xsend")]
         [RequireUserPermission(GuildPermission.ManageRoles)]
         [RequireContext(ContextType.Guild)]
@@ -169,7 +180,7 @@ namespace ERA20.Modules
         }
         [Command("Preview")]
         [RequireContext(ContextType.Guild)]
-        [Summary("Load a Pause code. Usage: `$Resume <Code>`.")]
+        [Summary("Preview a Pause code in DMs. Usage: `$Preview <Code>`.")]
         public async Task preview([Remainder] string _Code)
         {
             var code = new PauseCode().GetPauseCode(_Code);
@@ -203,7 +214,7 @@ namespace ERA20.Modules
             var user = GetUser(User);            
             await Context.Channel.SendMessageAsync(user.GetAvatarUrl().Replace("?size=128", ""));
         }
-
+        
         [Command("User"), Alias("Whois","UserStats")]
         [RequireContext(ContextType.Guild)]
         public async Task whois(string Name)
