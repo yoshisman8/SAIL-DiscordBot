@@ -74,19 +74,13 @@ namespace ERA20.Modules
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.ManageRoles)]
         [Summary("'Bans' someone. Ussage: `$Ban <name>`")]
-        public async Task Ban([Remainder] string _Target)
+        public async Task Ban([Remainder] IUser _Target)
         {
             IRole Admins = Context.Guild.GetRole(311989788540665857);
             IRole trialadmin = Context.Guild.GetRole(364633182357815298);
             var User = Context.User as SocketGuildUser;
-            IUser Target = GetUser(_Target);
-            if (Target is null)
             {
-                await Context.Channel.SendMessageAsync(_Target + " ur banne https://cdn.discordapp.com/attachments/314912846037254144/366611543263019009/ban1.png");
-            }
-            else
-            {
-                await Context.Channel.SendMessageAsync(Target.Mention + " ur banne https://cdn.discordapp.com/attachments/314912846037254144/366611543263019009/ban1.png");
+                await Context.Channel.SendMessageAsync(User.Mention + " ur banne https://cdn.discordapp.com/attachments/314912846037254144/366611543263019009/ban1.png");
             }
         }
 
@@ -105,16 +99,15 @@ namespace ERA20.Modules
         [Command("Hug")]
         [RequireContext(ContextType.Guild)]
         [Summary("Sends a hug to someone! Usage: `$Hug <name>`")]
-        public async Task Hug([Remainder] string _User)
+        public async Task Hug([Remainder] IUser _User)
         {
-            IUser User = GetUser(_User);
-            if (User is null)
+            if (_User == null)
             {
                 await Context.Channel.SendMessageAsync("I can't find this user!");
             }
             else
             {
-                IDMChannel dMChannel = await User.GetOrCreateDMChannelAsync();
+                IDMChannel dMChannel = await _User.GetOrCreateDMChannelAsync();
                 await Context.Channel.SendMessageAsync(Context.User.Mention + ", Hug sent successfully!");
                 await dMChannel.SendMessageAsync(Context.User.ToString() + " Sent you a hug!\n https://cdn.discordapp.com/attachments/314937091874095116/359130427136671744/de84426f25e6bf383afa8b5118b85770.gif");
             }
@@ -209,17 +202,17 @@ namespace ERA20.Modules
         [Alias("Avi","Icon")]
         [RequireContext(ContextType.Guild)]
         [Summary("Returns someone's avatar URL. Usage: `$Avatar <User>`. You dont have to mention the user")]
-        public async Task Avatar([Remainder] string User)
+        public async Task Avatar([Remainder] IUser User)
         {
-            var user = GetUser(User);            
-            await Context.Channel.SendMessageAsync(user.GetAvatarUrl().Replace("?size=128", ""));
+                        
+            await Context.Channel.SendMessageAsync(User.GetAvatarUrl().Replace("?size=128", ""));
         }
         
         [Command("User"), Alias("Whois","UserStats")]
         [RequireContext(ContextType.Guild)]
-        public async Task whois(string Name)
+        public async Task whois(IUser Username)
         {
-            var user = GetUser(Name);
+            var user = Username as SocketGuildUser;
             var builder = new EmbedBuilder()
                 .WithAuthor(Context.Client.CurrentUser)
                 .WithColor(new Color(0, 0, 255))

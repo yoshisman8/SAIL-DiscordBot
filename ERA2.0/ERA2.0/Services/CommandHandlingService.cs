@@ -36,16 +36,8 @@ namespace DiscordBot.Services
             _discord.UserLeft += OnUserLeft;
             _discord.ReactionAdded += OnReact;
             _discord.GuildMemberUpdated += OnUserUpdate;
-            _discord.GuildAvailable += OnGuildAvailable; ;
         }
 
-        private async Task OnGuildAvailable(SocketGuild guild)
-        {
-            var channel = guild.GetTextChannel(311987726872215552);
-            var repo = await _gitClient.Repository.Get("yoshisman8", "E.R.A.-Discord-Bot");
-            var commit = _gitClient.Repository.Commit.GetAll(repo.Id).Result.ToList().Find(x => x.Sha == _config["version"]);
-            await channel.SendMessageAsync("E.R.A. Is back online!\nCurrnetly running commit `" + commit.Sha.Substring(0, 7) + "`. Changelog:\n```" + commit.Commit.Message+"```");
-        }
 
         private async Task OnUserUpdate(SocketGuildUser OldUser, SocketGuildUser NewUser)
         {
