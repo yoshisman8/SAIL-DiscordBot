@@ -53,7 +53,7 @@ namespace ERA20.Modules
 
                     if (col.Find(x => x.Outlier == Outlier.Id).Count() >= 3)
                     {
-                        await ReplyAsync(Context.Guild.EveryoneRole.Mention + "! " + Outlier.Mention + " Has 3 or more warnings!");
+                        await ReplyAsync(Context.Guild.EveryoneRole + "! " + Outlier.Mention + " Has 3 or more warnings!");
                     }
                 }
             }
@@ -84,7 +84,7 @@ namespace ERA20.Modules
                     await ReplyAsync(msg);
                     if (warns.Count() >= 3)
                     {
-                        await staffLounge.SendMessageAsync(Context.Guild.EveryoneRole.Mention + "! " + user.Mention + " Has 3 or more warnings!");
+                        await staffLounge.SendMessageAsync(Context.Guild.EveryoneRole + "! " + user.Mention + " Has 3 or more warnings!");
                     }
                 }
                 else if (warns.Count() == 0)
