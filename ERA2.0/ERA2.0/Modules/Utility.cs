@@ -78,9 +78,18 @@ namespace ERA20.Modules
         {
             IRole Admins = Context.Guild.GetRole(311989788540665857);
             IRole trialadmin = Context.Guild.GetRole(364633182357815298);
-            var User = Context.User as SocketGuildUser;
             {
-                await Context.Channel.SendMessageAsync(User.Mention + " ur banne https://cdn.discordapp.com/attachments/314912846037254144/366611543263019009/ban1.png");
+                await Context.Channel.SendMessageAsync(_Target.Mention + " ur banne https://cdn.discordapp.com/attachments/314912846037254144/366611543263019009/ban1.png");
+            }
+        }
+        [Command("Nuke")]
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.ManageRoles)]
+        [Summary("'Nuke' someone or something. Ussage: `$Nuke <Thing>`")]
+        public async Task nuke([Remainder] string _Target)
+        {
+            {
+                await Context.Channel.SendMessageAsync("Sending tactical nukes at "+ _Target + "'s location! https://cdn.discordapp.com/attachments/357593658586955776/403289936536797204/giphy.png");
             }
         }
 
