@@ -69,59 +69,6 @@ namespace ERA20.Modules
                 await Context.Channel.SendMessageAsync("`You cannot use this Command!`");
             }
         }
-
-        [Command("Ban")]
-        [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.ManageRoles)]
-        [Summary("'Bans' someone. Ussage: `$Ban <name>`")]
-        public async Task Ban([Remainder] IUser _Target)
-        {
-            IRole Admins = Context.Guild.GetRole(311989788540665857);
-            IRole trialadmin = Context.Guild.GetRole(364633182357815298);
-            {
-                await Context.Channel.SendMessageAsync(_Target.Mention + " ur banne https://cdn.discordapp.com/attachments/314912846037254144/366611543263019009/ban1.png");
-            }
-        }
-        [Command("Nuke")]
-        [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.ManageRoles)]
-        [Summary("'Nuke' someone or something. Ussage: `$Nuke <Thing>`")]
-        public async Task nuke([Remainder] string _Target)
-        {
-            {
-                await Context.Channel.SendMessageAsync("Sending tactical nukes at "+ _Target + "'s location! https://cdn.discordapp.com/attachments/357593658586955776/403289936536797204/giphy.png");
-            }
-        }
-
-        [Command("Beep")]
-        public async Task Beepboop()
-        {
-            await Context.Channel.SendMessageAsync("boop!");
-        }
-
-        [Command("Boop")]
-        public async Task Boobbeep()
-        {
-            await Context.Channel.SendMessageAsync("I'm the one who boops! >:c");
-        }
-
-        [Command("Hug")]
-        [RequireContext(ContextType.Guild)]
-        [Summary("Sends a hug to someone! Usage: `$Hug <name>`")]
-        public async Task Hug([Remainder] IUser _User)
-        {
-            if (_User == null)
-            {
-                await Context.Channel.SendMessageAsync("I can't find this user!");
-            }
-            else
-            {
-                IDMChannel dMChannel = await _User.GetOrCreateDMChannelAsync();
-                await Context.Channel.SendMessageAsync(Context.User.Mention + ", Hug sent successfully!");
-                await dMChannel.SendMessageAsync(Context.User.ToString() + " Sent you a hug!\n https://cdn.discordapp.com/attachments/314937091874095116/359130427136671744/de84426f25e6bf383afa8b5118b85770.gif");
-            }
-        }
-
         [Command("Pause")]
         [RequireContext(ContextType.Guild)]
         [Summary("Creates a Pause code for the last 5 messagse sent. Usage: `$Pause <Code>`.")]
@@ -213,10 +160,8 @@ namespace ERA20.Modules
         [Summary("Returns someone's avatar URL. Usage: `$Avatar <User>`. You dont have to mention the user")]
         public async Task Avatar([Remainder] IUser User)
         {
-                        
             await Context.Channel.SendMessageAsync(User.GetAvatarUrl().Replace("?size=128", ""));
         }
-        
         [Command("User"), Alias("Whois","UserStats")]
         [RequireContext(ContextType.Guild)]
         public async Task whois(IUser Username)

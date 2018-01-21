@@ -226,7 +226,7 @@ namespace ERA20.Modules
                     Result = false
                 };
             }
-        } 
+        }
     }
 
     internal class TimerResult
@@ -240,4 +240,5 @@ namespace ERA20.Modules
         public ulong UserID { get; set; }
         public DateTime LastUse { get; set; } = DateTime.Now;
     }
+
 }
