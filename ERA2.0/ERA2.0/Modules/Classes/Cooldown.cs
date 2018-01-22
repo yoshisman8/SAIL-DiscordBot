@@ -58,4 +58,32 @@ public class CommandTimer {
             return false;
         }
     }
+    public async Task<bool> GobalValidate(SocketCommandContext context, LiteDatabase database, TimeSpan Cooldown){
+        var col = database.GetCollection<User>("User");
+        bool N = false;
+        if (!col.Exists(x => x.ID == context.User.Id)){
+            col.Insert(new User(){
+                ID = context.User.Id,
+                LastCommandUsed = DateTime.Now
+            });
+            col.EnsureIndex(x => x.ID);
+            N = true;
+        }
+        var user = col.FindOne(x => x.ID == context.User.Id);
+        if (N){
+            return true;
+        }
+        var diff = user.LastCommandUsed - DateTime.Now;
+        if (diff >= Cooldown){
+            user.LastCommandUsed = DateTime.Now;
+            col.Update(user);
+            return true;
+        }
+        else{
+            var dms = await context.User.GetOrCreateDMChannelAsync();
+            var left = Cooldown - diff;
+            await dms.SendMessageAsync("You need to wait "+left.Minutes+" Minutes and "+left.Seconds+" Seconds to use this command again!");
+            return false;
+        }
+    }
 }

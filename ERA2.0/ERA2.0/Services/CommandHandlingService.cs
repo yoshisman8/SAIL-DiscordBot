@@ -22,7 +22,9 @@ namespace DiscordBot.Services
         private LiteDatabase _database;
         private GitHubClient _gitClient;
 
-        public CommandHandlingService(IServiceProvider provider, DiscordSocketClient discord,IConfiguration config, CommandService commands, LiteDatabase database, GitHubClient gitHubClient)
+        private Toggles _toggles;
+
+        public CommandHandlingService(IServiceProvider provider, DiscordSocketClient discord,IConfiguration config, CommandService commands, LiteDatabase database, GitHubClient gitHubClient, Toggles toggles)
         {
             _discord = discord;
             _commands = commands;
@@ -30,6 +32,7 @@ namespace DiscordBot.Services
             _database = database;
             _config = config;
             _gitClient = gitHubClient;
+            _toggles = toggles;
 
             _discord.MessageReceived += MessageReceived;
             _discord.UserJoined += _discord_UserJoined;
@@ -75,7 +78,6 @@ namespace DiscordBot.Services
                     col.Insert(quote);
                     await msg.AddReactionAsync(new Discord.Emoji("💽"));
                 }
-                
             }
             else if (r.Emote.Name == "🔥")
             {
@@ -141,8 +143,15 @@ namespace DiscordBot.Services
             int argPos = 0;
             var context = new SocketCommandContext(_discord, message);
 
+            var cmd = msg.Content.Substring(1).Split(' ').FirstOrDefault();
+
             if (msg.HasStringPrefix(_config["prefix"], ref argPos) || msg.HasMentionPrefix(_discord.CurrentUser, ref argPos))
             {
+
+                if (_toggles.Slowmode && cmd.ToLower() != "slowmode"){
+                    var response = await new CommandTimer().GobalValidate(context,_database,TimeSpan.FromMinutes(_toggles.Cooldown));
+                    if (!response) return;
+                }
                 var result = await _commands.ExecuteAsync(context, argPos, _provider);     // Execute the command
 
                 if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)

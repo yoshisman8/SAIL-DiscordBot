@@ -9,6 +9,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using DiscordBot.Services;
 using LiteDB;
+using ERA20.Modules.Classes;
 using Octokit;
 
 namespace DiscordBot
@@ -52,6 +53,7 @@ namespace DiscordBot
                 .AddSingleton(_config)
                 .AddSingleton(new GitHubClient( new ProductHeaderValue("ERA")))
                 .AddSingleton(new LiteDatabase(@"Data/Database.db"))
+                .AddSingleton(new Toggles())
                 .AddSingleton<Random>()
                 // Add additional services here...
                 .BuildServiceProvider();
