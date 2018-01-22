@@ -1239,6 +1239,7 @@ namespace ERA20.Modules
             if (me.Money < Amount)
             {
                 await ReplyAsync(me.Name+" doesn't have this much money!");
+                return;
             }
             if (Name != null)
             {
@@ -1524,6 +1525,7 @@ namespace ERA20.Modules
                 if (me.Money < Amount)
                 {
                     await ReplyAsync(me.Name + " doesn't have this much money!");
+                    return;
                 }
                 else
                 {
@@ -1570,6 +1572,7 @@ namespace ERA20.Modules
                 if (sto.Money < Amount)
                 {
                     await ReplyAsync(sto.Name + " doesn't have this much money!");
+                    return;
                 }
                 else
                 {
