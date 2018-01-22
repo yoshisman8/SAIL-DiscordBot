@@ -7,12 +7,12 @@ using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
-using DiscordBot.Services;
+using ERA20.Services;
 using LiteDB;
 using ERA20.Modules.Classes;
 using Octokit;
 
-namespace DiscordBot
+namespace ERA20
 {
     class Program
     {
@@ -46,6 +46,7 @@ namespace DiscordBot
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<InteractiveService>()
+                .AddSingleton<ReliabilityService>()
                 // Logging
                 .AddLogging()
                 .AddSingleton<LogService>()
