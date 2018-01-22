@@ -155,7 +155,7 @@ namespace ERA20.Services
             if (msg.HasStringPrefix(_config["prefix"], ref argPos) || msg.HasMentionPrefix(_discord.CurrentUser, ref argPos))
             {
 
-                if (_toggles.Slowmode && cmd.ToLower() != "slowmode"){
+                if (_toggles.Slowmode && (cmd.ToLower() != "slowmode" || msg.Channel is IDMChannel)){
                     var response = await new CommandTimer().GobalValidate(context,_database,TimeSpan.FromMinutes(_toggles.Cooldown));
                     if (!response) return;
                 }
