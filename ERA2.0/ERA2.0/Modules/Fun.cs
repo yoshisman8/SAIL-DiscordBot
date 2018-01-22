@@ -19,7 +19,7 @@ namespace ERA20.Modules
         [Summary("'Bans' someone. Ussage: `$Ban <name>`")]
         public async Task Ban([Remainder] IUser _Target)
         {
-            var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service));
+            var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service);
 
             if (result)
             {
@@ -36,7 +36,7 @@ namespace ERA20.Modules
         [Summary("'Nuke' someone or something. Ussage: `$Nuke <Thing>`")]
         public async Task nuke([Remainder] string _Target)
         {
-            var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service));
+            var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service);
 
             if (result)
             {
@@ -49,7 +49,7 @@ namespace ERA20.Modules
         [Command("Beep")]
         public async Task Beepboop()
         {
-            var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service));
+            var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service);
 
             if (result)
             {
@@ -60,9 +60,9 @@ namespace ERA20.Modules
         [Command("Boop")]
         public async Task Boobbeep()
         {
-            var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service));
+            var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service);
 
-            if (result.Result)
+            if (result)
             {
                 await Context.Channel.SendMessageAsync("I'm the one who boops! >:c");
             }
@@ -79,7 +79,7 @@ namespace ERA20.Modules
             }
             else
             {
-                var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service));
+                var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service);
 
                 if (result)
                 {
@@ -93,7 +93,7 @@ namespace ERA20.Modules
         [Command("kill")]
         public async Task Kill(string victim)
         {
-            var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service));
+            var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service);
 
             if (result)
             {
