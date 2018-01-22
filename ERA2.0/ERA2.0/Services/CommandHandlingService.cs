@@ -11,7 +11,7 @@ using Microsoft.Extensions.Configuration;
 using System.Linq;
 using Octokit;
 
-namespace DiscordBot.Services
+namespace ERA20.Services
 {
     public class CommandHandlingService
     {

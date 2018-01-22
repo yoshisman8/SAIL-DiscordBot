@@ -5,7 +5,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace DiscordBot.Services
+namespace ERA20.Services
 {
     public class LogService
     {

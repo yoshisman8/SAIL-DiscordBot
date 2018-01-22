@@ -7,10 +7,11 @@ using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
-using ERA20.Services;
+using ERA20;
 using LiteDB;
 using ERA20.Modules.Classes;
 using Octokit;
+using ERA20.Services;
 
 namespace ERA20
 {
