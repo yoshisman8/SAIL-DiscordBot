@@ -47,7 +47,6 @@ namespace ERA20
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<InteractiveService>()
-                .AddSingleton<ReliabilityService>()
                 // Logging
                 .AddLogging()
                 .AddSingleton<LogService>()

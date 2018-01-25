@@ -136,7 +136,6 @@ namespace ERA20.Services
         }
 
         private async Task OnDisconnect(Exception e){
-            await Task.Delay(TimeSpan.FromSeconds(5));
             await _discord.LoginAsync(TokenType.Bot, _config["tokens:discord"]);
             await _discord.SetGameAsync(_config["status"]);
             await _discord.StartAsync();
