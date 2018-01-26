@@ -39,7 +39,6 @@ namespace ERA20.Services
             _discord.UserLeft += OnUserLeft;
             _discord.ReactionAdded += OnReact;
             _discord.GuildMemberUpdated += OnUserUpdate;
-            _discord.Disconnected += OnDisconnect;
         }
 
 
@@ -135,11 +134,6 @@ namespace ERA20.Services
             // Add additional initialization code here...
         }
 
-        private async Task OnDisconnect(Exception e){
-            await _discord.LoginAsync(TokenType.Bot, _config["tokens:discord"]);
-            await _discord.SetGameAsync(_config["status"]);
-            await _discord.StartAsync();
-        }
         private async Task MessageReceived(SocketMessage rawMessage)
         {
             // Ignore system messages and messages from bots
