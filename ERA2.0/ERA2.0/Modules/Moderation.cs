@@ -24,7 +24,11 @@ namespace ERA20.Modules
     [Group("Warnings"), Alias("Warn", "Warning","Warns")]
     public class WarningService : ModuleBase<SocketCommandContext>
     {
+        public DiscordSocketClient Client {get;set;}
+        private IRole admins { get =>
+        Client.GetGuild(311970313158262784).GetRole(405885961738780693);}
         public LiteDatabase Database { get; set; }
+
         [Command("Issue"), Alias("Give", "New", "Create")]
         [Summary("Admin command. Issue Warnings to a person.\nUsage: `$warn <person> <Reason>`")]
         [RequireUserPermission(GuildPermission.ManageRoles)]
@@ -32,8 +36,6 @@ namespace ERA20.Modules
         {
             {
                 var col = Database.GetCollection<Warning>("Warnings");
-                IRole Admins = Context.Guild.GetRole(311989788540665857);
-                IRole trialadmin = Context.Guild.GetRole(364633182357815298);
                 IMessageChannel staffLounge = Context.Guild.GetTextChannel(358635970632876043);
                 
 
@@ -53,7 +55,7 @@ namespace ERA20.Modules
 
                     if (col.Find(x => x.Outlier == Outlier.Id).Count() >= 3)
                     {
-                        await ReplyAsync(Context.Guild.EveryoneRole + "! " + Outlier.Mention + " Has 3 or more warnings!");
+                        await ReplyAsync(admins.Mention + "! " + Outlier.Mention + " Has 3 or more warnings!");
                     }
                 }
             }
@@ -62,6 +64,7 @@ namespace ERA20.Modules
         [RequireUserPermission(GuildPermission.ManageRoles)]
         public async Task Warning(IUser user)
         {
+            
             if (user == null)
             {
                 await Context.Channel.SendMessageAsync("Incorrect command ussage! Correct ussage is `$Warns <user>`");
@@ -84,7 +87,7 @@ namespace ERA20.Modules
                     await ReplyAsync(msg);
                     if (warns.Count() >= 3)
                     {
-                        await staffLounge.SendMessageAsync(Context.Guild.EveryoneRole + "! " + user.Mention + " Has 3 or more warnings!");
+                        await staffLounge.SendMessageAsync(admins.Mention + "! " + user.Mention + " Has 3 or more warnings!");
                     }
                 }
                 else if (warns.Count() == 0)

@@ -108,12 +108,11 @@ namespace ERA20.Services
         {
             
             SocketGuild Guild = _discord.GetGuild(311970313158262784);
-            IRole Admin = Guild.GetRole(311989788540665857);
-            IRole TrialAdmin = Guild.GetRole(364633182357815298);
+            IRole Admin = Guild.GetRole(405885961738780693);
             IMessageChannel ReceptionDesk = Guild.GetTextChannel(311974698839703562);
             IMessageChannel Fax = Guild.GetTextChannel(358635970632876043);
 
-            var msg = await ReceptionDesk.SendMessageAsync("Welcome to the server " + u.Mention + "! \nPlease wait here while either a " + Admin.Mention + " or a " + TrialAdmin.Mention + " gives" +
+            var msg = await ReceptionDesk.SendMessageAsync("Welcome to the server " + u.Mention + "! \nPlease wait here while an " + Admin.Mention + " gives" +
                 "you the Audience role! \nIn the meantime, make sure to read the rules on <#349026777852542986>!");
             var builder = new EmbedBuilder()
                 .WithAuthor(_discord.CurrentUser)
