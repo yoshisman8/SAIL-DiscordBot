@@ -15,7 +15,7 @@ public class Diceroller : ModuleBase<SocketCommandContext>
     public async Task DieRoll([Remainder]string input)
     {
         
-        var valid = System.Text.RegularExpressions.Regex.IsMatch(input.ToLower(), @"^[d-dk-k0-9\+\-\*]*$");
+        var valid = System.Text.RegularExpressions.Regex.IsMatch(input.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
         if (!valid){
             await ReplyAsync(Context.User.Mention+" This is not a valid dice expression!");
             return;
