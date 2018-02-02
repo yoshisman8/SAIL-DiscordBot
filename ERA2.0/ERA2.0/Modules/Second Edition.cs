@@ -685,7 +685,7 @@ namespace ERA20.Modules
                 {
                     c.Afflictions.Remove(affs.First());
                     c.Update();
-                    await ReplyAsync(c.Name + " is no longer afflicted with **" + Aff + "**!");
+                    await ReplyAsync(c.Name + " is no longer afflicted with **" + affs.FirstOrDefault().Name + "**!");
                 }
             }
         }
