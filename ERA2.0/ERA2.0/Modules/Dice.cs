@@ -14,7 +14,7 @@ public class Diceroller : ModuleBase<SocketCommandContext>
 
     [Command("Roll")]
     [Summary("Rolls a die on a xdy expression format. \nUsage: `$Roll <dice expression>`.")]
-    public async Task DieRoll([Remainder]string input)
+    public async Task DieRoll([Remainder]string input = "d20")
     {
         string[] sinput = new string[0];
         if (input.Contains(">>")){
