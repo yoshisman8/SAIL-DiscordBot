@@ -7,6 +7,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using LiteDB;
 using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using System.Linq;
 using Octokit;
@@ -39,8 +40,24 @@ namespace ERA20.Services
             _discord.UserLeft += OnUserLeft;
             _discord.ReactionAdded += OnReact;
             _discord.GuildMemberUpdated += OnUserUpdate;
+            _discord.MessageUpdated += OnMessageUpdate;
         }
 
+        private async Task OnMessageUpdate(Cacheable<IMessage, ulong> original, SocketMessage edit, ISocketMessageChannel channel)
+        {
+            if (edit == null) return;
+            var msg = await original.DownloadAsync() as SocketUserMessage;
+            var msg2 = edit as SocketUserMessage;
+            int argPos = 0;
+
+            if ((msg2.HasStringPrefix(_config["prefix"], ref argPos) || msg2.HasMentionPrefix(_discord.CurrentUser, ref argPos) && (!msg.HasStringPrefix(_config["prefix"], ref argPos) || !msg2.HasMentionPrefix(_discord.CurrentUser, ref argPos))))
+            {
+                var messages = await channel.GetMessagesAsync(msg,Direction.After,2,CacheMode.AllowDownload).Flatten();
+                var lastreply = messages.Where(x => x.Author.Id == _discord.CurrentUser.Id).FirstOrDefault();
+                await lastreply.DeleteAsync();
+                await MessageReceived(edit);
+            }
+        }
 
         private async Task OnUserUpdate(SocketGuildUser OldUser, SocketGuildUser NewUser)
         {
@@ -169,6 +186,17 @@ namespace ERA20.Services
             if (msg.Content.ToLower().Contains("robot") || msg.Content.ToLower().Contains("beep boop") || msg.Content.ToLower().Contains("beepboop") || msg.Content.ToLower().Contains("beep"))
             {
                 await msg.AddReactionAsync(Emote.Parse("<:RynnLurk:365983787932319745>"));
+            }
+
+            if (msg.Content.ToLower().Contains("(roll:")){
+
+                var regex = System.Text.RegularExpressions.Regex.Match(msg.Content.ToLower(), @"\(roll:(.+)\)");
+                if (!regex.Success){
+                    return;
+                }
+                var roll = regex.Captures.FirstOrDefault().Value.ToLower();
+                string expression = roll.Replace("(roll:","").Replace(")","");
+                await new Diceroller().Autoroll(context,expression);
             }
         }
 
