@@ -790,8 +790,8 @@ namespace ERA20.Modules
         {
             var C = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
             C.PassInstance(Database);
-            var skills = C.Skills.FindAll(x => x.Name.ToLower() == Name.ToLower());
-            if (!C.Skills.Exists(x => x.Name.ToLower() == Name.ToLower()))
+            var skills = C.Skills.FindAll(x => x.Name.ToLower().StartsWith(Name.ToLower()));
+            if (!C.Skills.Exists(x => x.Name.ToLower().StartsWith(Name.ToLower())))
             {
                 await ReplyAsync("You don't know **" + Name + "**!");
                 return;
@@ -821,7 +821,7 @@ namespace ERA20.Modules
             var C = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
             C.PassInstance(Database);
             var skills = C.Skills.FindAll(x => x.Name.ToLower().StartsWith(Name.ToLower()));
-            if (!C.Skills.Exists(x => x.Name.ToLower() == Name.ToLower()))
+            if (!C.Skills.Exists(x => x.Name.ToLower().StartsWith(Name.ToLower())))
             {
                 await ReplyAsync("You don't know **" + Name + "**!");
                 return;
