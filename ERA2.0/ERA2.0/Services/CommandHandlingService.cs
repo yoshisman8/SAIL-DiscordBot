@@ -152,6 +152,7 @@ namespace ERA20.Services
 
         private async Task MessageReceived(SocketMessage rawMessage)
         {
+            await Task.Delay(500);
             // Ignore system messages and messages from bots
             if (!(rawMessage is SocketUserMessage message)) return;
             if (message.Author == _discord.CurrentUser) return;
