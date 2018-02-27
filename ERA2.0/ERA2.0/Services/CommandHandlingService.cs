@@ -154,16 +154,21 @@ namespace ERA20.Services
         {
             // Ignore system messages and messages from bots
             if (!(rawMessage is SocketUserMessage message)) return;
-            if (message.Source != MessageSource.User) return;
+            if (message.Author == _discord.CurrentUser) return;
             var msg = rawMessage as SocketUserMessage;
             int argPos = 0;
             var context = new SocketCommandContext(_discord, message);
 
             var cmd = msg.Content.Substring(1).Split(' ').FirstOrDefault();
 
+            if (msg.Content.Contains("Unknown command. Use `!help` or `@RPBot#4161` help to view the list of all commands.")){
+                await msg.DeleteAsync();
+            }
+
+
             if (msg.HasStringPrefix(_config["prefix"], ref argPos) || msg.HasMentionPrefix(_discord.CurrentUser, ref argPos))
             {
-
+                
                 if (_toggles.Slowmode && (cmd.ToLower() != "slowmode" || msg.Channel is IDMChannel)){
                     var response = await new CommandTimer().GobalValidate(context,_database,TimeSpan.FromMinutes(_toggles.Cooldown));
                     if (!response) return;
