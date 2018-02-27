@@ -161,7 +161,7 @@ namespace ERA20.Services
 
             var cmd = msg.Content.Substring(1).Split(' ').FirstOrDefault();
 
-            if (msg.Content.Contains("Unknown command. Use `!help` or `@RPBot#4161` help to view the list of all commands.")){
+            if (msg.Content.ToLower().Contains("unknown command") && msg.Source == MessageSource.Bot){
                 await msg.DeleteAsync();
             }
 
