@@ -188,16 +188,16 @@ namespace ERA20.Services
                 await msg.AddReactionAsync(Emote.Parse("<:RynnLurk:365983787932319745>"));
             }
 
-            if (msg.Content.ToLower().Contains("(roll:")){
+            // if (msg.Content.ToLower().Contains("(roll:")){
 
-                var regex = System.Text.RegularExpressions.Regex.Match(msg.Content.ToLower(), @"\(roll:(.+)\)");
-                if (!regex.Success){
-                    return;
-                }
-                var roll = regex.Captures.FirstOrDefault().Value.ToLower();
-                string expression = roll.Replace("(roll:","").Replace(")","");
-                await new Diceroller().Autoroll(context,expression);
-            }
+            //     var regex = System.Text.RegularExpressions.Regex.Match(msg.Content.ToLower(), @"\(roll:(.+)\)");
+            //     if (!regex.Success){
+            //         return;
+            //     }
+            //     var roll = regex.Captures.FirstOrDefault().Value.ToLower();
+            //     string expression = roll.Replace("(roll:","").Replace(")","");
+            //     await new Diceroller().Autoroll(context,expression);
+            // }
         }
 
     }

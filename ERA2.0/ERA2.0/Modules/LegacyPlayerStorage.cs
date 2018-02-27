@@ -34,7 +34,7 @@ namespace ERA20.Modules
     public class LegacyPlayerStorage : ModuleBase<SocketCommandContext>
     {
         [Command("LegacyAdd")]
-        [Alias("LAdd-Char", "LChar")]
+        [Alias("LAdd-Char", "Legacy-Char")]
         [Summary("Adds a character to the legacy Character Database (Json files). Usage `$LAddchar <Name> <Sheet>`.")]
         public async Task Addchar(string name, [Remainder] string sheet)
         {
