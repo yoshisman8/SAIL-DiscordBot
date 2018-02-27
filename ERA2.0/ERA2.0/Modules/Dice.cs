@@ -12,7 +12,7 @@ public class Diceroller : ModuleBase<SocketCommandContext>
 {
     IDiceParser parser = new DiceParser();
 
-    [Command("R")]
+    [Command("Roll"), Alias("r")]
     [Summary("Rolls a die on a xdy expression format. \nUsage: `$Roll <dice expression>`.")]
     public async Task DieRoll([Remainder]string input = "d20")
     {
@@ -127,28 +127,28 @@ public class Diceroller : ModuleBase<SocketCommandContext>
         }
     }
 
-    // [Command("Max")]
-    // [Summary("Shows the maximum possible roll for this dice roll")]
-    // public async Task Max([Remainder]string input){
-    //     var valid = System.Text.RegularExpressions.Regex.IsMatch(input.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
-    //     if (!valid){
-    //         await ReplyAsync(Context.User.Mention+" This is not a valid dice expression!");
-    //         return;
-    //     }
-    //     var result = parser.Parse(input.ToLower()).MaxRoll();
-    //     await ReplyAsync(Context.User.Mention + ", The possible maximum roll for this expression is **"+result.Value+"**.");
-    // }
-    // [Command("Min")]
-    // [Summary("Shows the minimum possible roll for this dice roll")]
-    // public async Task Min([Remainder]string input){
-    //     var valid = System.Text.RegularExpressions.Regex.IsMatch(input.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
-    //     if (!valid){
-    //         await ReplyAsync(Context.User.Mention+" This is not a valid dice expression!");
-    //         return;
-    //     }
-    //     var result = parser.Parse(input.ToLower()).MinRoll();
-    //     await ReplyAsync(Context.User.Mention + ", The possible minimum roll for this expression is **"+result.Value+"**.");
-    // }
+    [Command("Max")]
+    [Summary("Shows the maximum possible roll for this dice roll")]
+    public async Task Max([Remainder]string input){
+        var valid = System.Text.RegularExpressions.Regex.IsMatch(input.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
+        if (!valid){
+            await ReplyAsync(Context.User.Mention+" This is not a valid dice expression!");
+            return;
+        }
+        var result = parser.Parse(input.ToLower()).MaxRoll();
+        await ReplyAsync(Context.User.Mention + ", The possible maximum roll for this expression is **"+result.Value+"**.");
+    }
+    [Command("Min")]
+    [Summary("Shows the minimum possible roll for this dice roll")]
+    public async Task Min([Remainder]string input){
+        var valid = System.Text.RegularExpressions.Regex.IsMatch(input.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
+        if (!valid){
+            await ReplyAsync(Context.User.Mention+" This is not a valid dice expression!");
+            return;
+        }
+        var result = parser.Parse(input.ToLower()).MinRoll();
+        await ReplyAsync(Context.User.Mention + ", The possible minimum roll for this expression is **"+result.Value+"**.");
+    }
 
     public async Task Autoroll(SocketCommandContext context, [Remainder]string input)
     {

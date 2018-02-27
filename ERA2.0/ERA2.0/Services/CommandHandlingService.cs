@@ -152,7 +152,6 @@ namespace ERA20.Services
 
         private async Task MessageReceived(SocketMessage rawMessage)
         {
-            await Task.Delay(500);
             // Ignore system messages and messages from bots
             if (!(rawMessage is SocketUserMessage message)) return;
             if (message.Author == _discord.CurrentUser) return;
@@ -161,11 +160,6 @@ namespace ERA20.Services
             var context = new SocketCommandContext(_discord, message);
 
             var cmd = msg.Content.Substring(1).Split(' ').FirstOrDefault();
-
-            if ((msg.Content.ToLower().Contains("unknown command") || msg.Content.ToLower().Contains("command is disabled"))&& msg.Source == MessageSource.Bot){
-                await msg.DeleteAsync();
-            }
-
 
             if (msg.HasStringPrefix(_config["prefix"], ref argPos) || msg.HasMentionPrefix(_discord.CurrentUser, ref argPos))
             {
