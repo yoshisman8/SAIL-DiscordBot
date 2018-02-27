@@ -161,7 +161,7 @@ namespace ERA20.Services
 
             var cmd = msg.Content.Substring(1).Split(' ').FirstOrDefault();
 
-            if (msg.Content.ToLower().Contains("unknown command") && msg.Source == MessageSource.Bot){
+            if ((msg.Content.ToLower().Contains("unknown command") || msg.Content.ToLower().Contains("command is disabled"))&& msg.Source == MessageSource.Bot){
                 await msg.DeleteAsync();
             }
 
