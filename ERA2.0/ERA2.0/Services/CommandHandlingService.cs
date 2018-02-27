@@ -174,10 +174,10 @@ namespace ERA20.Services
                 {     // If not successful, reply with the error.
                     await msg.AddReactionAsync(Emote.Parse("<:RynnQuestion:365983788724912128>"));
                 }
-                if (!result.IsSuccess && result.Error == CommandError.UnknownCommand)
-                {     // If not successful, reply with the error.
-                    await msg.AddReactionAsync(Emote.Parse("<:RynnQuestion:365983788724912128>"));
-                }
+                // if (!result.IsSuccess && result.Error == CommandError.UnknownCommand)
+                // {     // If not successful, reply with the error.
+                //     await msg.AddReactionAsync(Emote.Parse("<:RynnQuestion:365983788724912128>"));
+                // }
             }
             if (msg.Content.ToLower().StartsWith("hmmm"))
             {
