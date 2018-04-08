@@ -35,7 +35,7 @@ namespace ERA20.Modules
     {
         [Command("LegacyAdd")]
         [Alias("LAdd-Char", "Legacy-Char")]
-        [Summary("Adds a character to the legacy Character Database (Json files). Usage `$LAddchar <Name> <Sheet>`.")]
+        [Summary("Adds a character to the legacy Character Database (Json files). Usage `/LAddchar <Name> <Sheet>`.")]
         public async Task Addchar(string name, [Remainder] string sheet)
         {
             Directory.CreateDirectory(@"Data/Legacy/");
@@ -59,7 +59,7 @@ namespace ERA20.Modules
         }
         [Command("LegacyChar")]
         [Alias("LChar")]
-        [Summary("Finds a character on the Legacy Character Database (Json files). Usage: `$LegacyChar <Name>`.")]
+        [Summary("Finds a character on the Legacy Character Database (Json files). Usage: `/LegacyChar <Name>`.")]
         public async Task GetChar(string name)
         {
             var query = new LegacyCharacter().Query(name);
@@ -84,7 +84,7 @@ namespace ERA20.Modules
         }
         [Command("LegacyDelete")]
         [Alias("LDeleteChar", "LDel-Char", "LDelchar")]
-        [Summary("Removes a character from the Legacy Character Database (Json files). `$LegacyDelete <name>`.")]
+        [Summary("Removes a character from the Legacy Character Database (Json files). `/LegacyDelete <name>`.")]
         public async Task DelChar(string name)
         {
             IRole Dmasters = Context.Guild.GetRole(324320068748181504);
@@ -104,6 +104,7 @@ namespace ERA20.Modules
                 {
                     msg += "`" + q.Name + "` ";
                 }
+                
                 await Context.Channel.SendMessageAsync(msg);
             }
             else if (query.Count() == 1)

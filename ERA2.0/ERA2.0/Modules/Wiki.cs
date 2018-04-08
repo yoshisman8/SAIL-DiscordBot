@@ -58,7 +58,7 @@ namespace ERA20.Modules
 
         [Command("Wiki")]
         [Alias("W")]
-        [Summary("Search an entry on the wiki. Usage: `$wiki <entry name>`")]
+        [Summary("Search an entry on the wiki. Usage: `/wiki <entry name>`")]
         public async Task Frontpage()
         {
 
@@ -66,7 +66,7 @@ namespace ERA20.Modules
         }
         [Command("Wiki")]
         [Alias("w")]
-        [Summary("Search an entry on the wiki. Usage: `$wiki <entry name>`")]
+        [Summary("Search an entry on the wiki. Usage: `/wiki <entry name>`")]
         public async Task ShowEntry([Remainder] string _Entry)
         {
             {
@@ -94,9 +94,9 @@ namespace ERA20.Modules
         }
         [Command("Wikiadd")]
         [Alias("Wadd", "Wiki-Add")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
-        [Summary("Adds a wiki entry. Usage: `$Wikiadd <Name> <Thumbnail URL (leave as empty if non applicable or just updating an article)>`. Make sure to use this command while sending a .txt file with the contents of the article.\n" +
-            "For help about wiki article formatting, use `$Wiki Formatting` to see how it works.")]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
+        [Summary("Adds a wiki entry. Usage: `/Wikiadd <Name> <Thumbnail URL (leave as empty if non applicable or just updating an article)>`. Make sure to use this command while sending a .txt file with the contents of the article.\n" +
+            "For help about wiki article formatting, use `/Wiki Formatting` to see how it works.")]
         public async Task AddEntry(string _Name, [Remainder] string _ImageURL = "")
         {
             {
@@ -141,8 +141,8 @@ namespace ERA20.Modules
         }
         [Command("Wikidelete")]
         [Alias("Wdel", "Wiki-Del")]
-        [Summary("Deletes a wiki entry. Usage: `$Wikidelete <name>`")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [Summary("Deletes a wiki entry. Usage: `/Wikidelete <name>`")]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task delete([Remainder] string _Entry)
         {
             {
@@ -240,7 +240,7 @@ namespace ERA20.Modules
             var builder = new EmbedBuilder()
                 .WithTitle("Dragon's Den Personal Wikipedia")
                 .WithDescription("This is the Wiki Frontpage! So far we have a total of " + db.Count() + " entries on the wiki!\n" +
-                "If you're looking for something specific, use `$Wiki <entry>` to look for it!")
+                "If you're looking for something specific, use `/Wiki <entry>` to look for it!")
                 .WithAuthor(Context.User)
                 .WithCurrentTimestamp()
                 .WithColor(new Color(255, 255, 255));
@@ -250,14 +250,14 @@ namespace ERA20.Modules
             {
                 t5 += "• " + dbview.ToList()[x].Name + "\n";
             }
-            builder.AddInlineField(":chart_with_upwards_trend: Most Visited Entries", t5);
+            builder.AddField(":chart_with_upwards_trend: Most Visited Entries", t5,true);
             var wikirecent = db.FindAll().OrderByDescending(e => e.LastModified);
             t5 = "";
             for (int x = 0; x < 5; x++)
             {
                 t5 += "• " + wikirecent.ToList()[x].Name + "\n";
             }
-            builder.AddInlineField(":clock4: Last modified articles", t5);
+            builder.AddField(":clock4: Last modified articles", t5,true);
             var embed = builder.Build();
             return embed;
         }

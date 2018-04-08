@@ -23,7 +23,7 @@ namespace ERA20.Modules
 
         [Command("Status")]
         [RequireUserPermission(GuildPermission.ManageGuild)]
-        [Summary("Set the bot's 'Playing' status. Usage: `$Status <text>`")]
+        [Summary("Set the bot's 'Playing' status. Usage: `/Status <text>`")]
         public async Task StatusSet([Remainder] string _text)
         {
             await Context.Client.SetGameAsync(_text);
@@ -40,7 +40,7 @@ namespace ERA20.Modules
         [Command("Xsend")]
         [RequireUserPermission(GuildPermission.ManageRoles)]
         [RequireContext(ContextType.Guild)]
-        [Summary("Sends a message to specific channel under ERA's name. Ussage: $Xsend <Channel> <Message>")]
+        [Summary("Sends a message to specific channel under ERA's name. Ussage: /Xsend <Channel> <Message>")]
         public async Task Sendtoroom(ITextChannel channel, [Remainder] string message)
         {
             var User = Context.User as SocketGuildUser;
@@ -71,7 +71,7 @@ namespace ERA20.Modules
         }
         [Command("Pause")]
         [RequireContext(ContextType.Guild)]
-        [Summary("Creates a Pause code for the last 5 messagse sent. Usage: `$Pause <Code>`.")]
+        [Summary("Creates a Pause code for the last 5 messagse sent. Usage: `/Pause <Code>`.")]
         public async Task Pause([Remainder] string _Code)
         {
             var code = new PauseCode()
@@ -79,7 +79,7 @@ namespace ERA20.Modules
                 Code = _Code,
                 Channel = Context.Channel.Id
             };
-            var History = await Context.Channel.GetMessagesAsync(fromMessage: Context.Message, dir: Direction.Before, limit: 5).Flatten();
+            var History = await Context.Channel.GetMessagesAsync(fromMessage: Context.Message, dir: Direction.Before, limit: 5).FlattenAsync();
             foreach (IMessage x in History)
             {
                 code.Messages.Add(x.Id);
@@ -90,7 +90,7 @@ namespace ERA20.Modules
 
         [Command("Resume")]
         [RequireContext(ContextType.Guild)]
-        [Summary("Load a Pause code. Usage: `$Resume <Code>`.")]
+        [Summary("Load a Pause code. Usage: `/Resume <Code>`.")]
         public async Task Resume([Remainder] string _Code)
         {
             var code = new PauseCode().GetPauseCode(_Code);
@@ -129,7 +129,7 @@ namespace ERA20.Modules
         }
         [Command("Preview")]
         [RequireContext(ContextType.Guild)]
-        [Summary("Preview a Pause code in DMs. Usage: `$Preview <Code>`.")]
+        [Summary("Preview a Pause code in DMs. Usage: `/Preview <Code>`.")]
         public async Task preview([Remainder] string _Code)
         {
             var code = new PauseCode().GetPauseCode(_Code);
@@ -157,7 +157,7 @@ namespace ERA20.Modules
         [Command("Avatar")]
         [Alias("Avi","Icon")]
         [RequireContext(ContextType.Guild)]
-        [Summary("Returns someone's avatar URL. Usage: `$Avatar <User>`. You dont have to mention the user")]
+        [Summary("Returns someone's avatar URL. Usage: `/Avatar <User>`. You dont have to mention the user")]
         public async Task Avatar([Remainder] IUser User)
         {
             await Context.Channel.SendMessageAsync(User.GetAvatarUrl().Replace("?size=128", ""));
@@ -173,12 +173,12 @@ namespace ERA20.Modules
                 .WithTitle(user.Nickname + " [" + user.Username +"#"+ user.Discriminator+ "]")
                 .WithThumbnailUrl(user.GetAvatarUrl())
                 .WithUrl(user.GetAvatarUrl())
-                .AddInlineField("Id", user.Id)
-                .AddInlineField("Account created at", user.CreatedAt.Month+"/"+user.CreatedAt.Day+"/"+user.CreatedAt.Year)
-                .AddInlineField("Joined the server at", user.JoinedAt.Value.Month + "/" +user.JoinedAt.Value.Day + "/" +user.JoinedAt.Value.Year)
-                .AddInlineField("Roles", Buildroles(user))
-                .AddInlineField("Playing", Gamebuilder(user))
-                .AddInlineField("Other data", miscbuilder(user));
+                .AddField("Id", user.Id, true)
+                .AddField("Account created at", user.CreatedAt.Month+"/"+user.CreatedAt.Day+"/"+user.CreatedAt.Year, true)
+                .AddField("Joined the server at", user.JoinedAt.Value.Month + "/" +user.JoinedAt.Value.Day + "/" +user.JoinedAt.Value.Year, true)
+                .AddField("Roles", Buildroles(user), true)
+                .AddField("Playing", Gamebuilder(user),true)
+                .AddField("Other data", miscbuilder(user),true);
             await ReplyAsync("", embed: builder.Build());
         }
         public string Buildroles(SocketGuildUser User)
@@ -193,20 +193,24 @@ namespace ERA20.Modules
         public string Gamebuilder(SocketGuildUser user)
         {
             
-            if (!user.Game.HasValue)
+            if (user.Activity == null)
             {
                 return "This user isn't playing anything at the moment.";
             }
             else
             {
-                var game = user.Game.Value;
-                if ((game.StreamType == StreamType.Twitch))
+                var game = user.Activity;
+                if ((game.Type == ActivityType.Streaming))
                 {
-                    return user.Username + " is streaming **" + game.Name + "** over at " + game.StreamUrl+".";
+                    var stream = game as StreamingGame;
+                    return user.Username + " is streaming **" + stream.Name + "** over at " + stream.Url+".";
                 }
-                else
+                else if (game.Type == ActivityType.Playing)
                 {
                     return user.Username + " Is playing **" + game.Name + "**.";
+                }
+                else{
+                    return "This user isn't playing anything at the moment.";
                 }
             }
         }

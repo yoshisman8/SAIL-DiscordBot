@@ -16,7 +16,7 @@ namespace ERA20.Modules
 
         [Command("Ban")]
         [RequireContext(ContextType.Guild)]
-        [Summary("'Bans' someone. Ussage: `$Ban <name>`")]
+        [Summary("'Bans' someone. Ussage: `/Ban <name>`")]
         public async Task Ban([Remainder] IUser _Target)
         {
             var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service);
@@ -33,7 +33,7 @@ namespace ERA20.Modules
 
         [Command("Nuke")]
         [RequireContext(ContextType.Guild)]
-        [Summary("'Nuke' someone or something. Ussage: `$Nuke <Thing>`")]
+        [Summary("'Nuke' someone or something. Ussage: `/Nuke <Thing>`")]
         public async Task nuke([Remainder] string _Target)
         {
             var result = await new CommandTimer().ValidateTimer(Context,Database,TimeSpan.FromMinutes(3),Service);
@@ -70,7 +70,7 @@ namespace ERA20.Modules
 
         [Command("Hug")]
         [RequireContext(ContextType.Guild)]
-        [Summary("Sends a hug to someone! Usage: `$Hug <name>`")]
+        [Summary("Sends a hug to someone! Usage: `/Hug <name>`")]
         public async Task Hug([Remainder] IUser _User)
         {
             if (_User == null)

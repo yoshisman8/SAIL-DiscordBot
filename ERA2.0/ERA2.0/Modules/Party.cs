@@ -56,7 +56,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Create")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task Make(string Name)
         {
             var col = Database.GetCollection<Party>("Party");
@@ -71,11 +71,11 @@ namespace ERA20.Modules
                 var p = new Party() { Name = Name };
                 col.EnsureIndex("Name", "LOWER($.Name)");
                 col.Insert(p);
-                await ReplyAsync("Party **" + Name + "** Created! Add some characters to it by doing `$Party Add <Party> <character>`!");
+                await ReplyAsync("Party **" + Name + "** Created! Add some characters to it by doing `/Party Add <Party> <character>`!");
             }
         }
         [Command("Delete")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task delete (string name)
         {
             var col = Database.GetCollection<Party>("Party");
@@ -108,7 +108,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Add")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task Add(string party, string Name)
         {
             var col1 = Database.GetCollection<Party>("Party");
@@ -174,7 +174,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Remove"), Alias("Rem")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task rem(string party, string Name)
         {
             var col1 = Database.GetCollection<Party>("Party");
@@ -225,7 +225,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Summary")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task summary(string name, string Value)
         {
             var col = Database.GetCollection<Party>("Party");
@@ -258,7 +258,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Map"), Alias("Image")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task map(string name, string Value)
         {
             var col = Database.GetCollection<Party>("Party");

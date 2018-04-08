@@ -17,7 +17,7 @@ namespace ERA20.Modules
         public LiteDatabase Database { get; set; }
         [Command("Quote")]
         [Alias("Q")]
-        [Summary("Finds a quote from the Quote database. Usage: `$Quote <search>`. React with :speaking_head: to add a message to the database.")]
+        [Summary("Finds a quote from the Quote database. Usage: `/Quote <search>`. React with :speaking_head: to add a message to the database.")]
         public async Task FindQuote(string Quote = "")
         {
             var col = Database.GetCollection<Quote>("Quotes");
@@ -26,10 +26,11 @@ namespace ERA20.Modules
                 var rnd = new Random().Next(0, col.Count());
                 var quote = col.FindAll().ElementAt(rnd);
 
-                IMessageChannel channel = GetChannel(quote.Channel);
+                ITextChannel channel = GetChannel(quote.Channel);
+                ITextChannel Ch = Context.Channel as ITextChannel;
                 var Message = await GetMessageAsync(quote.Message);
                 if (Message == null) { await ReplyAsync("This quote contains a null message ID! (Maybe the original message was deleted?)"); return; }
-                if (channel.IsNsfw == Context.Channel.IsNsfw || channel.IsNsfw == false)
+                if (channel.IsNsfw == Ch.IsNsfw || channel.IsNsfw == false)
                 {
                     if (Message.Embeds.Count() == 0)
                     {
@@ -50,10 +51,11 @@ namespace ERA20.Modules
             var result = col.FindOne(x => x.Content.Contains(Quote.ToLower()));
             if (result != null)
             {
-                IMessageChannel channel = GetChannel(result.Channel);
+                ITextChannel channel = GetChannel(result.Channel);
+                ITextChannel Ch = Context.Channel as ITextChannel;
                 var Message = await GetMessageAsync(result.Message);
                 if (Message == null) { await ReplyAsync("This quote contains a null message ID! (Maybe the original message was deleted?)"); return; }
-                if (channel.IsNsfw == Context.Channel.IsNsfw || channel.IsNsfw == false)
+                if (channel.IsNsfw == Ch.IsNsfw || channel.IsNsfw == false)
                 {
                     if (Message.Embeds.Count() == 0)
                     {

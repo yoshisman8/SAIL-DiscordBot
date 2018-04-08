@@ -24,8 +24,9 @@ namespace ERA20.Services
         private GitHubClient _gitClient;
 
         private Toggles _toggles;
+        private TimerService _timerservice;
 
-        public CommandHandlingService(IServiceProvider provider, DiscordSocketClient discord,IConfiguration config, CommandService commands, LiteDatabase database, GitHubClient gitHubClient, Toggles toggles)
+        public CommandHandlingService(IServiceProvider provider, DiscordSocketClient discord,IConfiguration config, CommandService commands, LiteDatabase database, GitHubClient gitHubClient, Toggles toggles, TimerService timerService)
         {
             _discord = discord;
             _commands = commands;
@@ -34,13 +35,24 @@ namespace ERA20.Services
             _config = config;
             _gitClient = gitHubClient;
             _toggles = toggles;
+            _timerservice = timerService;
 
             _discord.MessageReceived += MessageReceived;
             _discord.UserJoined += _discord_UserJoined;
             _discord.UserLeft += OnUserLeft;
             _discord.ReactionAdded += OnReact;
-            _discord.GuildMemberUpdated += OnUserUpdate;
             _discord.MessageUpdated += OnMessageUpdate;
+            _discord.UserUpdated += OnUserUpdate;
+        }
+
+        private async Task OnUserUpdate(SocketUser OldUser, SocketUser NewUser)
+        {
+            if (OldUser.Activity.Type != ActivityType.Streaming && NewUser.Activity.Type == ActivityType.Streaming){ 
+                ITextChannel Channel =  _discord.GetChannel(390769178946174976) as ITextChannel;
+                StreamingGame Stream = NewUser.Activity as StreamingGame;
+                
+                await Channel.SendMessageAsync("User "+ NewUser.Mention +" Is now streaming **"+ Stream.Name +"**! \nYou can go and watch along by clicking this link: "+Stream.Url);
+            }
         }
 
         private async Task OnMessageUpdate(Cacheable<IMessage, ulong> original, SocketMessage edit, ISocketMessageChannel channel)
@@ -50,29 +62,12 @@ namespace ERA20.Services
             var msg2 = edit as SocketUserMessage;
             int argPos = 0;
 
-            if ((msg2.HasStringPrefix(_config["prefix"], ref argPos) || msg2.HasMentionPrefix(_discord.CurrentUser, ref argPos) && (!msg.HasStringPrefix(_config["prefix"], ref argPos) || !msg2.HasMentionPrefix(_discord.CurrentUser, ref argPos))))
+            if (msg2.HasStringPrefix(_config["prefix"], ref argPos))
             {
-                var messages = await channel.GetMessagesAsync(msg,Direction.After,2,CacheMode.AllowDownload).Flatten();
+                var messages = await channel.GetMessagesAsync(msg,Direction.After,2,CacheMode.AllowDownload).FlattenAsync();
                 var lastreply = messages.Where(x => x.Author.Id == _discord.CurrentUser.Id).FirstOrDefault();
                 await lastreply.DeleteAsync();
                 await MessageReceived(edit);
-            }
-        }
-
-        private async Task OnUserUpdate(SocketGuildUser OldUser, SocketGuildUser NewUser)
-        {
-            SocketGuild Guild = _discord.GetGuild(311970313158262784);
-            var streamerzone = Guild.GetTextChannel(390769178946174976);
-            var role = Guild.GetRole(314934868830191617);
-            var general = Guild.GetTextChannel(311987726872215552);
-            if (NewUser.Game.HasValue && NewUser.Game.Value.StreamType == StreamType.Twitch)
-            {
-                await streamerzone.SendMessageAsync(NewUser.Mention+" Is streaming **"+NewUser.Game.Value.Name+"**!" +
-                    "\nYou can go watch them stream over at "+NewUser.Game.Value.StreamUrl);
-            }
-            if (!OldUser.Roles.Contains(role) && NewUser.Roles.Contains(role))
-            {
-                await general.SendMessageAsync("Welcome our new den member " + NewUser.Mention + "!");
             }
         }
 
@@ -159,7 +154,10 @@ namespace ERA20.Services
             int argPos = 0;
             var context = new SocketCommandContext(_discord, message);
 
-            var cmd = msg.Content.Substring(1).Split(' ').FirstOrDefault();
+            var cmd = "";
+            if (msg.Content != ""){
+                cmd = msg.Content.Substring(1).Split(' ').FirstOrDefault();
+            }
 
             if (msg.HasStringPrefix(_config["prefix"], ref argPos) || msg.HasMentionPrefix(_discord.CurrentUser, ref argPos))
             {
@@ -183,7 +181,7 @@ namespace ERA20.Services
             {
                 await msg.AddReactionAsync(Emote.Parse("<:Wyrthis:354398518586114049>"));
             }
-            if (msg.Content.ToLower().Contains("robot") || msg.Content.ToLower().Contains("beep boop") || msg.Content.ToLower().Contains("beepboop") || msg.Content.ToLower().Contains("beep"))
+            if (msg.Content.ToLower().Contains("beep boop") || msg.Content.ToLower().Contains("beepboop"))
             {
                 await msg.AddReactionAsync(Emote.Parse("<:RynnLurk:365983787932319745>"));
             }

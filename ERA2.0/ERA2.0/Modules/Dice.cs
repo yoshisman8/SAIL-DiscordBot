@@ -13,7 +13,7 @@ public class Diceroller : ModuleBase<SocketCommandContext>
     IDiceParser parser = new DiceParser();
 
     [Command("Roll"), Alias("r")]
-    [Summary("Rolls a die on a xdy expression format. \nUsage: `$Roll <dice expression>`.")]
+    [Summary("Rolls a die on a xdy expression format. \nUsage: `/Roll <dice expression>`.")]
     public async Task DieRoll([Remainder]string input = "d20")
     {
         string[] sinput = new string[0];

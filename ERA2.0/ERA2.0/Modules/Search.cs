@@ -21,7 +21,7 @@ namespace ERA20.Modules
          public async Task Default()
         {
             await ReplyAsync("This is the search command! You can use it to search the bot's database for plenty of things!\n" +
-                "You can use this command by doing `$Search <Category> <Query>` (No need to wrap your query around \"s) where the catergory can be any of the following:\n\n" +
+                "You can use this command by doing `/Search <Category> <Query>` (No need to wrap your query around \"s) where the catergory can be any of the following:\n\n" +
                 "- 'Characters', 'char' or 'chars' to search for characters (both 2e and Legacy ones).\n" +
                 "- 'Players', 'users' 'made-by' or 'madeby' to search characters made by a specific user/person (both 2e and Legacy ones).\n" +
                 "- 'Wiki', 'Entries' or 'articles' to search for Articles on the bot's internal Wiki.\n" +

@@ -30,7 +30,7 @@ namespace ERA20.Modules
         public LiteDatabase Database { get; set; }
 
         [Command("Issue"), Alias("Give", "New", "Create")]
-        [Summary("Admin command. Issue Warnings to a person.\nUsage: `$warn <person> <Reason>`")]
+        [Summary("Admin command. Issue Warnings to a person.\nUsage: `/warn <person> <Reason>`")]
         [RequireUserPermission(GuildPermission.ManageRoles)]
         public async Task Warn(IUser Outlier, [Remainder] string _Reason)
         {
@@ -67,7 +67,7 @@ namespace ERA20.Modules
             
             if (user == null)
             {
-                await Context.Channel.SendMessageAsync("Incorrect command ussage! Correct ussage is `$Warns <user>`");
+                await Context.Channel.SendMessageAsync("Incorrect command ussage! Correct ussage is `/Warns <user>`");
             }
             else
             {
@@ -167,7 +167,7 @@ namespace ERA20.Modules
     {
         [Command("Support")]
         [RequireContext(ContextType.DM)]
-        [Summary("Sends an Annonymous message to the Admin's feedback channel. Usage: `$Support <Message>`")]
+        [Summary("Sends an Annonymous message to the Admin's feedback channel. Usage: `/Support <Message>`")]
         public async Task Report([Remainder] string report = "")
         {
             {

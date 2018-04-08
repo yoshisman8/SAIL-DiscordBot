@@ -55,6 +55,7 @@ namespace ERA20
                 .AddSingleton(new GitHubClient( new ProductHeaderValue("ERA")))
                 .AddSingleton(new LiteDatabase(@"Data/Database.db"))
                 .AddSingleton(new Toggles())
+                .AddSingleton(new TimerService(_client))
                 .AddSingleton<Random>()
                 // Add additional services here...
                 .BuildServiceProvider();

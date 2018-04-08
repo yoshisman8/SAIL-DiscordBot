@@ -30,8 +30,8 @@ namespace ERA20.Modules
             C.NullBGone(Database);
             if (player == null)
             {
-                await ReplyAsync("You are not locked into any character! Use `$Lock <Character name>` To lock into one!\n" +
-"Or if you haven't, make a new character with `$Character Create <Name> <Race> <Class>`!");
+                await ReplyAsync("You are not locked into any character! Use `/Lock <Character name>` To lock into one!\n" +
+"Or if you haven't, make a new character with `/Character Create <Name> <Race> <Class>`!");
                 return;
             }
             await ReplyAsync("", embed: new Builders().BuildSheet(C, Context));
@@ -73,7 +73,7 @@ namespace ERA20.Modules
 
         [Command("Create")]
         [Alias("New", "Add")]
-        [Summary("Creates a new character entry in the database and locks you as that character for further edits. Usage: `$Character Create <Name> <Race> <Class>`.")]
+        [Summary("Creates a new character entry in the database and locks you as that character for further edits. Usage: `/Character Create <Name> <Race> <Class>`.")]
         public async Task Create(string Name, string Race, string Class)
         {
 
@@ -99,7 +99,7 @@ namespace ERA20.Modules
                     Char.Add();
                     new Playerlock(Database).Lock(Context.User.Id, Char);
                     await ReplyAsync("Character **" + Char.Name + "** Has been added to the database! As an addition you've been **locked** into this character.\n" +
-                        "All `$Edit` Commands will now target this character. If you wish to edit a different character, use `$Lock <character>` to change who you're locked as.");
+                        "All `/Edit` Commands will now target this character. If you wish to edit a different character, use `/Lock <character>` to change who you're locked as.");
                 }
                 catch (Exception e)
                 {
@@ -110,7 +110,7 @@ namespace ERA20.Modules
 
         [Command("Delete")]
         [Alias("Remove","Del")]
-        [Summary("Deletes a character from the database. Usage: `$Character Delete <Name>`.")]
+        [Summary("Deletes a character from the database. Usage: `/Character Delete <Name>`.")]
         public async Task Del(string Name)
         {
             var col = Database.GetCollection<Character>("Characters");
@@ -157,12 +157,12 @@ namespace ERA20.Modules
             .WithUrl(player.ImageUrl)
             .WithDescription(player.Description)
             .WithThumbnailUrl(player.ImageUrl)
-            .AddInlineField(":chart_with_upwards_trend: Basic info", "Class: " + player.Class + "\nRace: " + player.Race + "\nStress: " + BuildStress(player) + "\n")
-            .AddInlineField(":tools: Gear", Buildequip(player))
+            .AddField(":chart_with_upwards_trend: Basic info", "Class: " + player.Class + "\nRace: " + player.Race + "\nStress: " + BuildStress(player) + "\n",true)
+            .AddField(":tools: Gear", Buildequip(player),true)
             .AddField(":warning: Afflictions", BuildAfflictions(player))
             .AddField(":star2: Physical Trait: " + player.ITrait.Name, player.ITrait.Description)
-            .AddInlineField(":star: Traits", BuildTraits(player))
-            .AddInlineField(":muscle:  Skills", BuildSkills(player))
+            .AddField(":star: Traits", BuildTraits(player),true)
+            .AddField(":muscle:  Skills", BuildSkills(player),true)
             .AddField(":school_satchel: Inventory", BuildInv(player));
             var embed = builder.Build();
             return embed;
@@ -185,7 +185,7 @@ namespace ERA20.Modules
         public string BuildInv(Character player)
         {
             string msg = "";
-            msg += "\\💰 $" + Math.Round(player.Money, 2) + "\n";
+            msg += "\\💰 /" + Math.Round(player.Money, 2) + "\n";
             foreach (Item x in player.Inventory.Items)
             {
                 msg += "* " + x.BaseItem.Name + " x"+x.Quantity+"\n";
@@ -199,7 +199,7 @@ namespace ERA20.Modules
             {
                 msg += "* " + x.Name + "\n";
             }
-            if (msg.Length == 0) { return "None! Use `$Equip <Item>` to Equip an item!"; }
+            if (msg.Length == 0) { return "None! Use `/Equip <Item>` to Equip an item!"; }
             return msg;
         }
         public string BuildTraits(Character player)
@@ -209,7 +209,7 @@ namespace ERA20.Modules
             {
                 msg += "* " + x.Name + "\n";
             }
-            if (msg.Length == 0) { return "None! Use `$Traits add <Name> <Description>` to add a trait!"; }
+            if (msg.Length == 0) { return "None! Use `/Traits add <Name> <Description>` to add a trait!"; }
             return msg;
         }
         public string BuildAfflictions(Character player)
@@ -229,7 +229,7 @@ namespace ERA20.Modules
             {
                 msg += "* " + x.Name + " [" + ToRoman(x.Level) + "]\n";
             }
-            if (msg.Length == 0) { return "None! \nUse `$Skills Learn <Name> <Description>` \nTo learn a new Skill!"; }
+            if (msg.Length == 0) { return "None! \nUse `/Skills Learn <Name> <Description>` \nTo learn a new Skill!"; }
             return msg;
         }
         public static string ToRoman(int number)
@@ -322,8 +322,8 @@ namespace ERA20.Modules
         {
             var player = new Playerlock(Database).GetPlayer(Context.User.Id);
             if (player == null) {
-                await ReplyAsync("You are not locked into any character! Use `$Lock <Character name>` To lock into one!\n" +
-"Or if you haven't, make a new character with `$Character Create <Name> <Race> <Class>`!");
+                await ReplyAsync("You are not locked into any character! Use `/Lock <Character name>` To lock into one!\n" +
+                    "Or if you haven't, make a new character with `/Character Create <Name> <Race> <Class>`!");
                 return;
             }
             await ReplyAsync("You're currently locked to **" + player.Character.Name + "**.");
@@ -392,8 +392,8 @@ namespace ERA20.Modules
         [Command]
         public async Task Help()
         {
-            await ReplyAsync("Welcome to the Editor! All the commands I will be listing are meant to go after the `$Edit`.\n" +
-                "Like so: `$Edit Name <New Name>`.\nHere's the list of all the possible things you can edit through this command:\n" +
+            await ReplyAsync("Welcome to the Editor! All the commands I will be listing are meant to go after the `/Edit`.\n" +
+                "Like so: `/Edit Name <New Name>`.\nHere's the list of all the possible things you can edit through this command:\n" +
                 "- Name `Name <New name>`\n" +
                 "- Class `Class <New Class>`\n" +
                 "- Race `Race <New Race>` \n" +
@@ -401,7 +401,7 @@ namespace ERA20.Modules
                 "- Description `Description <Character Description>`\n" +
                 "- Physical Trait(s) `PTrait <Name> <Description>`.\n" +
                 "- Max stress `Stress <number>.`\n"+
-                "***REMEMBER***: You can only use this commands if you have a character locked (Use `$Lock` to verify).");
+                "***REMEMBER***: You can only use this commands if you have a character locked (Use `/Lock` to verify).");
         }
         [Command("Name")]
         public async Task Name( string Name)
@@ -515,8 +515,8 @@ namespace ERA20.Modules
         public async Task help()
         {
             await ReplyAsync("Welcome to the Trait editor! Here you can only do one of two options:\n" +
-                "Either `$Trait Add <Name> <Description>` to add a trait to your *locked* character.\n" +
-                "Or `$Trait Remove <Name>` To remove a trait!");
+                "Either `/Trait Add <Name> <Description>` to add a trait to your *locked* character.\n" +
+                "Or `/Trait Remove <Name>` To remove a trait!");
         }
         [Command("Add")]
         public async Task Add(string Name,  string Descriotion)
@@ -591,7 +591,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Give")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task Give(string Name, string Aff,  string Description)
         {
             var col = Database.GetCollection<Character>("Characters");
@@ -635,7 +635,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Take"), Alias("Del")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task take(string Name, string Aff)
         {
             var col = Database.GetCollection<Character>("Characters");
@@ -690,7 +690,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Clear")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task Clear(string Name)
         {
             var col = Database.GetCollection<Character>("Characters");
@@ -885,7 +885,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Create"), Alias("New", "Add")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task New(string Name, string Description, string ImageURL = "")
         {
             var col = Database.GetCollection<BaseItem>("Items");
@@ -903,11 +903,11 @@ namespace ERA20.Modules
                     Description = Description,
                     ImageUrl = ImageURL
                 });
-                await ReplyAsync("Item **" + Name + "** added to the database successfully! You can now use `$Items Give <character> " + Name + "` to give this items to any character!");
+                await ReplyAsync("Item **" + Name + "** added to the database successfully! You can now use `/Items Give <character> " + Name + "` to give this items to any character!");
             }
         }
         [Command("Delete"), Alias("Del", "Remove", "Rem")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task rem( string Name)
         {
             var col = Database.GetCollection<BaseItem>("Items");
@@ -937,7 +937,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Edit")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task Edit(string Name, string Property,  string Value)
         {
             var col = Database.GetCollection<BaseItem>("Items");
@@ -987,7 +987,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Give")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task Give(string Name, string Item, int Ammount = 1)
         {
             var col = Database.GetCollection<Character>("Characters");
@@ -1049,7 +1049,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Take")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task Take(string Name, string Item, int Ammount = 1)
         {
             var col = Database.GetCollection<Character>("Characters");
@@ -1109,7 +1109,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Empty")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task empty(string Name)
         {
             var col = Database.GetCollection<Character>("Characters");
@@ -1150,7 +1150,7 @@ namespace ERA20.Modules
         public LiteDatabase Database { get; set; }
 
         [Command("Gift"), Alias("Give")]
-        [Summary("Gives another player an item from your currently-locked character's inventory. Usage: `$Gift <Character> <Item> <Amount>`. (Amount defaults to 1 if nothing is specified)")]
+        [Summary("Gives another player an item from your currently-locked character's inventory. Usage: `/Gift <Character> <Item> <Amount>`. (Amount defaults to 1 if nothing is specified)")]
         public async Task Give(string Player, string Item, int Quantity = 1)
         {
             Quantity = Math.Abs(Quantity);
@@ -1205,7 +1205,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Use"), Alias("Consume", "Toss","Discard")]
-        [Summary("Use, Consume, Toss or otherwise spend an item by a defined ammount. Usage: `$Use <Item> <Amount>`. (Amount defaults to 1 if not specified)")]
+        [Summary("Use, Consume, Toss or otherwise spend an item by a defined ammount. Usage: `/Use <Item> <Amount>`. (Amount defaults to 1 if not specified)")]
         public async Task Discard(string Item, int Ammount = 1)
         {
             Ammount = Math.Abs(Ammount);
@@ -1228,7 +1228,7 @@ namespace ERA20.Modules
             await ReplyAsync(me.Name+" used up " + Ammount + " of their **" + I.BaseItem.Name + "**(s)!", embed: new Builders().ItemBuilder(I.BaseItem));
         }
         [Command("Pay"), Alias("Spend")]
-        [Summary("Spend money on something or transfer money to someone! Usage: `$Pay <Amount> [Player]` The player parameter is optional, if non is specified, you'll simply spend the amount indicated.")]
+        [Summary("Spend money on something or transfer money to someone! Usage: `/Pay <Amount> [Player]` The player parameter is optional, if non is specified, you'll simply spend the amount indicated.")]
         public async Task Spend(double Amount, string Name = null)
         {
             Amount = Math.Abs(Amount);
@@ -1284,7 +1284,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Equip"), Alias("Wear","Put-On")]
-        [Summary("Put one of your items on as an equip. Usage: `$Equip <Item>`")]
+        [Summary("Put one of your items on as an equip. Usage: `/Equip <Item>`")]
         public async Task Equip(string Item)
         {
             var me = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
@@ -1301,7 +1301,7 @@ namespace ERA20.Modules
             await ReplyAsync(me.Name+" equiped their " + I.BaseItem.Name + ".");
         }
         [Command("Unequip"), Alias("DeEquip", "De-Equip", "re-un-de-equip")]
-        [Summary("Takes off a piece of equipment. Usage: `$Unequip <Item>`")]
+        [Summary("Takes off a piece of equipment. Usage: `/Unequip <Item>`")]
         public async Task Unequip(string Item)
         {
             var me = new Playerlock(Database).GetPlayer(Context.User.Id).Character;
@@ -1322,8 +1322,8 @@ namespace ERA20.Modules
             }
         }
         [Command("Stress")]
-        [Summary("Add or remove stress to a character! Use negative numbers to remove stress. Usage: `$Stress <character> <Amount>`.")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [Summary("Add or remove stress to a character! Use negative numbers to remove stress. Usage: `/Stress <character> <Amount>`.")]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task Stress(string Name, int amount)
         {
             var col = Database.GetCollection<Character>("Characters");
@@ -1363,8 +1363,8 @@ namespace ERA20.Modules
             }
         }
         [Command("Reward"), Alias("DMPay")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
-        [Summary("Give a player a sum of money. Usage: `$Reward <player> <Amount>`")]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
+        [Summary("Give a player a sum of money. Usage: `/Reward <player> <Amount>`")]
         public async Task Pay(string Name, double Amount)
         {
             var col = Database.GetCollection<Character>("Characters");
@@ -1394,7 +1394,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Store")]
-        [Summary("Stores an item in a Storage. Usage: `$Store <Storage Name> <Item> <amount, defaults to 1>")]
+        [Summary("Stores an item in a Storage. Usage: `/Store <Storage Name> <Item> <amount, defaults to 1>")]
         public async Task Store(string Name, string Item, int amount = 1)
         {
             amount = Math.Abs(amount);
@@ -1443,7 +1443,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Take")]
-        [Summary("Takes an item out of a Storage. Usage: `$Take <Storage name> <Item> <amount, defaults to 1>`")]
+        [Summary("Takes an item out of a Storage. Usage: `/Take <Storage name> <Item> <amount, defaults to 1>`")]
         public async Task take(string Name, string Item, int amount = 1)
         {
             amount = Math.Abs(amount);
@@ -1493,7 +1493,7 @@ namespace ERA20.Modules
         }
 
         [Command("Deposit")]
-        [Summary("Deposits money into a storage. Usage: `$Deposit <storage name> <amount>`")]
+        [Summary("Deposits money into a storage. Usage: `/Deposit <storage name> <amount>`")]
         public async Task Deposit(string Name, double Amount)
         {
             Amount = Math.Abs(Amount);
@@ -1539,7 +1539,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Withdraw")]
-        [Summary("Withdraws money into a storage. Usage: `$Withdraw <storage name> <amount>`")]
+        [Summary("Withdraws money into a storage. Usage: `/Withdraw <storage name> <amount>`")]
         public async Task Withdraw(string Name, double Amount)
         {
             Amount = Math.Abs(Amount);
@@ -1620,7 +1620,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Create"), Alias("Add")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task Make(string Name, string Description = "", string ImageUrl = "")
         {
             var col = Database.GetCollection<Storage>("Storages");
@@ -1636,10 +1636,10 @@ namespace ERA20.Modules
                 ImageURL = ImageUrl
             };
             col.Insert(Sto);
-            await ReplyAsync("Storage **" + Sto.Name + "** created successfully! Players can now store items here with `$Store <Storage name> <Item> <Quantity>`");
+            await ReplyAsync("Storage **" + Sto.Name + "** created successfully! Players can now store items here with `/Store <Storage name> <Item> <Quantity>`");
         }
         [Command("Delete"), Alias("Del", "Remove", "rem")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task del(string Name)
         {
             var col = Database.GetCollection<Storage>("Storages");
@@ -1669,7 +1669,7 @@ namespace ERA20.Modules
             }
         }
         [Command("Edit")]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task Edit(string Name, string Property, string Value)
         {
             var col = Database.GetCollection<Storage>("Storages");

@@ -27,10 +27,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Discord.Addons.Interactive" Version="1.0.1"/>
-    <PackageReference Include="Discord.Net" Version="1.0.2"/>
-    <PackageReference Include="Discord.Net.Commands" Version="1.0.2"/>
-    <PackageReference Include="Discord.Net.Core" Version="1.0.2"/>
-    <PackageReference Include="Discord.Net.WebSocket" Version="1.0.2"/>
     <PackageReference Include="LiteDB" Version="4.1.0"/>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0"/>
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.0.0"/>
@@ -44,5 +40,6 @@
     <PackageReference Include="Octokit" Version="0.28.0"/>
     <PackageReference Include="EdCanHack.DiceNotation" Version="0.2.0"/>
     <PackageReference Include="EdCanHack.DiceNotation.MathNet" Version="0.2.0"/>
+    <PackageReference Include="Discord.Net" Version="2.0.0-beta"/>
   </ItemGroup>
 </Project>
