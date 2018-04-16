@@ -24,7 +24,7 @@ namespace ERA20.Modules
                     sb.Clear();
                 }
                 if (emote.Animated){
-                    sb.AppendLine("<a:"+emote.Name+":"+emote.Id+"> "+"`"+emote.Name+"`");
+                    sb.AppendLine("<a:"+emote.Name+":"+emote.Id+"> "+"`:"+emote.Name+":`");
                 }
                 else{
                     sb.AppendLine(emote+" `:"+emote.Name+":`");
