@@ -16,7 +16,7 @@ namespace ERA20.Modules.Classes
 
         public string Name { get; set; }
         public string ImageUrl { get; set; } = "https://cdn.discordapp.com/attachments/314912846037254144/373911023754805250/32438.png";
-        public int MaxStress { get; set; } = 3;
+        public int MaxStress { get; set; } = 5;
         public int Stress { get; set; } = 0;
         public List<Affliction> Afflictions { get; set; } = new List<Affliction> { };
 

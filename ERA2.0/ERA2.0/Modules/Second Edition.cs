@@ -185,7 +185,7 @@ namespace ERA20.Modules
         public string BuildInv(Character player)
         {
             string msg = "";
-            msg += "\\💰 /" + Math.Round(player.Money, 2) + "\n";
+            msg += "\\💰 $" + Math.Round(player.Money, 2) + "\n";
             foreach (Item x in player.Inventory.Items)
             {
                 msg += "* " + x.BaseItem.Name + " x"+x.Quantity+"\n";
