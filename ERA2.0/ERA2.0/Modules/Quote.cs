@@ -59,8 +59,8 @@ namespace ERA20.Modules
             foreach (var x in all){
                 Quotes.Add(await GetMessageAsync(x.Message,Context.Guild.GetTextChannel(x.Channel)));
             }
-            var result = Quotes.Where(x => x.Content.Contains(Quote.ToLower()));
-            if (result != null)
+            var result = Quotes.Where(x => x.Content.ToLower().Contains(Quote.ToLower()));
+            if (result.Count() >=1)
             {
                 var Message = result.FirstOrDefault();
                 ITextChannel channel = result.FirstOrDefault().Channel as ITextChannel;
