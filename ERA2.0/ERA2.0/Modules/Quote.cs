@@ -21,6 +21,7 @@ namespace ERA20.Modules
         public async Task FindQuote(string Quote = "")
         {
             var col = Database.GetCollection<Quote>("Quotes");
+            var debug = col.FindAll();
             if (Quote == "")
             {
                 var rnd = new Random().Next(0, col.Count());
@@ -28,13 +29,18 @@ namespace ERA20.Modules
 
                 ITextChannel channel = GetChannel(quote.Channel);
                 ITextChannel Ch = Context.Channel as ITextChannel;
-                var Message = await GetMessageAsync(quote.Message);
-                if (Message == null) { await ReplyAsync("This quote contains a null message ID! (Maybe the original message was deleted?)"); return; }
+                var Message = await GetMessageAsync(quote.Message, channel);
+                if (Message == null) 
+                { 
+                    await ReplyAsync("This quote contains a null message ID! (Maybe the original message was deleted?) and has been removed from the database!"); 
+                    col.Delete(quote.QuoteId);
+                    return; 
+                }
                 if (channel.IsNsfw == Ch.IsNsfw || channel.IsNsfw == false)
                 {
                     if (Message.Embeds.Count() == 0)
                     {
-                        await Context.Channel.SendMessageAsync("", embed: EmbedQuote(quote));
+                        await Context.Channel.SendMessageAsync("", embed: EmbedQuote(Message));
                     }
                     else if (Message.Embeds.Count() >= 1)
                     {
@@ -48,23 +54,28 @@ namespace ERA20.Modules
                 }
                 return;
             }
-            var result = col.FindOne(x => x.Content.Contains(Quote.ToLower()));
+            var all = col.FindAll();
+            var Quotes = new List<IMessage>();
+            foreach (var x in all){
+                Quotes.Add(await GetMessageAsync(x.Message,Context.Guild.GetTextChannel(x.Channel)));
+            }
+            var result = Quotes.Where(x => x.Content.Contains(Quote.ToLower()));
             if (result != null)
             {
-                ITextChannel channel = GetChannel(result.Channel);
+                var Message = result.FirstOrDefault();
+                ITextChannel channel = result.FirstOrDefault().Channel as ITextChannel;
                 ITextChannel Ch = Context.Channel as ITextChannel;
-                var Message = await GetMessageAsync(result.Message);
                 if (Message == null) { await ReplyAsync("This quote contains a null message ID! (Maybe the original message was deleted?)"); return; }
                 if (channel.IsNsfw == Ch.IsNsfw || channel.IsNsfw == false)
                 {
                     if (Message.Embeds.Count() == 0)
                     {
-                        await Context.Channel.SendMessageAsync("", embed: EmbedQuote(result));
+                        await Context.Channel.SendMessageAsync("", embed: EmbedQuote(Message));
                     }
                     else
                     {
                         Embed embed = (Embed)Message.Embeds.First();
-                        await ReplyAsync("```Quote by: " + GetUser(result.User).Username + " on: " + result.Date.ToShortDateString() + result.Date.ToShortTimeString() + "```\n" + result.Content, embed: embed);
+                        await ReplyAsync("```Quote by: " + GetUser(Message.Author.Id).Username + " on: " + Message.CreatedAt.DateTime.ToShortDateString() + Message.CreatedAt.DateTime.ToShortTimeString() + "```\n" + Message.Content, embed: embed);
                     }
                 }
                 else
@@ -87,27 +98,20 @@ namespace ERA20.Modules
             SocketTextChannel channel = Context.Guild.GetTextChannel(id);
             return channel;
         }
-        public async Task<IMessage> GetMessageAsync(ulong id)
+        public async Task<IMessage> GetMessageAsync(ulong id, ITextChannel channel)
         {
             IMessage message = null;
-            foreach (SocketTextChannel X in Context.Guild.TextChannels)
-            {
-                var Y = await X.GetMessageAsync(id);
-                if (Y != null)
-                {
-                    message = Y;
-                    return message;
-                }
-            }
+            message = await channel.GetMessageAsync(id);
             return message;
+   
         }
-        public Embed EmbedQuote (Quote quote)
+        public Embed EmbedQuote (IMessage quote)
         {
             var builder = new EmbedBuilder()
                         .WithAuthor("E.R.A. Quoting system", Context.Client.CurrentUser.GetAvatarUrl())
-                        .WithDescription(quote.Content + "\n- On " + GetChannel(quote.Channel).Mention)
-                        .WithFooter(GetUser(quote.User).Username, GetUser(quote.User).GetAvatarUrl())
-                        .WithTimestamp(quote.Date)
+                        .WithDescription(quote.Content + "\n- On " + GetChannel(quote.Channel.Id).Mention)
+                        .WithFooter(GetUser(quote.Author.Id).Username, GetUser(quote.Author.Id).GetAvatarUrl())
+                        .WithTimestamp(quote.CreatedAt)
                         .WithColor(new Color(0, 153, 153));
             return builder.Build();
         }
