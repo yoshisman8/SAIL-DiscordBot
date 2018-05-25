@@ -54,7 +54,7 @@ namespace ERA20.Modules
                 return;
             }
             var result = col.Find(x => x.Content.Contains(Quote.ToLower()));
-            if (result.Count() ==1)
+            if (result.Count() == 1)
             {
                 var quote = result.FirstOrDefault();
                 SocketTextChannel channel = Context.Guild.GetTextChannel(quote.Channel);
@@ -78,7 +78,7 @@ namespace ERA20.Modules
                     await Context.Channel.SendMessageAsync("This quote is from a NSFW and thus it can't be viewed here!");
                 }
             }
-            if (result.Count() > 1){
+            else if (result.Count() > 1){
                 var rnd = new Random();
                 int index = rnd.Next(0,result.Count());
                 var quote = result.ElementAt(index);
