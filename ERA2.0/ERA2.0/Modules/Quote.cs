@@ -54,12 +54,14 @@ namespace ERA20.Modules
                 return;
             }
             var result = col.Find(x => x.Content.Contains(Quote.ToLower()));
-            if (result.Count() >=1)
+            if (result.Count() ==1)
             {
-                ITextChannel channel = Context.Guild.GetTextChannel(result.First().Channel);
-                SocketUserMessage Message = await channel.GetMessageAsync(result.First().Message) as SocketUserMessage;
+                var quote = result.FirstOrDefault();
+                SocketTextChannel channel = Context.Guild.GetTextChannel(quote.Channel);
+                SocketTextChannel CurrChan = Context.Channel as SocketTextChannel;
+                var Message = await channel.GetMessageAsync(quote.Message);
                 if (Message == null) { await ReplyAsync("This quote contains a null message ID! (Maybe the original message was deleted?)"); return; }
-                if (channel.IsNsfw == channel.IsNsfw || channel.IsNsfw == false)
+                if (CurrChan.IsNsfw == channel.IsNsfw || channel.IsNsfw == false)
                 {
                     if (Message.Embeds.Count() == 0)
                     {
@@ -75,7 +77,32 @@ namespace ERA20.Modules
                 {
                     await Context.Channel.SendMessageAsync("This quote is from a NSFW and thus it can't be viewed here!");
                 }
-            }           
+            }
+            if (result.Count() > 1){
+                var rnd = new Random();
+                int index = rnd.Next(0,result.Count());
+                var quote = result.ElementAt(index);
+                SocketTextChannel channel = Context.Guild.GetTextChannel(quote.Channel);
+                SocketTextChannel CurrChan = Context.Channel as SocketTextChannel;
+                var Message = await channel.GetMessageAsync(quote.Message);
+                if (Message == null) { await ReplyAsync("This quote contains a null message ID! (Maybe the original message was deleted?)"); return; }
+                if (CurrChan.IsNsfw == channel.IsNsfw || channel.IsNsfw == false)
+                {
+                    if (Message.Embeds.Count() == 0)
+                    {
+                        await Context.Channel.SendMessageAsync("", embed: EmbedQuote(Message));
+                    }
+                    else
+                    {
+                        Embed embed = (Embed)Message.Embeds.First();
+                        await ReplyAsync("```Quote by: " + GetUser(Message.Author.Id).Username + " on: " + Message.CreatedAt.DateTime.ToShortDateString() + Message.CreatedAt.DateTime.ToShortTimeString() + "```\n" + Message.Content, embed: embed);
+                    }
+                }
+                else
+                {
+                    await Context.Channel.SendMessageAsync("This quote is from a NSFW and thus it can't be viewed here!");
+                }
+            }
             else
             {
                 await ReplyAsync("There is no quote that contains the word \"" + Quote + "\"");

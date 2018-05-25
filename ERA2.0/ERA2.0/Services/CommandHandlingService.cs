@@ -48,11 +48,12 @@ namespace ERA20.Services
         private async Task OnUserUpdate(SocketGuildUser OldUser, SocketGuildUser NewUser)
         {
             var Role = OldUser.Guild.GetRole(311972158144512000);
-            if (OldUser.Activity.Type != ActivityType.Streaming && NewUser.Activity.Type == ActivityType.Streaming){ 
-                ITextChannel Channel =  _discord.GetChannel(311987726872215552) as ITextChannel;
-                StreamingGame Stream = NewUser.Activity as StreamingGame;
-                
-                await Channel.SendMessageAsync("User "+ NewUser.Mention +" Is now streaming **"+ Stream.Name +"**! \nYou can go and watch along by clicking this link: "+Stream.Url);
+            if (NewUser.Activity != null){
+                if (OldUser.Activity.Type != ActivityType.Streaming && NewUser.Activity.Type == ActivityType.Streaming){ 
+                    ITextChannel Channel =  _discord.GetChannel(311987726872215552) as ITextChannel;
+                    StreamingGame Stream = NewUser.Activity as StreamingGame;
+                    await Channel.SendMessageAsync("User "+ NewUser.Mention +" Is now streaming **"+ Stream.Name +"**! \nYou can go and watch along by clicking this link: "+Stream.Url);
+                }
             }
             if (!OldUser.Roles.Contains(Role) && NewUser.Roles.Contains(Role)){
                 ITextChannel Channel =  _discord.GetChannel(311987726872215552) as ITextChannel;
