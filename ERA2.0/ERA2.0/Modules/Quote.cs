@@ -21,7 +21,6 @@ namespace ERA20.Modules
         public async Task FindQuote(string Quote = "")
         {
             var col = Database.GetCollection<Quote>("Quotes");
-            var debug = col.FindAll();
             if (Quote == "")
             {
                 var rnd = new Random().Next(0, col.Count());
@@ -45,7 +44,7 @@ namespace ERA20.Modules
                     else if (Message.Embeds.Count() >= 1)
                     {
                         Embed embed = (Embed)Message.Embeds.First();
-                        await ReplyAsync("```Quote by: " + GetUser(quote.User).Username + " on: " + quote.Date.ToShortDateString() + quote.Date.ToShortTimeString() + "```\n" + quote.Content, embed: embed);
+                        await ReplyAsync("```Quote by: " + GetUser(quote.User).Username + " on: " + Message.CreatedAt.DateTime.ToShortDateString() + Message.CreatedAt.DateTime.ToShortTimeString() + "```\n" + quote.Content, embed: embed);
                     }
                 }
                 else
@@ -54,19 +53,13 @@ namespace ERA20.Modules
                 }
                 return;
             }
-            var all = col.FindAll();
-            var Quotes = new List<IMessage>();
-            foreach (var x in all){
-                Quotes.Add(await GetMessageAsync(x.Message,Context.Guild.GetTextChannel(x.Channel)));
-            }
-            var result = Quotes.Where(x => x.Content.ToLower().Contains(Quote.ToLower()));
+            var result = col.Find(x => x.Content.Contains(Quote.ToLower()));
             if (result.Count() >=1)
             {
-                var Message = result.FirstOrDefault();
-                ITextChannel channel = result.FirstOrDefault().Channel as ITextChannel;
-                ITextChannel Ch = Context.Channel as ITextChannel;
+                ITextChannel channel = Context.Guild.GetTextChannel(result.First().Channel);
+                SocketUserMessage Message = await channel.GetMessageAsync(result.First().Message) as SocketUserMessage;
                 if (Message == null) { await ReplyAsync("This quote contains a null message ID! (Maybe the original message was deleted?)"); return; }
-                if (channel.IsNsfw == Ch.IsNsfw || channel.IsNsfw == false)
+                if (channel.IsNsfw == channel.IsNsfw || channel.IsNsfw == false)
                 {
                     if (Message.Embeds.Count() == 0)
                     {
@@ -80,12 +73,30 @@ namespace ERA20.Modules
                 }
                 else
                 {
-                    await Context.Channel.SendMessageAsync("This quote is NSFW and thus it can't be sent here!");
+                    await Context.Channel.SendMessageAsync("This quote is from a NSFW and thus it can't be viewed here!");
                 }
             }           
             else
             {
                 await ReplyAsync("There is no quote that contains the word \"" + Quote + "\"");
+            }
+        }
+
+        [Command("quotefix")]
+        [RequireOwner]
+        public async Task fix(){
+            var col = Database.GetCollection<Quote>("Quotes");
+            var quotes = col.FindAll();
+            foreach(var x in quotes){
+                ITextChannel channel = Context.Guild.GetTextChannel(x.Channel);
+                var message = await channel.GetMessageAsync(x.Message);
+                if (message.Content == "" && message.Embeds.Count() > 0){
+                    x.Content = message.Embeds.First().Description;
+                    col.Update(x);
+                    continue;
+                }
+                x.Content = message.Content;
+                col.Update(x);
             }
         }
         public SocketUser GetUser(ulong id)
@@ -121,8 +132,7 @@ public class Quote : ModuleBase<SocketCommandContext>
 {
     public int QuoteId { get; set; }
     public string Content { get; set; }
-    public DateTime Date { get; set; }
-    public ulong Message { get; set; }
-    public ulong User { get; set; }
-    public ulong Channel { get; set; }
+    public ulong Message { get; set; } //Message ID as per Discord
+    public ulong User { get; set; } //User ID 
+    public ulong Channel { get; set; } //Channel ID 
 }

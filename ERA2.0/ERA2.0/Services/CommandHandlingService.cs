@@ -42,16 +42,21 @@ namespace ERA20.Services
             _discord.UserLeft += OnUserLeft;
             _discord.ReactionAdded += OnReact;
             _discord.MessageUpdated += OnMessageUpdate;
-            _discord.UserUpdated += OnUserUpdate;
+            _discord.GuildMemberUpdated += OnUserUpdate;
         }
 
-        private async Task OnUserUpdate(SocketUser OldUser, SocketUser NewUser)
+        private async Task OnUserUpdate(SocketGuildUser OldUser, SocketGuildUser NewUser)
         {
+            var Role = OldUser.Guild.GetRole(311972158144512000);
             if (OldUser.Activity.Type != ActivityType.Streaming && NewUser.Activity.Type == ActivityType.Streaming){ 
-                ITextChannel Channel =  _discord.GetChannel(390769178946174976) as ITextChannel;
+                ITextChannel Channel =  _discord.GetChannel(311987726872215552) as ITextChannel;
                 StreamingGame Stream = NewUser.Activity as StreamingGame;
                 
                 await Channel.SendMessageAsync("User "+ NewUser.Mention +" Is now streaming **"+ Stream.Name +"**! \nYou can go and watch along by clicking this link: "+Stream.Url);
+            }
+            if (!OldUser.Roles.Contains(Role) && NewUser.Roles.Contains(Role)){
+                ITextChannel Channel =  _discord.GetChannel(311987726872215552) as ITextChannel;
+                await Channel.SendMessageAsync("Welcome to the server, "+NewUser.Mention+"!");
             }
         }
 
@@ -79,7 +84,6 @@ namespace ERA20.Services
                 var col = _database.GetCollection<Quote>("Quotes");
                 Quote quote = new Quote
                 {
-                    Date = msg.Timestamp.DateTime,
                     Content = msg.Content,
                     Channel = c.Id,
                     User = msg.Author.Id,
@@ -88,6 +92,7 @@ namespace ERA20.Services
                 if (!col.Exists(x => x.Message == msg.Id))
                 {
                     col.Insert(quote);
+                    col.EnsureIndex("Content", "LOWER($.Content)");
                     await msg.AddReactionAsync(new Discord.Emoji("💽"));
                 }
             }
