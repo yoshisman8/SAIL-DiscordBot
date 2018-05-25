@@ -87,17 +87,21 @@ namespace ERA20.Modules
         public async Task fix(){
             var col = Database.GetCollection<Quote>("Quotes");
             var quotes = col.FindAll();
+            var type = Context.Channel.EnterTypingState();
             foreach(var x in quotes){
                 ITextChannel channel = Context.Guild.GetTextChannel(x.Channel);
                 var message = await channel.GetMessageAsync(x.Message);
                 if (message.Content == "" && message.Embeds.Count() > 0){
                     x.Content = message.Embeds.First().Description;
                     col.Update(x);
+                    await ReplyAsync("Parsed Quote ID"+x.QuoteId);
                     continue;
                 }
                 x.Content = message.Content;
+                await ReplyAsync("Parsed Quote ID"+x.QuoteId);
                 col.Update(x);
             }
+            type.Dispose();
         }
         public SocketUser GetUser(ulong id)
         {
