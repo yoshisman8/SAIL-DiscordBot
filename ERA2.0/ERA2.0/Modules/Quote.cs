@@ -18,7 +18,7 @@ namespace ERA20.Modules
         [Command("Quote")]
         [Alias("Q")]
         [Summary("Finds a quote from the Quote database. Usage: `/Quote <search>`. React with :speaking_head: to add a message to the database.")]
-        public async Task FindQuote(string Quote = "")
+        public async Task FindQuote([Remainder] string Quote = "")
         {
             var col = Database.GetCollection<Quote>("Quotes");
             if (Quote == "")

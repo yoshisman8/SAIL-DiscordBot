@@ -840,7 +840,7 @@ namespace ERA20.Modules
             else
             {
                 var skill = skills.First();
-                if (skill.Level == 5) { await ReplyAsync("This skill is already at Max level!"); return; }
+                if (skill.Level == 10) { await ReplyAsync("This skill is already at Max level!"); return; }
                 else
                 {
                     C.Skills.ElementAt(C.Skills.IndexOf(skill)).Level++;

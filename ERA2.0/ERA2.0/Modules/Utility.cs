@@ -28,14 +28,6 @@ namespace ERA20.Modules
         {
             await Context.Client.SetGameAsync(_text);
         }
-        [Command("version")]
-        [Summary("Get the current changelog and version number for ERA!")]
-        public async Task getVersion()
-        {
-            var repo = await GitHubClient.Repository.Get("yoshisman8", "E.R.A.-Discord-Bot");
-            var commit = GitHubClient.Repository.Commit.GetAll(repo.Id).Result.ToList().Find(x => x.Sha == Config["version"]);
-            await ReplyAsync("Currnetly running commit `" + commit.Sha.Substring(0, 7) + "`. Changelog:\n```" + commit.Commit.Message+"```");
-        }
        
         [Command("Xsend")]
         [RequireUserPermission(GuildPermission.ManageRoles)]
@@ -160,7 +152,9 @@ namespace ERA20.Modules
         [Summary("Returns someone's avatar URL. Usage: `/Avatar <User>`. You dont have to mention the user")]
         public async Task Avatar([Remainder] IUser User)
         {
-            await Context.Channel.SendMessageAsync(User.GetAvatarUrl().Replace("?size=128", ""));
+            var user = Context.Client.GetUser(User.Id);
+            await Context.Channel.SendMessageAsync(user.GetAvatarUrl().Replace("?size=128", ""));
+            
         }
         [Command("User"), Alias("Whois","UserStats")]
         [RequireContext(ContextType.Guild)]
