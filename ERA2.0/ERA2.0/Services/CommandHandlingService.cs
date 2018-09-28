@@ -206,7 +206,7 @@ namespace ERA20.Services
                 {     // If command error, reply with the error and send error to Crash log.
                     await msg.AddReactionAsync(new Discord.Emoji("💥"));
                     var cnnl = context.Guild.GetTextChannel(495267183518285835);
-                    await cnnl.SendMessageAsync(result.Error.ToString());
+                    await cnnl.SendMessageAsync(result.Error.ToString()+"\n"+result.Error.Value.ToString());
                 }
                 if (!result.IsSuccess && result.Error == CommandError.UnknownCommand)
                 {     // If not a command, reply with the Emote.
@@ -217,7 +217,7 @@ namespace ERA20.Services
                     var DMs = await context.User.GetOrCreateDMChannelAsync();
                     string command = msg.Content.Split(' ')[0].Substring(1);
                     var res = _commands.Search(context, command);
-                    if (!res.IsSuccess)
+                        if (!res.IsSuccess)
                         {
                             await DMs.SendMessageAsync($"Sorry, I couldn't find a command like **{command}**.");
                             return;
@@ -226,8 +226,7 @@ namespace ERA20.Services
                         var builder = new EmbedBuilder()
                         {
                             Color = new Color(114, 137, 218),
-                            Description = $"Here are some commands like **{command}**\n"+
-                                "Note: If any field you're writing is multi world (except for .addchar, .delchar and .char) make sure to wrap the word on quotation marks like this: `.NewSkill \"Super Attack\" \"Does some super attack\"`."
+                            Description = $"Here is how you use **{command}**:"
                         };
                         foreach (var match in res.Commands)
                         {

@@ -130,7 +130,7 @@ namespace ERA20.Modules
             var col = Database.GetCollection<Quote>("Quotes");
             var quotes = col.FindAll();
             var type = Context.Channel.EnterTypingState();
-            var log = File.CreateText("quotelog.txt");
+            var log = File.CreateText(@"Data/Temp/quotelog.txt");
             int Deleted = 0;
             int Updated = 0;
             foreach(var x in quotes){
@@ -146,12 +146,11 @@ namespace ERA20.Modules
                 log.WriteLine("["+DateTime.Now.ToShortDateString()+"]"+DateTime.Now.ToShortTimeString()+" Parsed/Updated quote ID"+x.QuoteId+".");
                 Updated++;
                 col.Update(x);
-
             }
             type.Dispose();
             log.Flush();
-            await Context.Channel.SendFileAsync("quotelog.txt","Finished Parsing all quotes. Updated "+Updated+" quotes and Deleted "+Deleted+" quotes.");
-            File.Delete("quotelog.txt");
+            await Context.Channel.SendFileAsync(@"Data/Temp/quotelog.txt","Finished Parsing all quotes. Updated "+Updated+" quotes and Deleted "+Deleted+" quotes.");
+            File.Delete(@"Data/Temp/quotelog.txt");
         }
         public SocketUser GetUser(ulong id)
         {

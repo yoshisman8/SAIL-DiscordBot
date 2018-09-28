@@ -122,7 +122,25 @@ namespace ERA20.Modules
             }
             if ((LChars.Count() + NChar.Count()) > 24)
             {
-                await ReplyAsync("This search brought up too many results (Over 25)! Please be more specific in your search!");
+                var builder = new EmbedBuilder()
+                    .WithAuthor("E.R.A. Database Search", Context.Client.CurrentUser.GetAvatarUrl())
+                    .WithDescription("Here are all characters made by "+Context.Guild.GetUser(GetUserAlt(Name).Id)+":")
+                    .WithCurrentTimestamp();
+                var sb = new StringBuilder();
+                foreach (Character X in NChar){
+                    sb.Append(X.Name+" ");
+                }
+                if (sb.Length > 0){
+                    builder.AddField("Characters",sb.ToString());
+                }
+                sb.Clear();
+                foreach (LegacyCharacter X in LChars){
+                    sb.Append(X.Name+" ");
+                }
+                if (sb.Length > 0){
+                    builder.AddField("Legacy Characters",sb.ToString());
+                }
+                await ReplyAsync("", embed: builder.Build());
                 return;
             }
             else
