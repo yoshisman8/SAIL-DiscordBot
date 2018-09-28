@@ -202,11 +202,11 @@ namespace ERA20.Services
                 }
                 var result = await _commands.ExecuteAsync(context, argPos, _provider);     // Execute the command
 
-                if (!result.IsSuccess && ((result.Error != CommandError.UnknownCommand) && (result.Error != CommandError.UnknownCommand)))
+                if (!result.IsSuccess && ((result.Error != CommandError.UnknownCommand) && (result.Error != CommandError.BadArgCount)))
                 {     // If command error, reply with the error and send error to Crash log.
                     await msg.AddReactionAsync(new Discord.Emoji("💥"));
                     var cnnl = context.Guild.GetTextChannel(495267183518285835);
-                    await cnnl.SendMessageAsync(result.Error.Value.ToString());
+                    await cnnl.SendMessageAsync(result.Error.ToString());
                 }
                 if (!result.IsSuccess && result.Error == CommandError.UnknownCommand)
                 {     // If not a command, reply with the Emote.
