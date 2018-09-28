@@ -130,6 +130,7 @@ namespace ERA20.Modules
             var col = Database.GetCollection<Quote>("Quotes");
             var quotes = col.FindAll();
             var type = Context.Channel.EnterTypingState();
+            File.Delete(@"Data/Temp/quotelog.txt");
             var log = File.CreateText(@"Data/Temp/quotelog.txt");
             int Deleted = 0;
             int Updated = 0;

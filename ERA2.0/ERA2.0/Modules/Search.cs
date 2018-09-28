@@ -128,17 +128,17 @@ namespace ERA20.Modules
                     .WithCurrentTimestamp();
                 var sb = new StringBuilder();
                 foreach (Character X in NChar){
-                    sb.Append(X.Name+" ");
+                    sb.Append(X.Name+", ");
                 }
                 if (sb.Length > 0){
-                    builder.AddField("Characters",sb.ToString());
+                    builder.AddField("Characters",sb.ToString().Substring(0,sb.Length-2));
                 }
                 sb.Clear();
                 foreach (LegacyCharacter X in LChars){
-                    sb.Append(X.Name+" ");
+                    sb.Append(X.Name+", ");
                 }
                 if (sb.Length > 0){
-                    builder.AddField("Legacy Characters",sb.ToString());
+                    builder.AddField("Legacy Characters",sb.ToString().Substring(0,sb.Length-2));
                 }
                 await ReplyAsync("", embed: builder.Build());
                 return;
