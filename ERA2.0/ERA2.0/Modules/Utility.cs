@@ -221,7 +221,7 @@ namespace ERA20.Modules
         }
         [Command("Log"), Alias("GenerateLog")]
         [Summary("Generates a dated word document of a chatroom. Logs take a while to generate. Please be patient! Usage: /log")]
-        [RequireUserPermission(GuildPermission.ViewAuditLog)]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task LogChannel(){
             await Context.Client.SetGameAsync("Currnetly Logging: "+Context.Channel.Name);
             await Context.Channel.TriggerTypingAsync();
