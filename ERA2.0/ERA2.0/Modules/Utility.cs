@@ -9,7 +9,8 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Collections.Generic;
-using Octokit;
+using CommonMark;
+using System.Text;
 
 namespace ERA20.Modules
 {
@@ -19,7 +20,6 @@ namespace ERA20.Modules
     {
         public LiteDatabase Database { get; set; }
         public IConfiguration Config { get; set; }
-        public GitHubClient GitHubClient { get; set; }
 
         [Command("Status")]
         [RequireUserPermission(GuildPermission.ManageGuild)]
@@ -174,6 +174,82 @@ namespace ERA20.Modules
                 .AddField("Playing", Gamebuilder(user),true)
                 .AddField("Other data", miscbuilder(user),true);
             await ReplyAsync("", embed: builder.Build());
+        }
+        [Command("MessagePurge"), Alias("Delete","Deletdis")]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
+        [Summary("Deletes an X amount of messages without any filters. Usage: `/MessagePurge <Ammount (Starting from your command)>`")]
+        public async Task Delete(int Amount){
+            ulong checkpoint = Context.Message.Id;
+            for (int i = 1; i <= Amount; i++){
+                var msg = await Context.Channel.GetMessagesAsync(checkpoint,Direction.Before,1).FlattenAsync();
+                checkpoint = msg.First().Id;
+                await msg.First().DeleteAsync();
+                await Task.Delay(800);
+            }
+            await ReplyAsync("Successfully deleted "+Amount+" Messages");
+        }
+        [Command("DeleteFrom")]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
+        [Summary("Deletes messages form a specific users. Usage: `/DeleteFrom <Amount of messages (Starting from your command)> <Specified users, seprated by a space>`")]
+        public async Task DeleteFrom(int Amount, params IUser[] _users){
+            var msgs = new List<IMessage>();
+            var users = _users.ToList();
+            int Count = 0;
+            ulong checkpoint = Context.Message.Id;
+            for (int i = 1; i <= Amount; i++){
+                var msg = await Context.Channel.GetMessagesAsync(checkpoint,Direction.Before,1).FlattenAsync();
+                checkpoint = msg.First().Id;
+                if(users.Exists(x => x.Id == msg.First().Author.Id)) {await msg.First().DeleteAsync(); Count++;}
+                await Task.Delay(800);
+            }
+            await ReplyAsync("Successfully deleted "+Count+" messages.");
+        }
+        [Command("DeleteIf"), Alias("KeywordDelete")]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
+        [Summary("Deletes messages that contain a word or phrase (Be careful with this one). Usage: `/DeleteFrom <Amount of messages (Starting from your command)> <Keyword>`")]
+        public async Task DeleteFrom(int Amount,[Remainder] string Keyword){
+            var msgs = new List<IMessage>();
+            int Count = 0;
+            ulong checkpoint = Context.Message.Id;
+            for (int i = 1; i <= Amount; i++){
+                var msg = await Context.Channel.GetMessagesAsync(checkpoint,Direction.Before,1).FlattenAsync();
+                checkpoint = msg.First().Id;
+                if(msg.First().Content.ToLower().Contains(Keyword.ToLower())) {await msg.First().DeleteAsync(); Count++;}
+                await Task.Delay(800);
+            }
+            await ReplyAsync("Successfully deleted "+Count+" messages.");
+        }
+        [Command("Log"), Alias("GenerateLog")]
+        [Summary("Generates a dated word document of a chatroom. Logs take a while to generate. Please be patient! Usage: /log")]
+        [RequireUserPermission(GuildPermission.ViewAuditLog)]
+        public async Task LogChannel(){
+            await Context.Client.SetGameAsync("Currnetly Logging: "+Context.Channel.Name);
+            await Context.Channel.TriggerTypingAsync();
+            var Messages = new List<IMessage>().AsEnumerable();
+            var Buffer = new List<IMessage>().AsEnumerable();
+
+            Messages = Messages.Concat(await Context.Channel.GetMessagesAsync(Context.Message, Discord.Direction.Before, 100).FlattenAsync());
+            bool loop = true;
+            do{
+                Buffer = await Context.Channel.GetMessagesAsync(Messages.Last(), Discord.Direction.Before, 100).FlattenAsync();
+                if (Buffer.Count() == 0) {loop = false;}
+                else {Messages = Messages.Concat(Buffer); await Task.Delay(TimeSpan.FromSeconds(1));}
+            } while (loop);
+            var file = File.CreateText(Directory.GetCurrentDirectory()+"/"+Context.Channel.Name+".html");
+            var output = new StringBuilder();
+            output.AppendLine(Context.Channel.Name+"\n\n");
+            foreach(var x in Messages.Reverse()){
+                output.AppendLine("\n["+x.Author.Username+"] "+x.Content);
+                if (x.Attachments.Count >0){
+                    output.Append(" [Attached: "+x.Attachments.First().Url+"]");
+                }
+            }
+            file.Write(CommonMarkConverter.Convert(output.ToString()));
+            file.Close();
+            await Context.Channel.SendFileAsync(Directory.GetCurrentDirectory()+"/" + Context.Channel.Name + ".html","Channel logged Successfully! Here is your log file, Enjoy!");
+            await Context.Message.DeleteAsync();
+            File.Delete(Directory.GetCurrentDirectory()+"/"+Context.Channel.Name+".html");
+            await Context.Client.SetGameAsync(Config["status"]);
         }
         public string Buildroles(SocketGuildUser User)
         {

@@ -41,5 +41,6 @@
     <PackageReference Include="EdCanHack.DiceNotation" Version="0.2.0"/>
     <PackageReference Include="EdCanHack.DiceNotation.MathNet" Version="0.2.0"/>
     <PackageReference Include="Discord.Net" Version="2.0.0-beta"/>
+    <PackageReference Include="CommonMark.NET" Version="0.15.1"/>
   </ItemGroup>
 </Project>

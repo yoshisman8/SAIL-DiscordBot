@@ -111,11 +111,12 @@ namespace ERA20.Modules
             var quote = col.FindOne(x => x.QuoteId == id);
             var channel = Context.Guild.GetChannel(quote.Channel) as SocketTextChannel;
             var msg = await channel.GetMessageAsync(quote.Message);
-            var msgs = await channel.GetMessagesAsync(quote.Message,Direction.Before,5).FlattenAsync();
-            foreach (var x in msgs){
+            var raw = await channel.GetMessagesAsync(msg,Direction.Before,5).FlattenAsync();
+            var sorted = raw.OrderBy(x => x.Timestamp);
+            foreach (var x in sorted){
                 var builder = new EmbedBuilder()
-                        .WithAuthor(Context.Client.CurrentUser.Username+" Context dispenser", Context.Client.CurrentUser.GetAvatarUrl())
-                        .WithDescription(quote.Content + "\n- On " + GetChannel(x.Channel.Id).Mention)
+                        .WithAuthor("S.A.I.L. Context module", Context.Client.CurrentUser.GetAvatarUrl())
+                        .WithDescription(x.Content + "\n- In " + GetChannel(x.Channel.Id).Mention)
                         .WithFooter(GetUser(x.Author.Id).Username, GetUser(x.Author.Id).GetAvatarUrl())
                         .WithTimestamp(x.CreatedAt)
                         .WithColor(new Color(0, 153, 153));
@@ -130,6 +131,7 @@ namespace ERA20.Modules
             var col = Database.GetCollection<Quote>("Quotes");
             var quotes = col.FindAll();
             var type = Context.Channel.EnterTypingState();
+            Directory.CreateDirectory(@"Data/Temp/");
             File.Delete(@"Data/Temp/quotelog.txt");
             var log = File.CreateText(@"Data/Temp/quotelog.txt");
             int Deleted = 0;
@@ -149,7 +151,7 @@ namespace ERA20.Modules
                 col.Update(x);
             }
             type.Dispose();
-            log.Flush();
+            log.Close();
             await Context.Channel.SendFileAsync(@"Data/Temp/quotelog.txt","Finished Parsing all quotes. Updated "+Updated+" quotes and Deleted "+Deleted+" quotes.");
             File.Delete(@"Data/Temp/quotelog.txt");
         }
@@ -174,7 +176,7 @@ namespace ERA20.Modules
         {
             var builder = new EmbedBuilder()
                         .WithAuthor(Context.Client.CurrentUser.Username+" Quoting System", Context.Client.CurrentUser.GetAvatarUrl())
-                        .WithDescription(quote.Content + "\n- On " + GetChannel(quote.Channel.Id).Mention)
+                        .WithDescription(quote.Content + "\n- In " + GetChannel(quote.Channel.Id).Mention)
                         .WithFooter("ID: "+ID+" "+GetUser(quote.Author.Id).Username, GetUser(quote.Author.Id).GetAvatarUrl())
                         .WithTimestamp(quote.CreatedAt)
                         .WithColor(new Color(0, 153, 153));

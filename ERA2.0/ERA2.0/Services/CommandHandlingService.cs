@@ -41,24 +41,24 @@ namespace ERA20.Services
             _discord.ReactionAdded += OnReact;
             _discord.MessageUpdated += OnMessageUpdate;
             _discord.GuildMemberUpdated += OnUserUpdate;
-            _discord.MessageDeleted += OnMessageDelete;
+            // _discord.MessageDeleted += OnMessageDelete;
         }
 
-        private async Task OnMessageDelete(Cacheable<IMessage, ulong> _msg, ISocketMessageChannel channel)
-        {
-            var msg = await _msg.DownloadAsync() as SocketUserMessage;
-            if (msg.Reactions.ContainsKey(new Discord.Emoji("💽"))){
-                var col = _database.GetCollection<Quote>("Quotes");
-                var q = col.FindOne(x => x.Message == msg.Id);
-                col.Delete(q.QuoteId);
-            }
-        }
+        // private async Task OnMessageDelete(Cacheable<IMessage, ulong> _msg, ISocketMessageChannel channel)
+        // {
+        //     var msg = await _msg.DownloadAsync() as SocketUserMessage;
+        //     if (msg.Reactions.ContainsKey(new Discord.Emoji("💽"))){
+        //         var col = _database.GetCollection<Quote>("Quotes");
+        //         var q = col.FindOne(x => x.Message == msg.Id);
+        //         col.Delete(q.QuoteId);
+        //     }
+        // }
 
         private async Task OnUserUpdate(SocketGuildUser OldUser, SocketGuildUser NewUser)
         {
-            var Role = OldUser.Guild.GetRole(311972158144512000);
+            var Role = OldUser.Guild.GetRole(314934868830191617);
             if (NewUser.Activity != null){
-                if (OldUser.Activity.Type != ActivityType.Streaming && NewUser.Activity.Type == ActivityType.Streaming){ 
+                if ((OldUser.Activity == null || OldUser.Activity.Type != ActivityType.Streaming) && NewUser.Activity.Type == ActivityType.Streaming){ 
                     ITextChannel Channel =  _discord.GetChannel(311987726872215552) as ITextChannel;
                     StreamingGame Stream = NewUser.Activity as StreamingGame;
                     await Channel.SendMessageAsync("User "+ NewUser.Mention +" Is now streaming **"+ Stream.Name +"**! \nYou can go and watch along by clicking this link: "+Stream.Url);
@@ -206,7 +206,7 @@ namespace ERA20.Services
                 {     // If command error, reply with the error and send error to Crash log.
                     await msg.AddReactionAsync(new Discord.Emoji("💥"));
                     var cnnl = context.Guild.GetTextChannel(495267183518285835);
-                    await cnnl.SendMessageAsync(result.Error.ToString()+"\n"+result.Error.Value.ToString());
+                    await cnnl.SendMessageAsync("["+ DateTime.Now.ToShortDateString() +"] "+DateTime.Now.ToShortTimeString()+" "+result.Error.Value.ToString());
                 }
                 if (!result.IsSuccess && result.Error == CommandError.UnknownCommand)
                 {     // If not a command, reply with the Emote.
