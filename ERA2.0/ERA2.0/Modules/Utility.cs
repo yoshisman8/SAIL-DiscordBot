@@ -11,6 +11,7 @@ using System.IO;
 using System.Collections.Generic;
 using CommonMark;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ERA20.Modules
 {
@@ -219,10 +220,13 @@ namespace ERA20.Modules
             }
             await ReplyAsync("Successfully deleted "+Count+" messages.");
         }
-        [Command("Log"), Alias("GenerateLog")]
+        [Command("Log",RunMode = RunMode.Async), Alias("GenerateLog")]
         [Summary("Generates a dated word document of a chatroom. Logs take a while to generate. Please be patient! Usage: /log")]
         [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task LogChannel(){
+            var regex = new Regex(@"\b(?:https?:\/\/|www\.)(?:\S(?:.*\.(?:png|jpg|gif|jpeg|svg)))(?:\S?)+\b");
+            var Emotex = new Regex(@"(?:\<\:\S*\:\d*\>)+");
+            var Mentionex = new Regex(@"(?:\<\@\&\d*\>)|(?:\<\@\!\d*\>)|(?:\<\#\d*\>)");
             await Context.Client.SetGameAsync("Currnetly Logging: "+Context.Channel.Name);
             await Context.Channel.TriggerTypingAsync();
             var Messages = new List<IMessage>().AsEnumerable();
@@ -237,13 +241,53 @@ namespace ERA20.Modules
             } while (loop);
             var file = File.CreateText(Directory.GetCurrentDirectory()+"/"+Context.Channel.Name+".html");
             var output = new StringBuilder();
-            output.AppendLine(Context.Channel.Name+"\n\n");
+            output.AppendLine("## "+Context.Channel.Name+" ##\n\n");
             foreach(var x in Messages.Reverse()){
-                output.AppendLine("\n["+x.Author.Username+"] "+x.Content);
+                if (x.Content != "" ){
+                    output.AppendLine("\n["+x.Author.Username+"] "+x.Content);
+                }
+                else if (x.Content == "" && x.Attachments.Count > 0) {
+                    output.AppendLine("\n**Empty Message**");
+                }
                 if (x.Attachments.Count >0){
-                    output.Append(" [Attached: "+x.Attachments.First().Url+"]");
+                    foreach(var A in x.Attachments){
+                        output.AppendLine(A.Url);
+                    }
                 }
             }
+            if (regex.IsMatch(output.ToString())){
+                var matches = regex.Matches(output.ToString()).Cast<Match>().Select(match => match.Value).ToList();
+                foreach (var X in matches){
+                    output.Replace(X,"\n![]("+X+")"); 
+                }
+            }
+            if (Emotex.IsMatch(output.ToString())){
+                var matches = Emotex.Matches(output.ToString()).Cast<Match>().Select(match => match.Value).ToList();
+                foreach (var y in matches){
+                    var e = Discord.Emote.Parse(y);
+                    output.Replace(y,"<img src=\""+e.Url+"\" width=\"30\"/>");
+                }
+            }
+            // if (Mentionex.IsMatch(output.ToString())){
+            //     var matches = Mentionex.Matches(output.ToString()).Cast<Match>().Select(match => match.Value).ToList();
+            //     foreach(var z in matches){
+            //         if (z.Contains("!")){
+            //             var v = Convert.ToUInt64(Regex.Match(z, @"\d+").Value);
+            //             var u = Context.Guild.GetUser(v);
+            //             output.Replace(z,"@"+u.Username+"#"+u.DiscriminatorValue);
+            //         }
+            //         if (z.Contains("&")){
+            //             var v = Convert.ToUInt64(Regex.Match(z, @"\d+").Value);
+            //             var u = Context.Guild.GetRole(v);
+            //             output.Replace(z,"@"+u.Name);
+            //         }
+            //         if (z.Contains("#")){
+            //             var v = Convert.ToUInt64(Regex.Match(z, @"\d+").Value);
+            //             var u = Context.Guild.GetTextChannel(v);
+            //             output.Replace(z,"#"+u.Name);
+            //         }
+            //     }
+            // }
             file.Write(CommonMarkConverter.Convert(output.ToString()));
             file.Close();
             await Context.Channel.SendFileAsync(Directory.GetCurrentDirectory()+"/" + Context.Channel.Name + ".html","Channel logged Successfully! Here is your log file, Enjoy!");

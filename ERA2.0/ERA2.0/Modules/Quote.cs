@@ -9,6 +9,7 @@ using Discord;
 using Newtonsoft.Json;
 using System.Linq;
 using LiteDB;
+using System.Text.RegularExpressions;
 
 namespace ERA20.Modules
 {
@@ -114,9 +115,23 @@ namespace ERA20.Modules
             var raw = await channel.GetMessagesAsync(msg,Direction.Before,5).FlattenAsync();
             var sorted = raw.OrderBy(x => x.Timestamp);
             foreach (var x in sorted){
+                var Emotex = new Regex(@"(?:\<\:\S*\:\d*\>)+");
+                var content = x.Content;
+                if (Emotex.IsMatch(quote.Content)){
+                    var matches = Emotex.Matches(content).Cast<Match>().Select(match => match.Value).ToList();
+                    foreach (var y in matches){
+                        var e = Discord.Emote.Parse(y);
+                        if (e.Animated){
+                            content.Replace(y,"<a:"+e.Name+":"+e.Id+">");
+                        }
+                        else{
+                            content.Replace(y,e+"");
+                        }
+                    }
+                }
                 var builder = new EmbedBuilder()
                         .WithAuthor("S.A.I.L. Context module", Context.Client.CurrentUser.GetAvatarUrl())
-                        .WithDescription(x.Content + "\n- In " + GetChannel(x.Channel.Id).Mention)
+                        .WithDescription(content + "\n- In " + GetChannel(x.Channel.Id).Mention)
                         .WithFooter(GetUser(x.Author.Id).Username, GetUser(x.Author.Id).GetAvatarUrl())
                         .WithTimestamp(x.CreatedAt)
                         .WithColor(new Color(0, 153, 153));
@@ -174,9 +189,23 @@ namespace ERA20.Modules
         }
         public Embed EmbedQuote (IMessage quote,int ID)
         {
+            var Emotex = new Regex(@"(?:\<\:\S*\:\d*\>)+");
+            var content = quote.Content;
+            if (Emotex.IsMatch(quote.Content)){
+                var matches = Emotex.Matches(content).Cast<Match>().Select(match => match.Value).ToList();
+                foreach (var y in matches){
+                    var e = Discord.Emote.Parse(y);
+                    if (e.Animated){
+                        content.Replace(y,"<a:"+e.Name+":"+e.Id+">");
+                    }
+                    else{
+                        content.Replace(y,e+"");
+                    }
+                }
+            }
             var builder = new EmbedBuilder()
                         .WithAuthor(Context.Client.CurrentUser.Username+" Quoting System", Context.Client.CurrentUser.GetAvatarUrl())
-                        .WithDescription(quote.Content + "\n- In " + GetChannel(quote.Channel.Id).Mention)
+                        .WithDescription(content + "\n- In " + GetChannel(quote.Channel.Id).Mention)
                         .WithFooter("ID: "+ID+" "+GetUser(quote.Author.Id).Username, GetUser(quote.Author.Id).GetAvatarUrl())
                         .WithTimestamp(quote.CreatedAt)
                         .WithColor(new Color(0, 153, 153));

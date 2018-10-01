@@ -119,6 +119,7 @@ namespace ERA20.Modules
             {
                 await ReplyAsync("There are no characters whose names contain '" + Name + "'.");
                 return;
+                
             }
             if ((LChars.Count() + NChar.Count()) > 24)
             {
