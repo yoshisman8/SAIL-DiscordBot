@@ -241,7 +241,26 @@ namespace ERA20.Modules
             } while (loop);
             var file = File.CreateText(Directory.GetCurrentDirectory()+"/"+Context.Channel.Name+".html");
             var output = new StringBuilder();
-            output.AppendLine("## "+Context.Channel.Name+" ##\n\n");
+            output.AppendLine("## "+Context.Channel.Name+" ##\n\n"+
+            "<html>\n"+
+            "<head>\n"+
+                "<style>\n"+
+                    "* {\n"+
+                        "margin: 0;\n"+
+                        "padding: 0;\n"+
+                    "}\n"+
+                    ".imgbox {\n"+
+                        "display: grid;\n"+
+                        "height: 100%;\n"+
+                    "}\n"+
+                    ".center-fit {\n"+
+                        "max-width: 100%;\n"+
+                        "max-height: 100vh;\n"+
+                        "margin: auto;\n"+
+                    "}\n"+
+                "</style>\n"+
+            "</head>"+
+            "<body>");
             foreach(var x in Messages.Reverse()){
                 if (x.Content != "" ){
                     output.AppendLine("\n["+x.Author.Username+"] "+x.Content);
@@ -258,7 +277,7 @@ namespace ERA20.Modules
             if (regex.IsMatch(output.ToString())){
                 var matches = regex.Matches(output.ToString()).Cast<Match>().Select(match => match.Value).ToList();
                 foreach (var X in matches){
-                    output.Replace(X,"\n![]("+X+")"); 
+                    output.Replace(X,"<div class=\"imgbox\">\n<img class=\"center-fit\" src=\""+X+"\"/>\n</div>"); 
                 }
             }
             if (Emotex.IsMatch(output.ToString())){
@@ -268,26 +287,7 @@ namespace ERA20.Modules
                     output.Replace(y,"<img src=\""+e.Url+"\" width=\"30\"/>");
                 }
             }
-            // if (Mentionex.IsMatch(output.ToString())){
-            //     var matches = Mentionex.Matches(output.ToString()).Cast<Match>().Select(match => match.Value).ToList();
-            //     foreach(var z in matches){
-            //         if (z.Contains("!")){
-            //             var v = Convert.ToUInt64(Regex.Match(z, @"\d+").Value);
-            //             var u = Context.Guild.GetUser(v);
-            //             output.Replace(z,"@"+u.Username+"#"+u.DiscriminatorValue);
-            //         }
-            //         if (z.Contains("&")){
-            //             var v = Convert.ToUInt64(Regex.Match(z, @"\d+").Value);
-            //             var u = Context.Guild.GetRole(v);
-            //             output.Replace(z,"@"+u.Name);
-            //         }
-            //         if (z.Contains("#")){
-            //             var v = Convert.ToUInt64(Regex.Match(z, @"\d+").Value);
-            //             var u = Context.Guild.GetTextChannel(v);
-            //             output.Replace(z,"#"+u.Name);
-            //         }
-            //     }
-            // }
+            output.Append("</body>\n</html>");
             file.Write(CommonMarkConverter.Convert(output.ToString()));
             file.Close();
             await Context.Channel.SendFileAsync(Directory.GetCurrentDirectory()+"/" + Context.Channel.Name + ".html","Channel logged Successfully! Here is your log file, Enjoy!");
