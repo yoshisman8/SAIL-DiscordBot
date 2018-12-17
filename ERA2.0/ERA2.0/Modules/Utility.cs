@@ -225,13 +225,12 @@ namespace ERA20.Modules
         [RequireUserPermission(ChannelPermission.ManageMessages)]
         public async Task LogChannel(){
             var regex = new Regex(@"\b(?:https?:\/\/|www\.)(?:\S(?:.*\.(?:png|jpg|gif|jpeg|svg)))(?:\S?)+\b");
-            var Emotex = new Regex(@"(?:\<\:\S*\:\d*\>)+");
+            var Emotex = new Regex(@"(?:\<a*\:\w*\d*\:\d*\>)+?");
             var Mentionex = new Regex(@"(?:\<\@\&\d*\>)|(?:\<\@\!\d*\>)|(?:\<\#\d*\>)");
             await Context.Client.SetGameAsync("Currnetly Logging: "+Context.Channel.Name);
             await Context.Channel.TriggerTypingAsync();
             var Messages = new List<IMessage>().AsEnumerable();
             var Buffer = new List<IMessage>().AsEnumerable();
-
             Messages = Messages.Concat(await Context.Channel.GetMessagesAsync(Context.Message, Discord.Direction.Before, 100).FlattenAsync());
             bool loop = true;
             do{
@@ -241,26 +240,7 @@ namespace ERA20.Modules
             } while (loop);
             var file = File.CreateText(Directory.GetCurrentDirectory()+"/"+Context.Channel.Name+".html");
             var output = new StringBuilder();
-            output.AppendLine("## "+Context.Channel.Name+" ##\n\n"+
-            "<html>\n"+
-            "<head>\n"+
-                "<style>\n"+
-                    "* {\n"+
-                        "margin: 0;\n"+
-                        "padding: 0;\n"+
-                    "}\n"+
-                    ".imgbox {\n"+
-                        "display: grid;\n"+
-                        "height: 100%;\n"+
-                    "}\n"+
-                    ".center-fit {\n"+
-                        "max-width: 100%;\n"+
-                        "max-height: 100vh;\n"+
-                        "margin: auto;\n"+
-                    "}\n"+
-                "</style>\n"+
-            "</head>"+
-            "<body>");
+            output.AppendLine("## "+Context.Channel.Name+" ##\n\n"+"<html>\n<head>\n<style>\n* {\nmargin: 0;\npadding: 0;\n}\n.imgbox {\ndisplay: grid;\nheight: 100%;\n}\n.center-fit {\nmax-width: 100%;\nmax-height: 100vh;\nmargin: auto;\n}\nbody {\nfont-family: \"Whitney\", \"Helvetica Neue\", Helvetica, Arial, sans-serif;\nfont-size: 16px;\n}\na {\ntext-decoration: none;\n}\na:hover {\ntext-decoration: underline;\n}\nimg {\nobject-fit: contain;\n}\n.pre {\nfont-family: \"Consolas\", \"Courier New\", Courier, Monospace;\nwhite-space: pre-wrap;\n}\n.pre--multiline {\nmargin-top: 4px;\npadding: 8px;\nborder: 2px solid;\nborder-radius: 5px;\n}\n.pre--inline {\npadding: 2px;\nborder-radius: 3px;\n}\n.emoji {\nwidth: 24px;\nheight: 24px;\nmargin: 0 1px;\nvertical-align: middle;\n}\n.emoji--small {\nwidth: 16px;\nheight: 16px;\n}\n.emoji--large {\nwidth: 32px;\nheight: 32px;\n}\n.mention {\nfont-weight: 600;\n}\n/* === INFO === */\n.info {\ndisplay: flex;\nmax-width: 100%;\nmargin: 0 5px 10px 5px;\n}\n.info__guild-icon-container {\nflex: 0;\n}\n.info__guild-icon {\nmax-width: 88px;\nmax-height: 88px;\n}\n.info__metadata {\nflex: 1;\nmargin-left: 10px;\n}\n.info__guild-name {\nfont-size: 1.4em;\n}\n.info__channel-name {\nfont-size: 1.2em;\n}\n.info__channel-topic {\nmargin-top: 2px;\n}\n.info__channel-message-count {\nmargin-top: 2px;\n}\n.info__channel-date-range {\nmargin-top: 2px;\n}\n/* === CHATLOG === */\n.chatlog {\nmax-width: 100%;\n}\n.chatlog__message-group {\ndisplay: flex;\nmargin: 0 10px;\npadding: 15px 0;\nborder-top: 1px solid;\n}\n.chatlog__author-avatar-container {\nflex: 0;\nwidth: 40px;\nheight: 40px;\n}\n.chatlog__author-avatar {\nborder-radius: 50%;\nheight: 40px;\nwidth: 40px;\n}\n.chatlog__messages {\nflex: 1;\nmin-width: 50%;\nmargin-left: 20px;\n}\n.chatlog__author-name {\nfont-size: 1em;\n}\n.chatlog__timestamp {\nmargin-left: 5px;\nfont-size: .75em;\n}\n.chatlog__content {\npadding-top: 5px;\nfont-size: .9375em;\nword-wrap: break-word;\n}\n.chatlog__edited-timestamp {\nmargin-left: 5px;\nfont-size: .8em;\n}\n.chatlog__attachment {\nmargin: 5px 0;\n}\n.chatlog__attachment-thumbnail {\nmax-width: 50%;\nmax-height: 500px;\nborder-radius: 3px;\n}\n.chatlog__embed {\ndisplay: flex;\nmax-width: 520px;\nmargin-top: 5px;\n}\n.chatlog__embed-color-pill {\nflex-shrink: 0;\nwidth: 4px;\nborder-top-left-radius: 3px;\nborder-bottom-left-radius: 3px;\n}\n.chatlog__embed-content-container {\ndisplay: flex;\nflex-direction: column;\npadding: 8px 10px;\nborder: 1px solid;\nborder-top-right-radius: 3px;\nborder-bottom-right-radius: 3px;\n}\n.chatlog__embed-content {\nwidth: 100%;\ndisplay: flex;\n}\n.chatlog__embed-text {\nflex: 1;\n}\n.chatlog__embed-author {\ndisplay: flex;\nalign-items: center;\nmargin-bottom: 5px;\n}\n.chatlog__embed-author-icon {\nwidth: 20px;\nheight: 20px;\nmargin-right: 9px;\nborder-radius: 50%;\n}\n.chatlog__embed-author-name {\nfont-size: .875em;\nfont-weight: 600;\n}\n.chatlog__embed-title {\nmargin-bottom: 4px;\nfont-size: .875em;\nfont-weight: 600;\n}\n.chatlog__embed-description {\nfont-weight: 500;\nfont-size: 14px;\n}\n.chatlog__embed-fields {\ndisplay: flex;\nflex-wrap: wrap;\n}\n.chatlog__embed-field {\nflex: 0;\nmin-width: 100%;\nmax-width: 506px;\npadding-top: 10px;\n}\n.chatlog__embed-field--inline {\nflex: 1;\nflex-basis: auto;\nmin-width: 150px;\n}\n.chatlog__embed-field-name {\nmargin-bottom: 4px;\nfont-size: .875em;\nfont-weight: 600;\n}\n.chatlog__embed-field-value {\nfont-size: .875em;\nfont-weight: 500;\n}\n.chatlog__embed-thumbnail {\nflex: 0;\nmargin-left: 20px;\nmax-width: 80px;\nmax-height: 80px;\nborder-radius: 3px;\n}\n.chatlog__embed-image-container {\nmargin-top: 10px;\n}\n.chatlog__embed-image {\nmax-width: 500px;\nmax-height: 400px;\nborder-radius: 3px;\n}\n.chatlog__embed-footer {\nmargin-top: 10px;\n}\n.chatlog__embed-footer-icon {\nmargin-right: 4px;\nwidth: 20px;\nheight: 20px;\nborder-radius: 50%;\nvertical-align: middle;\n}\n.chatlog__embed-footer-text {\nfont-weight: 600;\nfont-size: .75em;\n}\n.chatlog__reactions {\ndisplay: flex;\n}\n.chatlog__reaction {\nmargin: 6px 2px 2px 2px;\npadding: 2px 6px 2px 2px;\nborder-radius: 3px;\n}\n.chatlog__reaction-emoji {\nmargin-left: 3px;\nvertical-align: middle;\n}\n.chatlog__reaction-count {\nfont-size: .875em;\nvertical-align: middle;\n}\n/* === GENERAL === */\nbody {\nbackground-color: #36393e;\ncolor: #ffffffb3;\n}\na {\ncolor: #0096cf;\n}\n.pre {\nbackground-color: #2f3136;\n}\n.pre--multiline {\nborder-color: #282b30;\ncolor: #839496;\n}\n.mention {\nbackground-color: #738bd71a;\ncolor: #7289da;\n}\n/* === INFO === */\n.info__guild-name {\ncolor: #ffffff;\n}\n.info__channel-name {\ncolor: #ffffff;\n}\n.info__channel-topic {\ncolor: #ffffff;\n}\n/* === CHATLOG === */\n.chatlog__message-group {\nborder-color: #ffffff0a;\n}\n.chatlog__author-name {\ncolor: #ffffff;\n}\n.chatlog__timestamp {\ncolor: #ffffff33;\n}\n.chatlog__edited-timestamp {\ncolor: #ffffff33;\n}\n.chatlog__embed-content-container {\nbackground-color: #2e30364d;\nborder-color: #2e303699;\n}\n.chatlog__embed-author-name {\ncolor: #ffffff;\n}\n.chatlog__embed-author-name-link {\ncolor: #ffffff;\n}\n.chatlog__embed-title {\ncolor: #ffffff;\n}\n.chatlog__embed-description {\ncolor: #ffffff99;\n}\n.chatlog__embed-field-name {\ncolor: #ffffff;\n}\n.chatlog__embed-field-value {\ncolor: #ffffff99;\n}\n.chatlog__embed-footer {\ncolor: #ffffff99;\n}\n.chatlog__reaction {\nbackground-color: #ffffff0a;\n}\n.chatlog__reaction-count {\ncolor: #ffffff4d;\n}\n</style>\n</head>\n<body>");
             foreach(var x in Messages.Reverse()){
                 if (x.Content != "" ){
                     output.AppendLine("\n["+x.Author.Username+"] "+x.Content);

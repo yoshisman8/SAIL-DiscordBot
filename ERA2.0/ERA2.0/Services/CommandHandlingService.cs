@@ -22,7 +22,6 @@ namespace ERA20.Services
         private IServiceProvider _provider;
         private LiteDatabase _database;
         private GitHubClient _gitClient;
-
         private Toggles _toggles;
 
         public CommandHandlingService(IServiceProvider provider, DiscordSocketClient discord,IConfiguration config, CommandService commands, LiteDatabase database, GitHubClient gitHubClient, Toggles toggles)

@@ -2,45 +2,45 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <StartupObject/>
+    <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="data\**"/>
-    <Compile Remove="Legacy\**"/>
-    <EmbeddedResource Remove="data\**"/>
-    <EmbeddedResource Remove="Legacy\**"/>
-    <None Remove="data\**"/>
-    <None Remove="Legacy\**"/>
+    <Compile Remove="data\**" />
+    <Compile Remove="Legacy\**" />
+    <EmbeddedResource Remove="data\**" />
+    <EmbeddedResource Remove="Legacy\**" />
+    <None Remove="data\**" />
+    <None Remove="Legacy\**" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="Modules\DergNet.cs"/>
-    <Compile Remove="Modules\LANCER.cs"/>
-    <Compile Remove="Modules\PlayerStorage.cs"/>
+    <Compile Remove="Modules\DergNet.cs" />
+    <Compile Remove="Modules\LANCER.cs" />
+    <Compile Remove="Modules\PlayerStorage.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Remove="game.txt"/>
-    <None Remove="token.txt"/>
+    <None Remove="game.txt" />
+    <None Remove="token.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Modules\Wiki.cs"/>
-    <None Include="Program.cs"/>
+    <None Include="Modules\Wiki.cs" />
+    <None Include="Program.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Discord.Addons.Interactive" Version="1.0.1"/>
-    <PackageReference Include="LiteDB" Version="4.1.0"/>
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0"/>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.0.0"/>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0"/>
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.0.0"/>
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.0.0"/>
-    <PackageReference Include="Microsoft.NETCore.Platforms" Version="2.0.1"/>
-    <PackageReference Include="Microsoft.NETCore.Targets" Version="2.0.0"/>
-    <PackageReference Include="NETStandard.Library" Version="2.0.1"/>
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1-beta1"/>
-    <PackageReference Include="Octokit" Version="0.28.0"/>
-    <PackageReference Include="EdCanHack.DiceNotation" Version="0.2.0"/>
-    <PackageReference Include="EdCanHack.DiceNotation.MathNet" Version="0.2.0"/>
-    <PackageReference Include="Discord.Net" Version="2.0.0-beta"/>
-    <PackageReference Include="CommonMark.NET" Version="0.15.1"/>
+    <PackageReference Include="Discord.Addons.PassiveInteractive" Version="2.0.3" />
+    <PackageReference Include="LiteDB" Version="4.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.0.0" />
+    <PackageReference Include="Microsoft.NETCore.Platforms" Version="2.0.1" />
+    <PackageReference Include="Microsoft.NETCore.Targets" Version="2.0.0" />
+    <PackageReference Include="NETStandard.Library" Version="2.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.1-beta1" />
+    <PackageReference Include="Octokit" Version="0.28.0" />
+    <PackageReference Include="EdCanHack.DiceNotation" Version="0.2.0" />
+    <PackageReference Include="EdCanHack.DiceNotation.MathNet" Version="0.2.0" />
+    <PackageReference Include="Discord.Net" Version="2.0.0-beta" />
+    <PackageReference Include="CommonMark.NET" Version="0.15.1" />
   </ItemGroup>
 </Project>
