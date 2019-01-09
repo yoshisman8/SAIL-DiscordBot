@@ -110,7 +110,12 @@ namespace ERA20.Modules
         public async Task getcontext(int id){
             var col = Database.GetCollection<Quote>("Quotes");
             var quote = col.FindOne(x => x.QuoteId == id);
+            var CurrentChannel = Context.Channel as SocketTextChannel;
             var channel = Context.Guild.GetChannel(quote.Channel) as SocketTextChannel;
+            if (channel.IsNsfw && CurrentChannel.IsNsfw == false){
+                await Context.Channel.SendMessageAsync("This quote is from a NSFW and thus it can't be viewed here!");
+                return;
+            }
             var msg = await channel.GetMessageAsync(quote.Message);
             var raw = await channel.GetMessagesAsync(msg,Direction.Before,5).FlattenAsync();
             var sorted = raw.OrderBy(x => x.Timestamp);
