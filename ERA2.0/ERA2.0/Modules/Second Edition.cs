@@ -726,7 +726,7 @@ namespace ERA20.Modules
         }
     }
 
-    [Group("Skills"), Alias("Skill", "S")]
+    [Group("Skills"), Alias("Skill")]
     public class SkillMGR : ModuleBase<SocketCommandContext>
     {
         public LiteDatabase Database { get; set; }
