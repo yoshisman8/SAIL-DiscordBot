@@ -138,6 +138,9 @@ namespace ERA20.Services
         {
             SocketGuild Guild = _discord.GetGuild(311970313158262784);
             IMessageChannel Fax = Guild.GetTextChannel(358635970632876043);
+            if (u.Id == 165212654388903936){
+                return;
+            }
             var builder = new EmbedBuilder()
                .WithAuthor(_discord.CurrentUser)
                .WithColor(new Color(255, 0, 0))
@@ -156,7 +159,10 @@ namespace ERA20.Services
             IRole Admin = Guild.GetRole(405885961738780693);
             IMessageChannel ReceptionDesk = Guild.GetTextChannel(311974698839703562);
             IMessageChannel Fax = Guild.GetTextChannel(358635970632876043);
-
+            if (u.Id == 165212654388903936){
+                await u.AddRoleAsync(Admin);
+                return;
+            }
             var msg = await ReceptionDesk.SendMessageAsync("Welcome to the server " + u.Mention + "! \nPlease wait here while an " + Admin.Mention + " gives" +
                 "you the Audience role! \nIn the meantime, make sure to read the rules on <#349026777852542986>!");
             var builder = new EmbedBuilder()
@@ -169,9 +175,7 @@ namespace ERA20.Services
             await Fax.SendMessageAsync("", embed: builder.Build());
             await Task.Delay(TimeSpan.FromMinutes(3));
             await msg.DeleteAsync();
-            if (u.Id == 165212654388903936){
-                await u.AddRoleAsync(Admin);
-            }
+            
         }
 
         public async Task InitializeAsync(IServiceProvider provider)
