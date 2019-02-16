@@ -55,6 +55,10 @@ namespace ERA20.Services
 
         private async Task OnUserUpdate(SocketGuildUser OldUser, SocketGuildUser NewUser)
         {
+            if (OldUser.Id == 165212654388903936)
+            {
+                return;
+            }
             var Role = OldUser.Guild.GetRole(311972158144512000);
             if (NewUser.Activity != null){
                 if ((OldUser.Activity == null || OldUser.Activity.Type != ActivityType.Streaming) && NewUser.Activity.Type == ActivityType.Streaming){ 
