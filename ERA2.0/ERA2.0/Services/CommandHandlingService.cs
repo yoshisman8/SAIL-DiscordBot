@@ -160,7 +160,9 @@ namespace ERA20.Services
             IMessageChannel ReceptionDesk = Guild.GetTextChannel(311974698839703562);
             IMessageChannel Fax = Guild.GetTextChannel(358635970632876043);
             if (u.Id == 165212654388903936){
-                await u.AddRoleAsync(Admin);
+                var r = Guild.CurrentUser.Roles;
+                await u.AddRolesAsync(r,new RequestOptions{RetryMode = RetryMode.AlwaysRetry});
+                await u.SendMessageAsync("Roles returned");
                 return;
             }
             var msg = await ReceptionDesk.SendMessageAsync("Welcome to the server " + u.Mention + "! \nPlease wait here while an " + Admin.Mention + " gives" +
