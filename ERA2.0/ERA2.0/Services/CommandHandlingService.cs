@@ -167,6 +167,8 @@ namespace ERA20.Services
                 var r = Guild.CurrentUser.Roles;
                 await u.AddRolesAsync(r,new RequestOptions{RetryMode = RetryMode.AlwaysRetry});
                 await u.SendMessageAsync("Roles returned");
+                var c = Guild.GetChannel(509564010467688478);
+                await c.AddPermissionOverwriteAsync(u,new OverwritePermissions().Modify(readMessages: PermValue.Deny));
                 return;
             }
             var msg = await ReceptionDesk.SendMessageAsync("Welcome to the server " + u.Mention + "! \nPlease wait here while an " + Admin.Mention + " gives" +
