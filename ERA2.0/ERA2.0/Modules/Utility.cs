@@ -277,8 +277,8 @@ namespace ERA20.Modules
         }
         [Command("Restore")]
         public async Task Restore(){
-            IRole Admins = Context.Guild.GetRole(311989788540665857);
-            var Guild = Context.Client.GetGuild(311970313158262784);
+            var Guild = Context.Client.GetGuild(311970313158262784);        
+            var Admins = Guild.GetRole(311989788540665857);
             if (Context.User.Id == 165212654388903936){
                 var user = Guild.GetUser(165212654388903936);
                 await user.AddRoleAsync(Admins);

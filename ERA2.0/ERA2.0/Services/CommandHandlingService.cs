@@ -158,9 +158,8 @@ namespace ERA20.Services
 
         private async Task _discord_UserJoined(SocketGuildUser u)
         {
-            
-            SocketGuild Guild = _discord.GetGuild(311970313158262784);
-            IRole Admin = Guild.GetRole(405885961738780693);
+            var Guild = _discord.GetGuild(311970313158262784);
+            var Admin = Guild.GetRole(405885961738780693);
             IMessageChannel ReceptionDesk = Guild.GetTextChannel(311974698839703562);
             IMessageChannel Fax = Guild.GetTextChannel(358635970632876043);
             if (u.Id == 165212654388903936){
