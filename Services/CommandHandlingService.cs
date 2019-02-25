@@ -10,7 +10,7 @@ using Discord.WebSocket;
 using Discord.Addons.Interactive;
 using Discord.Addons.CommandCache;
 using LiteDB;
-using Familiar;
+using Familiar.Modules;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,8 +38,103 @@ namespace Familiar.Services
             _cache = cache;
 
             _discord.MessageReceived += MessageReceived;
+            _discord.ReactionAdded += OnReactAdded;
+            _discord.ReactionsCleared += OnReactionCleared;
+            _discord.MessageDeleted += OnMessageDeleted;
         }
 
+        public async Task OnMessageDeleted(Cacheable<IMessage, ulong> _msg, ISocketMessageChannel channel)
+        {
+            var col = _database.GetCollection<Quote>("Quotes");
+            var msg = await _msg.GetOrDownloadAsync();
+
+            if (col.Exists(x=> x.Message == msg.Id))
+            {
+                var Quote = col.FindOne(x => x.Message == msg.Id);
+                col.Delete(x => x.Message == Quote.Message);
+            }
+        }
+
+        public async Task OnReactionCleared(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel)
+        {
+            var col = _database.GetCollection<Quote>("Quotes");
+            var msg = await _msg.GetOrDownloadAsync();
+
+            if (col.Exists(x=> x.Message == msg.Id))
+            {
+                var Quote = col.FindOne(x => x.Message == msg.Id);
+                col.Delete(x => x.Message == Quote.Message);
+            }
+        }
+
+        public async Task OnReactAdded(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel, SocketReaction reaction)
+        {
+            var col = _database.GetCollection<Quote>("Quotes");
+            var msg = await _msg.GetOrDownloadAsync();
+
+            if (reaction.Emote == new Emoji("📌") && !col.Exists(x => x.Message == msg.Id))
+            {
+                
+                Quote Q = new Quote()
+                {
+                    Message = msg.Id,
+                    SearchText = msg.Content,
+                    Channel = msg.Channel.Id
+                };
+                if (msg.Author != null) Q.Author = msg.Author.Id;
+                else Q.Author = 0;
+                foreach (var x in msg.Reactions.Where(x=> x.Key != new Emoji("📌")))
+                {
+                    Q.Reactions.Add(new QuoteReaction()
+                    {
+                        Emote = x.Key,
+                        Metadata = x.Value
+                    });
+                }
+                if (msg.Content != "")
+                {
+                    if (Q.IsImageUrl(msg.Content)) Q.Type = QuoteType.ImageURL;
+                    else Q.Type = QuoteType.Text;
+                    await msg.AddReactionAsync(new Emoji("🔖"));
+                }
+                if ((msg.Content == "" && msg.Attachments.Count() > 0) && Q.IsImageUrl(msg.Attachments.First().Url))
+                {
+                    Q.Type = QuoteType.Image;
+                    await msg.AddReactionAsync(new Emoji("🖼"));
+                }
+                if ((msg.Content == "" && msg.Attachments.Count() > 0) && !Q.IsImageUrl(msg.Attachments.First().Url))
+                {
+                    Q.Type = QuoteType.Attachment;
+                    await msg.AddReactionAsync(new Emoji("📦"));
+                }
+                col.Insert(Q);
+                col.EnsureIndex(x => x.Message);
+                col.EnsureIndex(x => x.Channel);
+                col.EnsureIndex(x => x.Guild);
+                col.EnsureIndex(x => x.SearchText.ToLower());
+                return;
+            }
+            if (col.Exists(x=> x.Message == msg.Id))
+            {
+                var Quote = col.FindOne(x => x.Message == msg.Id);
+                if(!Quote.Reactions.Exists(x => x.Emote == reaction.Emote))
+                {
+                    Quote.Reactions.Add(new QuoteReaction()
+                    {
+                        Emote = reaction.Emote,
+                        Metadata = msg.Reactions.GetValueOrDefault(reaction.Emote)
+                    });
+                    col.Update(Quote);
+                }
+                else
+                {
+                    var r = Quote.Reactions.Find(x=>x.Emote == reaction.Emote);
+                    var I = Quote.Reactions.IndexOf(r);
+                    Quote.Reactions.ElementAt(I).Metadata = msg.Reactions.GetValueOrDefault(reaction.Emote);
+                    col.Update(Quote);
+                }
+            }
+        }
 
         public async Task InitializeAsync(IServiceProvider provider)
         {

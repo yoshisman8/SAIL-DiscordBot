@@ -42,7 +42,12 @@ namespace Familiar
             return new ServiceCollection()
                 // Base
                 .AddSingleton(_client)
-                .AddSingleton<CommandService>()
+                .AddSingleton(new CommandService(new CommandServiceConfig()
+                    {
+                        DefaultRunMode = RunMode.Async,
+                        CaseSensitiveCommands = false
+                    })
+                )
                 .AddSingleton<CommandHandlingService>()
                 // Logging
                 .AddLogging()
