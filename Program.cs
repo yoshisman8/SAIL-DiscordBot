@@ -24,6 +24,7 @@ namespace SAIL
 
         public async Task MainAsync()
         {
+            Directory.CreateDirectory(Directory.GetCurrentDirectory()+@"/Data/");
             _client = new DiscordSocketClient();
             _config = BuildConfig();
             
@@ -65,7 +66,7 @@ namespace SAIL
         {
             return new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("config.json")
+                .AddJsonFile(Directory.GetCurrentDirectory()+@"/Data/config.json")
                 .Build();
 }
     }

@@ -19,6 +19,8 @@ namespace SAIL.Classes
         public string Prefix {get;set;} = "!";
         public int ListMode {get;set;} = 0;
         public List<ulong> Channels {get;set;} = new List<ulong>();
+        public List<Module> Modules {get;set;} = new List<Module>();
+        public ulong ErrorChannel {get;set;} = 0;
     }
     public class Module
     {
