@@ -10,9 +10,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using LiteDB;
-using Familiar.Services;
+using SAIL.Services;
 
-namespace Familiar
+namespace SAIL
 {
     class Program
     {

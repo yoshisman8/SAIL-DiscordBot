@@ -11,8 +11,10 @@ using Discord.Rest;
 using Discord;
 using System.Net;
 using System.Globalization;
+using SAIL.Classes;
+using System.Text;
 
-namespace Familiar.Modules 
+namespace SAIL.Modules 
 {
     public class Quote
     {
@@ -24,70 +26,48 @@ namespace Familiar.Modules
         public QuoteType Type {get;set;}
         public string SearchText {get;set;}
         public List<QuoteReaction> Reactions {get;set;} = new List<QuoteReaction>();
-
-        public async Task<Embed> Embed(SocketCommandContext context)
-        {
-            var C = context.Client.GetChannel(Channel) as SocketTextChannel;
-            if (C == null) throw new Exception("The channel this quote was on has been deleted.");
-            var U = context.Client.GetUser(Author);
-            var M = await C.GetMessageAsync(Message);
-            if (M == null) throw new Exception("The message this quote linked to has been deleted.");
-            if(C.IsNsfw && (context.Channel as SocketTextChannel).IsNsfw) return new EmbedBuilder().WithAuthor(context.Client.CurrentUser).WithDescription("This quote is NSFW so it cannot be displayed here!").Build();
-
-            var embed = new EmbedBuilder()
-                .WithTimestamp(M.Timestamp);
-            if (M.Content != "")
-            {
-                embed.WithDescription(M.Content);
-            }
-            if(U == null)
-            {
-                embed.WithAuthor("[User out of Reach]");
-            }
-            else
-            {
-                embed.WithAuthor(U);
-            }
-            if (M.Attachments.Count > 0)
-            {
-                switch (Type)
-                {
-                    case QuoteType.Attachment:
-                        foreach (var x in M.Attachments)
-                        {
-                            embed.AddField(x.Filename,"[Download]("+x.Url+")",true);
-                        }
-                        break;
-                    case QuoteType.Image:
-                        embed.WithImageUrl(M.Attachments.First().Url);
-                        break;
-                }
-            }
-            return embed.Build();
-        }
-        public bool IsImageUrl(string URL)
-        {
-            var req = (HttpWebRequest)HttpWebRequest.Create(URL);
-            req.Method = "HEAD";
-            using (var resp = req.GetResponse())
-            {
-                return resp.ContentType.ToLower(CultureInfo.InvariantCulture)
-                        .StartsWith("image/");
-            }
-        }
-
+        [BsonIgnore]
+        public QuoteContext QContext {get;set;}
         
+        public async Task GenerateContext(SocketCommandContext context)
+        {
+            QContext.Guild = context.Client.GetGuild(Guild);
+            if (QContext.Guild == null) throw new Exception("Guild not found. I cannot access the server this quote is from. This is an unusual error, and you should contact my owner about this.");
+            QContext.Channel = QContext.Guild.GetTextChannel(Channel);
+            if (QContext.Channel == null) throw new Exception("Channel not found. I cannot access the channel this quote is from. This can be due to me not having the Read Messages and Read Message History premissions on the channel this quote is from. Consider giving me these permissions in order to avoid this issue in the future.");
+            QContext.User = QContext.Guild.GetUser(Author);
+            QContext.Message = await QContext.Channel.GetMessageAsync(Message) as SocketUserMessage;
+            if (QContext.Message == null) throw new Exception("Message not found. I cannot seem to find this message. It might have been deleted or the message or due to me not having the Read Messages and Read Message History premissions on the channel this quote is from. Consider giving me these permissions in order to avoid this issue in the future.");
+        }
     }
+
+    public class QuoteContext
+    {
+        public SocketUserMessage Message {get;set;}
+        public SocketTextChannel Channel {get;set;}
+        public SocketGuildUser User {get;set;}
+        public SocketGuild Guild {get;set;}
+    }
+
     public enum QuoteType {Text, Image, Attachment, ImageURL}
     public class QuoteReaction
     {
         public IEmote Emote {get;set;}
         public ReactionMetadata Metadata {get;set;}
     }
-    public class QuoteModule : InteractiveBase<SocketCommandContext>
+    public class QuoteModule : InteractiveBase<SocketCommandContext>, IController
     {
-        public LiteDatabase Database {get;set;}
+        public QuoteModule(LiteDatabase database, CommandCacheService commandCache, int index) 
+        {
+            this.Database = database;
+                this.CommandCache = commandCache;
+                this.Index = index;
+               
+        }
+                public LiteDatabase Database {get;set;}
         public CommandCacheService CommandCache {get;set;}
+        public int Index {get; set;} = 0;
+        public List<Embed> Pages {get;set;} = new List<Embed>();
 
         [Command("Quote"),Alias("Q")]
         [RequireContext(ContextType.Guild)]
@@ -95,19 +75,59 @@ namespace Familiar.Modules
         {
             var All = Database.GetCollection<Quote>("Quotes").Find(x=> x.Guild==Context.Guild.Id);
             var rnd = new Random();
-
+            
             var Quote = All.ElementAt(rnd.Next(0,All.Count()-1));
-            try
-            {
-                var emb = await Quote.Embed(Context);
-                var msg = await ReplyAsync("",embed: emb);
+            try{
+                await Quote.GenerateContext(Context);
+                var emb = await StaticMethods.EmbedMessage(Context,Quote.QContext);
+                var emote = new Emoji("❓");
+
+                var msg = await ReplyAsync(".");
+                await msg.AddReactionAsync(emote);
+                
                 CommandCache.Add(Context.Message.Id,msg.Id);
+
+                Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,new ReactionCallbackData
+                ("",emb,true,true,TimeSpan.FromMinutes(3))
+                    .WithCallback(emote, async (C,R) => await GetContext(C,R,msg,Interactive,Quote))));
             }
             catch (Exception e)
             {
-                var msg = await ReplyAsync("Uh oh, it seems like this quote has returned the error `"+e.Message+"` and has beed deleted from the databanks, sorry!");
+                Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Quote.Message);
+                var msg = await ReplyAsync("It seems like this quote has returned the error `"+e.Message+"` and has beed deleted from the databanks, Appologies!");
                 CommandCache.Add(Context.Message.Id,msg.Id);
             }
+        }
+
+        public async Task GetContext(SocketCommandContext c, SocketReaction r, IUserMessage msg, InteractiveService interactive, Quote quote)
+        {
+            var prev = new Emoji("⏮");
+            var next = new Emoji("⏭");
+            var kill = new Emoji("⏹");
+            var channel = msg.Channel as SocketTextChannel;
+            var _msgs = await channel.GetMessagesAsync(msg.Id,Direction.Before,5).FlattenAsync();
+            var msgs = _msgs.ToList();
+            msgs.Add(msg);
+            foreach(var x in msgs.OrderBy(x=>x.Timestamp))
+            {
+                Pages.Add();
+            }
+        }
+
+        public Task Next(SocketCommandContext c, SocketReaction r, SocketMessage msg)
+        {
+            
+        }
+            
+
+        public Task Previous(SocketCommandContext c, SocketReaction r, SocketMessage msg)
+        {
+            
+        }
+
+        public Task ToIndex(SocketCommandContext c, SocketReaction r, SocketMessage msg)
+        {
+            
         }
     }
 }

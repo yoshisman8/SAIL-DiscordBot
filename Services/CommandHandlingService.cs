@@ -10,12 +10,12 @@ using Discord.WebSocket;
 using Discord.Addons.Interactive;
 using Discord.Addons.CommandCache;
 using LiteDB;
-using Familiar.Modules;
+using SAIL.Modules;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Familiar.Services
+namespace SAIL.Services
 {
     public class CommandHandlingService
     {
@@ -93,16 +93,16 @@ namespace Familiar.Services
                 }
                 if (msg.Content != "")
                 {
-                    if (Q.IsImageUrl(msg.Content)) Q.Type = QuoteType.ImageURL;
+                    if (StaticMethods.IsImageUrl(msg.Content)) Q.Type = QuoteType.ImageURL;
                     else Q.Type = QuoteType.Text;
                     await msg.AddReactionAsync(new Emoji("🔖"));
                 }
-                if ((msg.Content == "" && msg.Attachments.Count() > 0) && Q.IsImageUrl(msg.Attachments.First().Url))
+                if ((msg.Content == "" && msg.Attachments.Count() > 0) && StaticMethods.IsImageUrl(msg.Attachments.First().Url))
                 {
                     Q.Type = QuoteType.Image;
                     await msg.AddReactionAsync(new Emoji("🖼"));
                 }
-                if ((msg.Content == "" && msg.Attachments.Count() > 0) && !Q.IsImageUrl(msg.Attachments.First().Url))
+                if ((msg.Content == "" && msg.Attachments.Count() > 0) && !StaticMethods.IsImageUrl(msg.Attachments.First().Url))
                 {
                     Q.Type = QuoteType.Attachment;
                     await msg.AddReactionAsync(new Emoji("📦"));

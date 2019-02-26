@@ -5,7 +5,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace Familiar.Services
+namespace SAIL.Services
 {
     public class LogService
     {
