@@ -24,9 +24,8 @@ namespace SAIL.Modules
         public ulong Author {get;set;}
         public ulong Guild {get;set;}
         public string SearchText {get;set;}
-        public List<QuoteReaction> Reactions {get;set;} = new List<QuoteReaction>();
         [BsonIgnore]
-        public QuoteContext Context {get;set;}
+        public QuoteContext Context {get;set;} = new QuoteContext();
         
         public async Task GenerateContext(SocketCommandContext SCC)
         {
@@ -35,14 +34,15 @@ namespace SAIL.Modules
             Context.Channel = Context.Guild.GetTextChannel(Channel);
             if (Context.Channel == null) throw new Exception("Channel not found. I cannot access the channel this quote is from. This can be due to me not having the Read Messages and Read Message History premissions on the channel this quote is from. Consider giving me these permissions in order to avoid this issue in the future.");
             Context.User = Context.Guild.GetUser(Author);
-            Context.Message = await Context.Channel.GetMessageAsync(Message) as SocketUserMessage;
+            var _msg = await Context.Channel.GetMessageAsync(Message);
+            Context.Message = _msg as IUserMessage;
             if (Context.Message == null) throw new Exception("Message not found. I cannot seem to find this message. It might have been deleted or the message or due to me not having the Read Messages and Read Message History premissions on the channel this quote is from. Consider giving me these permissions in order to avoid this issue in the future.");
         }
     }
 
     public class QuoteContext
     {
-        public SocketUserMessage Message {get;set;}
+        public IUserMessage Message {get;set;}
         public SocketTextChannel Channel {get;set;}
         public SocketGuildUser User {get;set;}
         public SocketGuild Guild {get;set;}
@@ -52,6 +52,8 @@ namespace SAIL.Modules
         public IEmote Emote {get;set;}
         public ReactionMetadata Metadata {get;set;}
     }
+    [Name("Message Quoting")]
+    [Summary("This module contains all commands related to Finding Quotes! Keep in mind that even if you disable this module, existing quotes will not be deleted.")]
     public class QuoteModule : InteractiveBase<SocketCommandContext>
     {
         public LiteDatabase Database {get;set;}
@@ -64,22 +66,21 @@ namespace SAIL.Modules
         public async Task RandomQuote()
         {
             var All = Database.GetCollection<Quote>("Quotes").Find(x=> x.Guild==Context.Guild.Id);
-            var rnd = new Random();
+            var rnd = new Random().Next(0,All.Count()-1);
             
-            var Quote = All.ElementAt(rnd.Next(0,All.Count()-1));
+            var Quote = All.ElementAt(rnd);
             try{
                 await Quote.GenerateContext(Context);
-                var emb = await StaticMethods.EmbedMessage(Context,Quote.Context.Channel,Quote.Context.Message);
+                var emb = StaticMethods.EmbedMessage(Context,Quote.Context.Channel,Quote.Context.Message);
                 var emote = new Emoji("❓");
 
-                var msg = await ReplyAsync(".") as SocketUserMessage;
-                await msg.AddReactionAsync(emote);
+                var msg = await ReplyAsync("",embed: emb);
                 
                 CommandCache.Add(Context.Message.Id,msg.Id);
-
-                Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,new ReactionCallbackData
-                ("",emb,true,true,TimeSpan.FromMinutes(3))
-                    .WithCallback(emote, async (C,R) => await GetContext(C,R,msg,Interactive,Quote))));
+                var callback = new ReactionCallbackData("",emb,false,false,TimeSpan.FromMinutes(3));
+                callback.WithCallback(emote, async (C,R) => await GetContext(Context,R,msg,Interactive,Quote,callback));
+                Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,callback));
+                await msg.AddReactionAsync(emote);
             }
             catch (Exception e)
             {
@@ -102,23 +103,25 @@ namespace SAIL.Modules
             }
             else
             {
-                var msg = await ReplyAsync("Searching for \""+Query+"\"...") as SocketUserMessage;
+                var msg = await ReplyAsync("Searching for \""+Query+"\"...");
                 if(results.Count() > 1)
                 {
                     var prev = new Emoji("⏮");
                     await msg.AddReactionAsync(prev);
-                    var next = new Emoji("⏭");
-                    await msg.AddReactionAsync(next);
                     var kill = new Emoji("⏹");
                     await msg.AddReactionAsync(kill);
+                    var next = new Emoji("⏭");
+                    await msg.AddReactionAsync(next);
                     foreach(var x in results)
                     {
                         await x.GenerateContext(Context);
-                        Controller.Pages.Add(await StaticMethods.EmbedMessage(Context,x.Context.Channel,x.Context.Message));
+                        Controller.Pages.Add(StaticMethods.EmbedMessage(Context,x.Context.Channel,x.Context.Message));
                     }
+                    await msg.ModifyAsync(x=>x.Content= "Found "+results.Count()+" results for '"+Query+"'.");
+                    await msg.ModifyAsync(x=> x.Embed = Controller.Pages.ElementAt(Controller.Index));
+
                     Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,new ReactionCallbackData
-                        ("Context (Page "+Controller.Index+1+" of **"+Controller.Pages.Count+"**)",
-                        Controller.Pages.First(),false,false,TimeSpan.FromMinutes(3))
+                        ("",null,false,false,TimeSpan.FromMinutes(3))
                             .WithCallback(prev,(ctx,rea)=>Controller.Previous(ctx,rea,msg))
                             .WithCallback(kill,(ctx,rea)=>Controller.Kill(Interactive,msg))
                             .WithCallback(next,(ctx,rea)=>Controller.Next(ctx,rea,msg))));
@@ -130,8 +133,8 @@ namespace SAIL.Modules
                     try
                     {
                         await Q.GenerateContext(Context);
-                        await msg.ModifyAsync(x=>x.Content = "");
-                        var embed = await StaticMethods.EmbedMessage(Context,Q.Context.Channel,Q.Context.Message);
+                        await msg.ModifyAsync(x=>x.Content = "Found one result for '"+Query+"'.");
+                        var embed = StaticMethods.EmbedMessage(Context,Q.Context.Channel,Q.Context.Message);
                         await msg.ModifyAsync(x=>x.Embed = embed);
                         CommandCache.Add(Context.Message.Id,msg.Id);
                     }
@@ -145,33 +148,36 @@ namespace SAIL.Modules
             }
         }
 
-        public async Task GetContext(SocketCommandContext c, SocketReaction r, SocketUserMessage msg, InteractiveService interactive, Quote quote)
+        public async Task GetContext(SocketCommandContext c, SocketReaction r, IUserMessage msg, InteractiveService interactive, Quote quote, ReactionCallbackData callback)
         {
-            await msg.RemoveReactionAsync(r.Emote,r.User.Value);
-            interactive.RemoveReactionCallback(msg);
+            await msg.RemoveAllReactionsAsync();
 
             var prev = new Emoji("⏮");
             await msg.AddReactionAsync(prev);
-            var next = new Emoji("⏭");
-            await msg.AddReactionAsync(next);
             var kill = new Emoji("⏹");
             await msg.AddReactionAsync(kill);
+            var next = new Emoji("⏭");
+            await msg.AddReactionAsync(next);
 
-            var channel = msg.Channel as SocketTextChannel;
-            var raw = channel.GetMessagesAsync(msg.Id,Direction.Before,5).Flatten().ToEnumerable().ToList();
-            raw.Add(msg);
-            var context = raw.OrderBy(x=> x.Timestamp).ToList();
-            foreach(var x in context.OrderBy(x=>x.Timestamp))
+            var channel = c.Guild.GetTextChannel(msg.Channel.Id);
+            var raw = await quote.Context.Channel.GetMessagesAsync(quote.Context.Message.Id,Direction.Before,5).FlattenAsync();
+            var context = raw.OfType<IUserMessage>().OrderBy(x=>x.Timestamp);
+            foreach(var x in context)
             {
-                Controller.Pages.Add(await StaticMethods.EmbedMessage(c,channel,x as SocketUserMessage));
+                Controller.Pages.Add(StaticMethods.EmbedMessage(c,channel,x));
             }
+            Controller.Pages.Add(StaticMethods.EmbedMessage(c,quote.Context.Channel,quote.Context.Message));
 
-            interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,new ReactionCallbackData
-                ("Context (Page "+Controller.Index+1+" of **"+Controller.Pages.Count+"**)",
-                Controller.Pages.First(),false,false,TimeSpan.FromMinutes(3))
-                .WithCallback(prev,(ctx,rea)=>Controller.Previous(ctx,rea,msg))
+            await msg.ModifyAsync(x=> x.Embed = Controller.Pages.ElementAt(Controller.Index));
+            await msg.ModifyAsync(x=> x.Content = "Showing the last 5 messages before this Quote.\n"+
+                "Use ⏮ and ⏭ to navigate. Press ⏹ to end navigation\n"+
+                "Note: Navigation will be automatically dissabled after 3 minutes");
+            
+            callback.WithCallback(prev,(ctx,rea)=>Controller.Previous(c,rea,msg))
                 .WithCallback(kill,(ctx,rea)=>Controller.Kill(interactive,msg))
-                .WithCallback(next,(ctx,rea)=>Controller.Next(ctx,rea,msg))));
+                .WithCallback(next,(ctx,rea)=>Controller.Next(c,rea,msg));
+            
+            interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,c,callback));
         }
     }
 }

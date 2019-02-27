@@ -43,20 +43,54 @@ namespace SAIL.Services
             _discord.ReactionsCleared += OnReactionCleared;
             _discord.MessageDeleted += OnMessageDeleted;
             _discord.MessageUpdated += OnMessageUpdated;
-            InitializeGuildsDB(_discord, _commands,_database);
+            _discord.Ready += OnReady;
         }
 
-        private Task InitializeGuildsDB(DiscordSocketClient discord, CommandService commands, LiteDatabase database)
+        public async Task OnReady()
+        {
+            await InitializeGuildsDB(_discord, _database);
+            await UpdateModules(_discord,_database,_commands);
+        }
+
+        private async Task UpdateModules(DiscordSocketClient discord, LiteDatabase database, CommandService commands)
         {
             var col = database.GetCollection<SysGuild>("Guilds");
-            var joined = discord.Guilds.
-            foreach(var x )
+            var servers = col.FindAll();
+            var modules = commands.Modules.Select(x=> x.Name).ToList();
+            foreach (var x in modules.Where(x=>x != "Control Module"))
+            {
+                foreach(var y in servers.Where(z=>!z.Modules.Exists(w=>w.Name == x)))
+                {
+                    y.Modules.Add(new Classes.Module(){Name=x});
+                    col.Update(y);
+                }
+            }
         }
 
-        public async Task OnMessageUpdated(Cacheable<IMessage, ulong> OldMsg, SocketMessage NewMsg, ISocketMessageChannel Channel)
+        private async Task InitializeGuildsDB(DiscordSocketClient discord, LiteDatabase database)
         {
-            var col = _database.GetCollection<Quote>("Quotes");
+            var col = database.GetCollection<SysGuild>("Guilds");
+            var joined = discord.Guilds.Select(x=> x.Id).ToList();
+            foreach (var x in joined)
+            {
+                if (!col.Exists(y =>y.Id == x))
+                {
+                    col.Insert(new SysGuild()
+                    {
+                        Id = x
+                    });
+                    col.EnsureIndex("Modules","$.Modules[*].Name",false);
+                }
+            }
+        }
 
+        public async Task OnMessageUpdated(Cacheable<IMessage, ulong> _OldMsg, SocketMessage NewMsg, ISocketMessageChannel Channel)
+        {
+            var OldMsg = await _OldMsg.DownloadAsync();
+            if (OldMsg.Source != MessageSource.User) return;
+
+            var col = _database.GetCollection<Quote>("Quotes");
+            
             if(_cache.TryGetValue(NewMsg.Id, out var CacheMsg))
             {
                 var reply = await Channel.GetMessageAsync(CacheMsg.First());
@@ -75,6 +109,7 @@ namespace SAIL.Services
         {
             var col = _database.GetCollection<Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
+            if (msg == null || msg.Source != MessageSource.User) return;
 
             if (col.Exists(x=> x.Message == msg.Id))
             {
@@ -87,7 +122,7 @@ namespace SAIL.Services
         {
             var col = _database.GetCollection<Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
-
+            if (msg.Source != MessageSource.User) return;
             if (col.Exists(x=> x.Message == msg.Id))
             {
                 var Quote = col.FindOne(x => x.Message == msg.Id);
@@ -97,31 +132,35 @@ namespace SAIL.Services
 
         public async Task OnReactAdded(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel, SocketReaction reaction)
         {
+            if (reaction.UserId == _discord.CurrentUser.Id) return;
             var col = _database.GetCollection<Quote>("Quotes");
-            var msg = await _msg.GetOrDownloadAsync() as SocketUserMessage;
+            var msg = await _msg.GetOrDownloadAsync();
+            var context = new CommandContext(_discord,msg);
+            var guild = context.Guild;
 
-            if (reaction.Emote == new Emoji("📌") && !col.Exists(x => x.Message == msg.Id))
-            {  
+            if (reaction.Emote.Name == "📌" && (col.Exists(x => x.Message == msg.Id)==false))
+            {
                 Quote Q = new Quote()
                 {
                     Message = msg.Id,
                     SearchText = msg.Content,
-                    Channel = msg.Channel.Id
+                    Channel = msg.Channel.Id,
+                    Guild = guild.Id
                 };
                 if (msg.Author != null) Q.Author = msg.Author.Id;
                 else Q.Author = 0;
                 if (msg.Content == "")
                 {
-                    var prompt = await channel.SendMessageAsync("This message has no text in it, which would make it impossible to lookup and will make it appear only on random quote pools. Please respond with a string of text to use for the purposes of searching this mesage using the `Quote` command.");
-                    var reply = await _interactive.NextMessageAsync(new SocketCommandContext(_discord,msg));
-                    Q.SearchText = reply.Content.ToLower();
+                    var prompt = await channel.SendMessageAsync("This message has no text in it, which will make it impossible to lookup outside of the Random Quote command.\n"+
+                    "Please consider editing this message's contents in order to make it searchable in the future.");
+                    _cache.Add(msg.Id,prompt.Id);
                 }
-                await msg.AddReactionAsync(new Emoji("🔖"));
                 col.Insert(Q);
                 col.EnsureIndex(x => x.Message);
                 col.EnsureIndex(x => x.Channel);
                 col.EnsureIndex(x => x.Guild);
-                col.EnsureIndex(x => x.SearchText.ToLower());
+                col.EnsureIndex("SearchText","LOWER($.SearchText)");
+                await msg.AddReactionAsync(new Emoji("🔖"));
                 return;
             }
         }
@@ -141,18 +180,26 @@ namespace SAIL.Services
             
             var context = new SocketCommandContext(_discord, message);
             var Guild = _database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==context.Guild.Id);
-            var module = _commands.Search(context,message.Content.Replace(Guild.Prefix,"")
-                                .Split(' ').First()).Commands.First().Command.Module.Name;
-            int argPos = 0;
-            if ((!message.HasMentionPrefix(_discord.CurrentUser, ref argPos) 
-                && !message.HasStringPrefix(Guild.Prefix, ref argPos))
-                || Guild.Modules.Exists(x=> x.Name == module && x.Active == false)) return;
+            if (Guild.ListMode == ListMode.Blacklist && Guild.Channels.Exists(x=> x == message.Channel.Id)) return;
+            if (Guild.ListMode == ListMode.Whitelist && Guild.Channels.Exists(x=> x == message.Channel.Id) == false) return;
 
-            var result = await _commands.ExecuteAsync(context, argPos, _provider);
+            
+            var command = _commands.Search(context,message.Content.Replace(Guild.Prefix,"").Split(' ').First());
+            if (command.IsSuccess && command.Commands != null)
+            {
+                var module = command.Commands.First().Command.Module;
+                int argPos = 0;
+                if ((!message.HasMentionPrefix(_discord.CurrentUser, ref argPos) 
+                    && !message.HasStringPrefix(Guild.Prefix, ref argPos))
+                    || Guild.Modules.Exists(x=> x.Name == module.Name && x.Active == false)) return;
 
-            if (result.Error.HasValue && 
-                (result.Error.Value != CommandError.UnknownCommand))
-                Console.WriteLine(result.Error); 
+                var result = await _commands.ExecuteAsync(context, argPos, _provider);
+
+                if (result.Error.HasValue && (result.Error.Value != CommandError.UnknownCommand))
+                {
+                    Console.WriteLine(result.Error); 
+                }
+            }
         }
     }
 }

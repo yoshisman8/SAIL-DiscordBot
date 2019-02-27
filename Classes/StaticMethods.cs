@@ -28,7 +28,7 @@ namespace SAIL.Classes
                         .StartsWith("image/");
             }
         }
-        public static async Task<Embed> EmbedMessage(SocketCommandContext context, SocketTextChannel channel, SocketUserMessage message)
+        public static Embed EmbedMessage(SocketCommandContext context, SocketTextChannel channel, IUserMessage message)
         {
             if (channel == null) throw new Exception("Channel not found. It might have been deleted or I may no longer have the \"Read Message\" and \"Read Message History\" Permissions.");
             if (message == null) throw new Exception("Message not found. It might have been deleted or I may no longer have the \"Read Message History\" permission");
@@ -70,7 +70,7 @@ namespace SAIL.Classes
                     }
                 }
             }
-            if(message.Reactions.Where(x=> x.Key != new Emoji("📌")).Count() == 0)
+            if(message.Reactions.Where(x=> x.Key.Name != "📌"&& x.Key.Name != "🔖").Count() > 0)
             {
                 var sb = new StringBuilder();
                 foreach (var x in message.Reactions.Where(x=> x.Key != new Emoji("📌")))

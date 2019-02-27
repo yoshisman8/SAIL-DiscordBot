@@ -12,6 +12,7 @@ using Discord.Addons.CommandCache;
 namespace SAIL.Modules
 {
     [Name("Dice Roller")]
+    [Summary("This module contains multiple commands for rolling all sorts of dice. Useful for games and roleplay!")]
     public class Diceroller : CommandCacheModuleBase<SocketCommandContext>
     {
         IDiceParser parser = new DiceParser();
@@ -240,10 +241,10 @@ namespace SAIL.Modules
         }
         [Command("Fate")]
         [Summary("Roll a set of [Fate dice](https://fate-srd.com/fate-core/what-you-need-play). \nUsage: `Fate +/-Y`. Where -Y or +Y is a positve or negative whole number.")]
-        public async Task FateRoll ([Remainder] int input)
+        public async Task FateRoll ([Remainder] int input = 0)
         {
             var results = parser.Parse("4d6").Roll();
-            string[] dice = new string[4];
+            var dice = new List<string>();
             int value = input;
             string Rating = "Invalid";
             foreach (var x in results.Results)
@@ -251,34 +252,34 @@ namespace SAIL.Modules
                 switch (x.Value)
                 {
                     case 1:
-                        dice.Append("[➖]");
+                        dice.Add("[➖]");
                         value--;
                         break;
                     case 2:
-                        dice.Append("[➖]");
+                        dice.Add("[➖]");
                         value--;
                         break;
                     case 3:
-                        dice.Append("[⬛]");
+                        dice.Add("[⬛]");
                         break;
                     case 4:
-                        dice.Append("[⬛]");
+                        dice.Add("[⬛]");
                         break;
                     case 5:
-                        dice.Append("[➕]");
+                        dice.Add("[➕]");
                         value++;
                         break;
                     case 6:
-                        dice.Append("[➕]");
+                        dice.Add("[➕]");
                         value++;
                         break;
                 }
             }
             if (value > 8) Rating = "Legendary+";
-            else if(value < 2) Rating = "Terrible +";
+            else if(value < -2) Rating = "Terrible+";
             else Rating = FateLadder.GetValueOrDefault(value);
-            await ReplyAsync(Context.User.Mention+", You got a(n) "+Rating+" ("+value+") roll."+
-                "\n"+string.Join(", ",dice)+" "+input.ToString()+".");
+            await ReplyAsync(Context.User.Mention+", You got a "+Rating+" ("+value+") roll."+
+                "\n"+string.Join(", ",dice)+" "+(input == 0 ? "" :"+ ("+input.ToString()+")")+".");
             
         }
         private Dictionary<int,string> FateLadder = new Dictionary<int, string>()
