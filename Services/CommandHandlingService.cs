@@ -177,8 +177,22 @@ namespace SAIL.Services
             // Ignore system messages and messages from bots
             if (!(rawMessage is SocketUserMessage message)) return;
             if (message.Source != MessageSource.User) return;
-            
+
             var context = new SocketCommandContext(_discord, message);
+            if (context.Guild == null)
+            {
+                int argPos = 0;
+                if ((!message.HasMentionPrefix(_discord.CurrentUser, ref argPos) 
+                    && !message.HasStringPrefix("!", ref argPos))) return;
+
+                var result = await _commands.ExecuteAsync(context, argPos, _provider);
+
+                if (result.Error.HasValue && (result.Error.Value != CommandError.UnknownCommand))
+                {
+                    Console.WriteLine(result.Error); 
+                }
+                return;
+            }
             var Guild = _database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==context.Guild.Id);
             if (Guild.ListMode == ListMode.Blacklist && Guild.Channels.Exists(x=> x == message.Channel.Id)) return;
             if (Guild.ListMode == ListMode.Whitelist && Guild.Channels.Exists(x=> x == message.Channel.Id) == false) return;
