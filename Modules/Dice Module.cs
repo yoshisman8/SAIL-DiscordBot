@@ -18,31 +18,31 @@ namespace SAIL.Modules
         IDiceParser parser = new DiceParser();
 
         [Command("Roll"), Alias("r")]
-        [Summary("Rolls a die on a xdy expression format. \nUsage: `Roll <dice expression>`.")]
-        public async Task DieRoll([Remainder]string input = "d20")
+        [Summary("Rolls a die on a xdy + z expression format.")]
+        public async Task DieRoll([Remainder]string DiceExpression = "d20")
         {
-            string[] sinput = new string[0];
-            if (input.Contains(">>")){
-                sinput = input.Split(">>",StringSplitOptions.RemoveEmptyEntries);
-                if (sinput.Length == 1){
+            string[] sDiceExpression = new string[0];
+            if (DiceExpression.Contains(">>")){
+                sDiceExpression = DiceExpression.Split(">>",StringSplitOptions.RemoveEmptyEntries);
+                if (sDiceExpression.Length == 1){
                     await ReplyAsync("You didn't add a conditional!");
                     return;
                 }
-                if (sinput.Length > 2){
+                if (sDiceExpression.Length > 2){
                     await ReplyAsync("You can't add more than one conditional!");
                     return;
                 }
-                if (!int.TryParse(sinput[1], out int n)){
+                if (!int.TryParse(sDiceExpression[1], out int n)){
                     await ReplyAsync("This expression has an invalid/non-numeric conditional!");
                     return;
                 }
-                int conditional = int.Parse(sinput[1]);
-                var valid = System.Text.RegularExpressions.Regex.IsMatch(sinput[0].ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
+                int conditional = int.Parse(sDiceExpression[1]);
+                var valid = System.Text.RegularExpressions.Regex.IsMatch(sDiceExpression[0].ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
                 if (!valid){
                     await ReplyAsync(Context.User.Mention+" This is not a valid dice expression!");
                     return;
                 }
-                var result = parser.Parse(sinput[0].ToLower()).Roll();
+                var result = parser.Parse(sDiceExpression[0].ToLower()).Roll();
                 string steps = "";
                 var successes = result.Results.Where(x => x.Value >= conditional);
                 foreach (var x in result.Results){
@@ -64,27 +64,27 @@ namespace SAIL.Modules
                 }
             }
 
-            if (input.Contains(">")){
-                sinput = input.Split(">",StringSplitOptions.RemoveEmptyEntries);
-                if (sinput.Length == 1){
+            if (DiceExpression.Contains(">")){
+                sDiceExpression = DiceExpression.Split(">",StringSplitOptions.RemoveEmptyEntries);
+                if (sDiceExpression.Length == 1){
                     await ReplyAsync("You didn't add a conditional!");
                     return;
                 }
-                if (sinput.Length > 2){
+                if (sDiceExpression.Length > 2){
                     await ReplyAsync("You can't add more than one conditional!");
                     return;
                 }
-                if (!int.TryParse(sinput[1], out int n)){
+                if (!int.TryParse(sDiceExpression[1], out int n)){
                     await ReplyAsync("This expression has an invalid/non-numeric conditional!");
                     return;
                 }
-                int conditional = int.Parse(sinput[1]);
-                var valid = System.Text.RegularExpressions.Regex.IsMatch(sinput[0].ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
+                int conditional = int.Parse(sDiceExpression[1]);
+                var valid = System.Text.RegularExpressions.Regex.IsMatch(sDiceExpression[0].ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
                 if (!valid){
                     await ReplyAsync(Context.User.Mention+" This is not a valid dice expression!");
                     return;
                 }
-                var result = parser.Parse(sinput[0].ToLower()).Roll();
+                var result = parser.Parse(sDiceExpression[0].ToLower()).Roll();
                 string steps = "";
                 foreach(var x in result.Results){
                 if (x.Scalar == -1){
@@ -108,27 +108,27 @@ namespace SAIL.Modules
                 }
             }
 
-            if (input.Contains("<<")){
-                sinput = input.Split("<<",StringSplitOptions.RemoveEmptyEntries);
-                if (sinput.Length == 1){
+            if (DiceExpression.Contains("<<")){
+                sDiceExpression = DiceExpression.Split("<<",StringSplitOptions.RemoveEmptyEntries);
+                if (sDiceExpression.Length == 1){
                     await ReplyAsync("You didn't add a conditional!");
                     return;
                 }
-                if (sinput.Length > 2){
+                if (sDiceExpression.Length > 2){
                     await ReplyAsync("You can't add more than one conditional!");
                     return;
                 }
-                if (!int.TryParse(sinput[1], out int n)){
+                if (!int.TryParse(sDiceExpression[1], out int n)){
                     await ReplyAsync("This expression has an invalid/non-numeric conditional!");
                     return;
                 }
-                int conditional = int.Parse(sinput[1]);
-                var valid = System.Text.RegularExpressions.Regex.IsMatch(sinput[0].ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
+                int conditional = int.Parse(sDiceExpression[1]);
+                var valid = System.Text.RegularExpressions.Regex.IsMatch(sDiceExpression[0].ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
                 if (!valid){
                     await ReplyAsync(Context.User.Mention+" This is not a valid dice expression!");
                     return;
                 }
-                var result = parser.Parse(sinput[0].ToLower()).Roll();
+                var result = parser.Parse(sDiceExpression[0].ToLower()).Roll();
                 string steps = "";
                 var successes = result.Results.Where(x => x.Value < conditional);
                 foreach (var x in result.Results){
@@ -150,27 +150,27 @@ namespace SAIL.Modules
                 }
             }
 
-            if (input.Contains("<")){
-                sinput = input.Split("<",StringSplitOptions.RemoveEmptyEntries);
-                if (sinput.Length == 1){
+            if (DiceExpression.Contains("<")){
+                sDiceExpression = DiceExpression.Split("<",StringSplitOptions.RemoveEmptyEntries);
+                if (sDiceExpression.Length == 1){
                     await ReplyAsync("You didn't add a conditional!");
                     return;
                 }
-                if (sinput.Length > 2){
+                if (sDiceExpression.Length > 2){
                     await ReplyAsync("You can't add more than one conditional!");
                     return;
                 }
-                if (!int.TryParse(sinput[1], out int n)){
+                if (!int.TryParse(sDiceExpression[1], out int n)){
                     await ReplyAsync("This expression has an invalid/non-numeric conditional!");
                     return;
                 }
-                int conditional = int.Parse(sinput[1]);
-                var valid = System.Text.RegularExpressions.Regex.IsMatch(sinput[0].ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
+                int conditional = int.Parse(sDiceExpression[1]);
+                var valid = System.Text.RegularExpressions.Regex.IsMatch(sDiceExpression[0].ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
                 if (!valid){
                     await ReplyAsync(Context.User.Mention+" This is not a valid dice expression!");
                     return;
                 }
-                var result = parser.Parse(sinput[0].ToLower()).Roll();
+                var result = parser.Parse(sDiceExpression[0].ToLower()).Roll();
                 string steps = "";
                 foreach(var x in result.Results){
                 if (x.Scalar == -1){
@@ -194,12 +194,12 @@ namespace SAIL.Modules
                 }
             }
             else {
-            var valid = System.Text.RegularExpressions.Regex.IsMatch(input.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
+            var valid = System.Text.RegularExpressions.Regex.IsMatch(DiceExpression.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
             if (!valid){
                 await ReplyAsync(Context.User.Mention+" This is not a valid dice expression!");
                 return;
             }
-            var result = parser.Parse(input.ToLower()).Roll();
+            var result = parser.Parse(DiceExpression.ToLower()).Roll();
             string steps = "";
             foreach(var x in result.Results){
                 if (x.Scalar == -1){
@@ -218,34 +218,34 @@ namespace SAIL.Modules
         }
 
         [Command("Max")]
-        [Summary("Shows the maximum possible roll for this dice roll")]
-        public async Task Max([Remainder]string input){
-            var valid = System.Text.RegularExpressions.Regex.IsMatch(input.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
+        [Summary("Shows the maximum possible roll for this dice roll.")]
+        public async Task Max([Remainder]string DiceExpression){
+            var valid = System.Text.RegularExpressions.Regex.IsMatch(DiceExpression.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
             if (!valid){
                 await ReplyAsync(Context.User.Mention+" This is not a valid dice expression!");
                 return;
             }
-            var result = parser.Parse(input.ToLower()).MaxRoll();
+            var result = parser.Parse(DiceExpression.ToLower()).MaxRoll();
             await ReplyAsync(Context.User.Mention + ", The possible maximum roll for this expression is **"+result.Value+"**.");
         }
         [Command("Min")]
-        [Summary("Shows the minimum possible roll for this dice roll")]
-        public async Task Min([Remainder]string input){
-            var valid = System.Text.RegularExpressions.Regex.IsMatch(input.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
+        [Summary("Shows the minimum possible roll for this dice roll.")]
+        public async Task Min([Remainder]string DiceExpression){
+            var valid = System.Text.RegularExpressions.Regex.IsMatch(DiceExpression.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
             if (!valid){
                 await ReplyAsync(Context.User.Mention+" This is not a valid dice expression!");
                 return;
             }
-            var result = parser.Parse(input.ToLower()).MinRoll();
+            var result = parser.Parse(DiceExpression.ToLower()).MinRoll();
             await ReplyAsync(Context.User.Mention + ", The possible minimum roll for this expression is **"+result.Value+"**.");
         }
         [Command("Fate")]
-        [Summary("Roll a set of [Fate dice](https://fate-srd.com/fate-core/what-you-need-play). \nUsage: `Fate +/-Y`. Where -Y or +Y is a positve or negative whole number.")]
-        public async Task FateRoll ([Remainder] int input = 0)
+        [Summary("Roll a set of [Fate dice](https://fate-srd.com/fate-core/what-you-need-play). This command only accepts non-decimal numbers added to it (Such as -5 or +2).")]
+        public async Task FateRoll ([Remainder] int DiceExpression = 0)
         {
             var results = parser.Parse("4d6").Roll();
             var dice = new List<string>();
-            int value = input;
+            int value = DiceExpression;
             string Rating = "Invalid";
             foreach (var x in results.Results)
             {
@@ -279,7 +279,7 @@ namespace SAIL.Modules
             else if(value < -2) Rating = "Terrible+";
             else Rating = FateLadder.GetValueOrDefault(value);
             await ReplyAsync(Context.User.Mention+", You got a "+Rating+" ("+value+") roll."+
-                "\n"+string.Join(", ",dice)+" "+(input == 0 ? "" :"+ ("+input.ToString()+")")+".");
+                "\n"+string.Join(", ",dice)+" "+(DiceExpression == 0 ? "" :"+ ("+DiceExpression.ToString()+")")+".");
             
         }
         private Dictionary<int,string> FateLadder = new Dictionary<int, string>()
@@ -296,30 +296,30 @@ namespace SAIL.Modules
             {-1, "Poor"},
             {-2, "Terrible"}
         };
-        public async Task Autoroll(SocketCommandContext context, [Remainder]string input)
+        public async Task Autoroll(SocketCommandContext context, [Remainder]string DiceExpression)
         {
-            string[] sinput = new string[0];
-            if (input.Contains(">>")){
-                sinput = input.Split(">>",StringSplitOptions.RemoveEmptyEntries);
-                if (sinput.Length == 1){
+            string[] sDiceExpression = new string[0];
+            if (DiceExpression.Contains(">>")){
+                sDiceExpression = DiceExpression.Split(">>",StringSplitOptions.RemoveEmptyEntries);
+                if (sDiceExpression.Length == 1){
                     await context.Channel.SendMessageAsync("You didn't add a conditional!");
                     return;
                 }
-                if (sinput.Length > 2){
+                if (sDiceExpression.Length > 2){
                     await context.Channel.SendMessageAsync("You can't add more than one conditional!");
                     return;
                 }
-                if (!int.TryParse(sinput[1], out int n)){
+                if (!int.TryParse(sDiceExpression[1], out int n)){
                     await context.Channel.SendMessageAsync("This expression has an invalid/non-numeric conditional!");
                     return;
                 }
-                int conditional = int.Parse(sinput[1]);
-                var valid = System.Text.RegularExpressions.Regex.IsMatch(sinput[0].ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
+                int conditional = int.Parse(sDiceExpression[1]);
+                var valid = System.Text.RegularExpressions.Regex.IsMatch(sDiceExpression[0].ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
                 if (!valid){
                     await context.Channel.SendMessageAsync(context.User.Mention+" This is not a valid dice expression!");
                     return;
                 }
-                var result = parser.Parse(sinput[0].ToLower()).Roll();
+                var result = parser.Parse(sDiceExpression[0].ToLower()).Roll();
                 string steps = "";
                 var successes = result.Results.Where(x => x.Value >= conditional);
                 foreach (var x in result.Results){
@@ -341,27 +341,27 @@ namespace SAIL.Modules
                 }
             }
 
-            if (input.Contains(">")){
-                sinput = input.Split(">",StringSplitOptions.RemoveEmptyEntries);
-                if (sinput.Length == 1){
+            if (DiceExpression.Contains(">")){
+                sDiceExpression = DiceExpression.Split(">",StringSplitOptions.RemoveEmptyEntries);
+                if (sDiceExpression.Length == 1){
                     await context.Channel.SendMessageAsync("You didn't add a conditional!");
                     return;
                 }
-                if (sinput.Length > 2){
+                if (sDiceExpression.Length > 2){
                     await context.Channel.SendMessageAsync("You can't add more than one conditional!");
                     return;
                 }
-                if (!int.TryParse(sinput[1], out int n)){
+                if (!int.TryParse(sDiceExpression[1], out int n)){
                     await context.Channel.SendMessageAsync("This expression has an invalid/non-numeric conditional!");
                     return;
                 }
-                int conditional = int.Parse(sinput[1]);
-                var valid = System.Text.RegularExpressions.Regex.IsMatch(sinput[0].ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
+                int conditional = int.Parse(sDiceExpression[1]);
+                var valid = System.Text.RegularExpressions.Regex.IsMatch(sDiceExpression[0].ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
                 if (!valid){
                     await context.Channel.SendMessageAsync(context.User.Mention+" This is not a valid dice expression!");
                     return;
                 }
-                var result = parser.Parse(sinput[0].ToLower()).Roll();
+                var result = parser.Parse(sDiceExpression[0].ToLower()).Roll();
                 string steps = "";
                 foreach(var x in result.Results){
                 if (x.Scalar == -1){
@@ -386,12 +386,12 @@ namespace SAIL.Modules
             }
 
             else {
-            var valid = System.Text.RegularExpressions.Regex.IsMatch(input.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
+            var valid = System.Text.RegularExpressions.Regex.IsMatch(DiceExpression.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
             if (!valid){
                 await context.Channel.SendMessageAsync(context.User.Mention+" This is not a valid dice expression!");
                 return;
             }
-            var result = parser.Parse(input.ToLower()).Roll();
+            var result = parser.Parse(DiceExpression.ToLower()).Roll();
             string steps = "";
             foreach(var x in result.Results){
                 if (x.Scalar == -1){

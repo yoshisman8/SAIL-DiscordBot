@@ -27,8 +27,9 @@ namespace SAIL.Services
         private InteractiveService _interactive;
         private readonly IConfiguration _config;
         private CommandCacheService _cache;
+        private ScheduleService _timer;
 
-        public CommandHandlingService(IConfiguration config, IServiceProvider provider, DiscordSocketClient discord, CommandService commands,LiteDatabase database, CommandCacheService cache,InteractiveService interactive)
+        public CommandHandlingService(IConfiguration config, IServiceProvider provider, DiscordSocketClient discord, CommandService commands,LiteDatabase database, CommandCacheService cache,InteractiveService interactive,ScheduleService timer)
         {
             _discord = discord;
             _commands = commands;
@@ -37,6 +38,7 @@ namespace SAIL.Services
             _config = config;
             _interactive = interactive;
             _cache = cache;
+            _timer = timer;
             
             _discord.MessageReceived += MessageReceived;
             _discord.ReactionAdded += OnReactAdded;
@@ -44,6 +46,33 @@ namespace SAIL.Services
             _discord.MessageDeleted += OnMessageDeleted;
             _discord.MessageUpdated += OnMessageUpdated;
             _discord.Ready += OnReady;
+
+            _timer.Tick += OnTimerTick;
+        }
+
+        public async Task OnTimerTick()
+        {
+            var col = _database.GetCollection<SysGuild>("Guilds");
+            var Guilds = col.Find(x=>x.Modules.Contains(new SAIL.Classes.Module(){Name = "Schedule Module",Active = true}) && x.Notifications && x.NotificationChannel > 0);
+            if(Guilds != null && Guilds.Count() > 1)
+            {
+                foreach (var x in Guilds)
+                {
+                    var events = x.Events.Where(T=>T.Time==DateTime.Now.RoundUp(TimeSpan.FromMinutes(15)).ToHourOfTheDay()&&T.Days.Contains(DateTime.Now.GetDayOfWeek()));
+                    if (events != null && events.Count() > 0)
+                    {
+                        foreach(var E in events)
+                        {
+                            //Event Execution Code
+                            if (E.OneTime)
+                            {
+                                x.Events.Remove(E);
+                                col.Update(x);
+                            }
+                        }
+                    }
+                }
+            } 
         }
 
         public async Task OnReady()

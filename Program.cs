@@ -55,6 +55,7 @@ namespace SAIL
                 .AddSingleton<LogService>()
                 // Extra
                 .AddSingleton(_config)
+                .AddSingleton(new ScheduleService())
                 .AddSingleton(new CommandCacheService(_client))
                 .AddSingleton(new InteractiveService(_client))
                 .AddSingleton(new LiteDatabase(Directory.GetCurrentDirectory()+@"/Data/Database.db"))

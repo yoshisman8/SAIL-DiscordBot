@@ -10,6 +10,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Discord.Rest;
 using Discord;
+using static SAIL.Classes.DateTimeExtension;
 
 namespace SAIL.Classes
 {
@@ -21,8 +22,10 @@ namespace SAIL.Classes
         public List<Module> Modules {get;set;} = new List<Module>();
         public ListMode ListMode {get;set;} = ListMode.None;
         public List<ulong> Channels {get;set;} = new List<ulong>();
-        public ulong MessageChannel {get;set;} = 0;
+        public ulong NotificationChannel {get;set;} = 0;
         public bool Notifications {get;set;} = true;
+        public List<GuildEvent> Events {get;set;} = new List<GuildEvent>();
+
         [BsonIgnore]
         private SocketGuild Guild {get;set;}
         [BsonIgnore]
@@ -63,7 +66,26 @@ namespace SAIL.Classes
                 LoadedChannels.Add(Guild.GetTextChannel(x));
             }
         }
+        public async Task ReportMessage(DiscordSocketClient Client,GuildEvent Event)
+        {
+            var guild = Client.GetGuild(Id);
+            var ch = guild.GetTextChannel(NotificationChannel);
+            var embed = new EmbedBuilder()
+                .WithTitle("[EVENT] "+Event.Name)
+                .WithDescription(Event.Description)
+                .AddField("Event Time",Event.OneTime?"This event is set to happen once and will not be repeated.":"This event happens on "+Event.Time.Get12h()+" every "+string.Join(",",Event.Days));
+        }
     }
+
+    public class GuildEvent
+    {
+        public HourOfTheDay Time {get;set;}
+        public List<DayOfWeek> Days {get;set;} = new List<DayOfWeek>();
+        public string Name {get;set;}
+        public string Description {get;set;}
+        public bool OneTime {get;set;} = true;
+    }
+
     public class Module
     {
         public string Name {get;set;}
