@@ -240,8 +240,8 @@ namespace SAIL.Services
             var Guild = (context.Guild==null)?null:_database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==context.Guild.Id);
 
             int argPos = 0;
-            if (!message.HasMentionPrefix(_discord.CurrentUser, ref argPos))return;
-            if(Guild!= null && !message.HasStringPrefix(Guild.Prefix, ref argPos)) return;
+            if (Guild == null && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos))return;
+            if (Guild!= null && !message.HasStringPrefix(Guild.Prefix, ref argPos) && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
 
             var result = await _commands.ExecuteAsync(context, argPos, _provider);
 

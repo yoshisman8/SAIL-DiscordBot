@@ -17,6 +17,7 @@ using Discord;
 namespace SAIL.Modules
 {
     [Name("Administrative Module")]
+    [Summary("This module contains a series of Administrative commands for the bot. It cannot be dissabled.")]
     public class AdministrativeModule : InteractiveBase<SocketCommandContext>
     {
         public LiteDatabase Database {get;set;}
@@ -233,20 +234,20 @@ namespace SAIL.Modules
                 .WithTitle("Commands Available on "+Context.Guild)
                 .WithDescription("Parameters surounded by [] are optional, Parameters surrounded by <> are mandatory."
                     +"\nOnly commands you can use will be shown.")
-                .WithThumbnailUrl(Context.Guild.IconUrl);
-            
+                .WithThumbnailUrl(Context.Guild.IconUrl)
+                .AddField(module.Name,module.Summary,false);
             foreach (var c in module.Commands)
             {
                 var result = await c.CheckPreconditionsAsync(ctx,_provider);
                 if (!result.IsSuccess) continue;
-                embed.AddField(module.Name,module.Summary,false);
+                
                 string arguments = "";
                 if(c.Parameters.Count > 0) {
                     foreach(var p in c.Parameters){
                     arguments += p.IsOptional? "["+p.Name+"] ":"<"+p.Name+"> ";
                     }
                 }
-                embed.AddField(guild.Prefix+c.Name+" "+(arguments,c.Aliases.Count > 0 ? "Aliases: "+string.Join(",",c.Aliases):"")+"\n"+c.Summary,true);
+                embed.AddField(guild.Prefix+c.Name+" "+arguments,(c.Aliases.Count > 0 ? "Aliases: "+string.Join(",",c.Aliases)+"\n":"")+c.Summary,true);
             }
             return embed.Build();
         }

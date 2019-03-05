@@ -212,7 +212,7 @@ namespace SAIL.Modules
         [RequireGuildSettings]
         [Priority(2)] [RequireContext(ContextType.Guild)]
         [Summary("Searches for a quote that has any of the specified reactions on it. You can list the reactions by separating them by spaces or commas like so: `Quote 😀 😒 😂`.")]
-        public async Task SearchFromReactions(IEmote[] Emotes)
+        public async Task SearchFromReactions(params string[] Emotes)
         {
             var col = Database.GetCollection<Quote>("Quotes").Find(x=>x.Guild == Context.Guild.Id).ToList();
             if (col.Count() == 0)
@@ -221,7 +221,7 @@ namespace SAIL.Modules
                 CommandCache.Add(Context.Message.Id,msg.Id);
                 return;
             }
-            var results = col.Where(x=>x.Reactions.Exists(y=>Emotes.Contains(y)));
+            var results = col.Where(x=>x.Reactions.Exists(y=>Emotes.ToList().Contains(y.Name)));
             if (results.Count() == 0) 
             {
                 var msg = await ReplyAsync("There are no quotes that have any of these reactions: "+String.Join(',',Emotes.ToList())+".");
