@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Linq;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using LiteDB;
 using Discord.Addons.CommandCache;
 using Discord.Addons.Interactive;
@@ -124,6 +125,7 @@ namespace SAIL.Classes
             }
             return day;
         }
+        
         public class HourOfTheDay 
         {
             public int Hours;
@@ -141,6 +143,25 @@ namespace SAIL.Classes
                 int h = (Hours>=12)? Hours-12:Hours;
                 return (h == 12 || h-12 == 0)? 12+":"+Minutes+d:h+":"+Minutes+d;
             }
+        }
+    }
+    public class RequireGuildSettings : PreconditionAttribute
+    {
+        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
+        {
+            //If the message is being sent in DMs or Groups, Pass.
+            if(context.Guild == null) return Task.FromResult(PreconditionResult.FromSuccess());
+            var usr = context.User as SocketGuildUser;
+            //If the user has the ManageGuild permission, Pass.
+            if(usr.Roles.ToList().Exists(x=>x.Permissions.ManageGuild)) return Task.FromResult(PreconditionResult.FromSuccess());
+            var G = services.GetRequiredService<LiteDatabase>().GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id == context.Guild.Id);
+            //If the module this command is from is disabled, Fail.
+            if(G.Modules.Find(x=> x.Name==command.Module.Name).Active == false) return Task.FromResult(PreconditionResult.FromError("This module is Disabled."));
+            //If the server is in Blacklist mode and the channel this is being sent in is in the list, Fail.
+            if(G.ListMode==ListMode.Blacklist && G.Channels.Contains(context.Channel.Id)) return Task.FromResult(PreconditionResult.FromError("This Channel is Blacklisted."));
+            //If the server is in Whitelist mode and the channel this is being sent in isn't in the list, fail.
+            if(G.ListMode==ListMode.Whitelist && !G.Channels.Contains(context.Channel.Id)) return Task.FromResult(PreconditionResult.FromError("This Channel isn't in the whitelist."));
+            return Task.FromResult(PreconditionResult.FromError("Unspecified."));
         }
     }
 }

@@ -28,6 +28,7 @@ namespace SAIL.Modules
         [Command("AdminPanel"),Alias("Panel","Config")]
         [Summary("Shows the current settings and what modules are on or off")]
         [RequireContext(ContextType.Guild)] [RequireUserPermission(GuildPermission.ManageGuild)]
+        [RequireGuildSettings]
         public async Task ConfigPanel()
         {
             var col = Database.GetCollection<SysGuild>("Guilds");
@@ -40,6 +41,7 @@ namespace SAIL.Modules
         [Command("Prefix"),Alias("SetPrefix")]
         [Summary("Change the prefix that will be used for this server. Set to `!` by default. Additionally, you can also mention the bot instead of using a prefix (cannot be disabled).")]
         [RequireContext(ContextType.Guild)] [RequireUserPermission(GuildPermission.ManageGuild)]
+        [RequireGuildSettings]
         public async Task SetPrefix([Remainder] string prefix)
         {
             var col = Database.GetCollection<SysGuild>("Guilds");
@@ -52,6 +54,7 @@ namespace SAIL.Modules
         [Command("ToggleModule"),Alias("TgglModule","ToggleM","Toggle")]
         [Summary("Toggles a module On or Off, The Administrative Module cannot be toggled Off. You can find the names of the modules by using the AdminPanel command.")]
         [RequireContext(ContextType.Guild)] [RequireUserPermission(GuildPermission.ManageGuild)]
+        [RequireGuildSettings]
         public async Task ToggleModule([Remainder] string ModuleName)
         {
             var col = Database.GetCollection<SysGuild>("Guilds");
@@ -90,6 +93,7 @@ namespace SAIL.Modules
         }
         [Command("Help")][Alias("Commands")]
         [Summary("Shows all commands along with their parameters, aliases and information.")]
+        [RequireGuildSettings]
         [RequireContext(ContextType.Guild)]
         public async Task GetHelp()
         {
@@ -116,20 +120,111 @@ namespace SAIL.Modules
             await msg.AddReactionAsync(prev);
             await msg.AddReactionAsync(kill);
             await msg.AddReactionAsync(next);
+            Cache.Add(Context.Message.Id,msg.Id);
         }
-        [Command("Return")]
-        [RequireContext(ContextType.DM)] [RequireOwner]
-        public async Task Restore()
+        [Command("ToggleListMode"),Alias("ToggleBlacklist","ToggleWhitelist")]
+        [RequireGuildSettings]
+        [RequireContext(ContextType.Guild)] [RequireUserPermission(GuildPermission.ManageGuild)]
+        [Summary("Cycles between the Server channel list modes. This command will cycle between None, Blacklist and Whitelist (in that order)")]
+        public async Task Cyclemode()
         {
-            if (Context.User.Id == 165212654388903936){
-                var guild = Context.Client.GetGuild(311970313158262784);
-                var roles = guild.Roles.Where(x=>x.Permissions.ManageRoles==true);
-                var user = guild.GetUser(165212654388903936);
-                await user.AddRolesAsync(roles);
-
-                await ReplyAsync("Done");
+            var col = Database.GetCollection<SysGuild>("Guilds");
+            var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
+            
+            switch (guild.ListMode)
+            {
+                case ListMode.None:
+                guild.ListMode = ListMode.Blacklist;
+                break;
+                case ListMode.Blacklist:
+                guild.ListMode = ListMode.Whitelist;
+                break;
+                case ListMode.Whitelist:
+                guild.ListMode = ListMode.None;
+                break;
+            }
+            col.Update(guild);
+            if(guild.ListMode!= ListMode.None)
+            {
+                var msg = await ReplyAsync("The server is now "+(guild.ListMode == ListMode.Blacklist?"Blacklisting":"Whitelisting")+" the channels in the Channel List. Use "+guild.Prefix+"AddChannel and "+guild.Prefix+"RemChannel to add or remove channels from the "+guild.ListMode+".");
+                Cache.Add(Context.Message.Id,msg.Id);   
             }
         }
+        [Command("AddChannel")]
+        [RequireGuildSettings]
+        [RequireContext(ContextType.Guild)] [RequireUserPermission(GuildPermission.ManageGuild)]
+        [Summary("Cycles between the Server channel list modes. This command will cycle between None, Blacklist and Whitelist (in that order)")]
+        public async Task Addtolist(ITextChannel Channel)
+        {
+            var col = Database.GetCollection<SysGuild>("Guilds");
+            var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
+            
+            if(!guild.Channels.Contains(Channel.Id))
+            {
+                guild.Channels.Add(Channel.Id);
+                col.Update(guild);
+                var msg = await ReplyAsync("The channel "+Channel.Mention+" has been added to the List of Blacklisted/Whitelisted channels.");
+                Cache.Add(Context.Message.Id,msg.Id);
+                return;
+            }
+            else
+            {
+                var msg = await ReplyAsync("The channel "+Channel.Mention+" is already on the list.");
+                Cache.Add(Context.Message.Id,msg.Id);
+                return;
+            }
+        }
+        [Command("RemChannel"),Alias("RemoveChannel")]
+        [RequireGuildSettings]
+        [RequireContext(ContextType.Guild)] [RequireUserPermission(GuildPermission.ManageGuild)]
+        [Summary("Cycles between the Server channel list modes. This command will cycle between None, Blacklist and Whitelist (in that order)")]
+        public async Task Remtolist(ITextChannel Channel)
+        {
+            var col = Database.GetCollection<SysGuild>("Guilds");
+            var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
+            
+            if(guild.Channels.Contains(Channel.Id))
+            {
+                guild.Channels.Remove(Channel.Id);
+                col.Update(guild);
+                var msg = await ReplyAsync("The channel "+Channel.Mention+" has been removed from the List of Blacklisted/Whitelisted channels.");
+                Cache.Add(Context.Message.Id,msg.Id);
+                return;
+            }
+            else
+            {
+                var msg = await ReplyAsync("The channel "+Channel.Mention+" is sn't on the channel list.");
+                Cache.Add(Context.Message.Id,msg.Id);
+                return;
+            }
+        }
+        [Command("ToggleNotifications"),Alias("ToggleNotif","TgglNotif")]
+        [RequireGuildSettings]
+        [RequireContext(ContextType.Guild)] [RequireUserPermission(GuildPermission.ManageGuild)]
+        [Summary("")]
+        public async Task ToggleNotif()
+        {
+            var col = Database.GetCollection<SysGuild>("Guilds");
+            var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
+            
+            guild.Notifications = !guild.Notifications;
+            col.Update(guild);
+            var msg = await ReplyAsync("Bot Notifications are now turned **"+(guild.Notifications?"On":"Off")+"**.");
+            Cache.Add(Context.Message.Id,msg.Id);
+        }
+        // [Command("Return")]
+        // [RequireContext(ContextType.DM)] [RequireOwner]
+        // public async Task Restore()
+        // {
+        //     if (Context.User.Id == 165212654388903936){
+        //         var guild = Context.Client.GetGuild(311970313158262784);
+        //         var roles = guild.Roles.Where(x=>x.Permissions.ManageRoles==true);
+        //         var user = guild.GetUser(165212654388903936);
+        //         await user.AddRolesAsync(roles);
+
+        //         await ReplyAsync("Done");
+        //     }
+        // }
         private async Task<Embed> GenerateEmbedPage(SocketCommandContext ctx, CommandService cmd,IServiceProvider _provider, Module _module,SysGuild guild)
         {
             

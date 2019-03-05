@@ -43,12 +43,14 @@ namespace SAIL.Services
             _discord.MessageReceived += MessageReceived;
             _discord.ReactionAdded += OnReactAdded;
             _discord.ReactionsCleared += OnReactionCleared;
+            _discord.ReactionRemoved += OnReactRemoved;
             _discord.MessageDeleted += OnMessageDeleted;
             _discord.MessageUpdated += OnMessageUpdated;
             _discord.Ready += OnReady;
 
             _timer.Tick += OnTimerTick;
         }
+
 
         public async Task OnTimerTick()
         {
@@ -147,6 +149,21 @@ namespace SAIL.Services
             }
         }
 
+        private async Task OnReactRemoved(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel, SocketReaction reaction)
+        {
+            var col = _database.GetCollection<Quote>("Quotes");
+            var msg = await _msg.GetOrDownloadAsync();
+            if (msg.Source != MessageSource.User) return;
+            if (col.Exists(x=> x.Message == msg.Id))
+            {
+                if(!msg.Reactions.ToList().Exists(x=> x.Key==reaction.Emote))
+                {
+                    var q = col.FindOne(x=>x.Message==msg.Id);
+                    q.Reactions.Remove(reaction.Emote);
+                    col.Update(q);
+                }
+            }
+        }
         public async Task OnReactionCleared(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel)
         {
             var col = _database.GetCollection<Quote>("Quotes");
@@ -184,6 +201,10 @@ namespace SAIL.Services
                     "Please consider editing this message's contents in order to make it searchable in the future.");
                     _cache.Add(msg.Id,prompt.Id);
                 }
+                foreach(var x in msg.Reactions.Where(x=>x.Key!=new Emoji("📌") || x.Key!=new Emoji("🔖")))
+                {
+                    Q.Reactions.Add(x.Key);
+                }
                 col.Insert(Q);
                 col.EnsureIndex(x => x.Message);
                 col.EnsureIndex(x => x.Channel);
@@ -191,6 +212,12 @@ namespace SAIL.Services
                 col.EnsureIndex("SearchText","LOWER($.SearchText)");
                 await msg.AddReactionAsync(new Emoji("🔖"));
                 return;
+            }
+            if(col.Exists(x=>x.Message == msg.Id && !x.Reactions.Contains(reaction.Emote)))
+            {
+                var q = col.FindOne(x=>x.Message==msg.Id);
+                q.Reactions.Add(reaction.Emote);
+                col.Update(q);
             }
         }
 
@@ -208,40 +235,17 @@ namespace SAIL.Services
             if (message.Source != MessageSource.User) return;
 
             var context = new SocketCommandContext(_discord, message);
-            if (context.Guild == null)
+            var Guild = (context.Guild==null)?null:_database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==context.Guild.Id);
+
+            int argPos = 0;
+            if (!message.HasMentionPrefix(_discord.CurrentUser, ref argPos))return;
+            if(Guild!= null && !message.HasStringPrefix(Guild.Prefix, ref argPos)) return;
+
+            var result = await _commands.ExecuteAsync(context, argPos, _provider);
+
+            if (result.Error.HasValue && (result.Error.Value != CommandError.UnknownCommand))
             {
-                int argPos = 0;
-                if ((!message.HasMentionPrefix(_discord.CurrentUser, ref argPos) 
-                    && !message.HasStringPrefix("!", ref argPos))) return;
-
-                var result = await _commands.ExecuteAsync(context, argPos, _provider);
-
-                if (result.Error.HasValue && (result.Error.Value != CommandError.UnknownCommand))
-                {
-                    Console.WriteLine(result.Error); 
-                }
-                return;
-            }
-            var Guild = _database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==context.Guild.Id);
-            if (Guild.ListMode == ListMode.Blacklist && Guild.Channels.Exists(x=> x == message.Channel.Id)) return;
-            if (Guild.ListMode == ListMode.Whitelist && Guild.Channels.Exists(x=> x == message.Channel.Id) == false) return;
-
-            
-            var command = _commands.Search(context,message.Content.Replace(Guild.Prefix,"").Split(' ').First());
-            if (command.IsSuccess && command.Commands != null)
-            {
-                var module = command.Commands.First().Command.Module;
-                int argPos = 0;
-                if ((!message.HasMentionPrefix(_discord.CurrentUser, ref argPos) 
-                    && !message.HasStringPrefix(Guild.Prefix, ref argPos))
-                    || Guild.Modules.Exists(x=> x.Name == module.Name && x.Active == false)) return;
-
-                var result = await _commands.ExecuteAsync(context, argPos, _provider);
-
-                if (result.Error.HasValue && (result.Error.Value != CommandError.UnknownCommand))
-                {
-                    Console.WriteLine(result.Error); 
-                }
+                Console.WriteLine(result.Error); 
             }
         }
     }

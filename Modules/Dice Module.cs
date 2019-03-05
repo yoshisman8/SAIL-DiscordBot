@@ -7,7 +7,7 @@ using Discord.Commands;
 using DiceNotation;
 using System.Text.RegularExpressions;
 using Discord.Addons.CommandCache;
-
+using SAIL.Classes;
 
 namespace SAIL.Modules
 {
@@ -18,6 +18,7 @@ namespace SAIL.Modules
         IDiceParser parser = new DiceParser();
 
         [Command("Roll"), Alias("r")]
+        [RequireGuildSettings]
         [Summary("Rolls a die on a xdy + z expression format.")]
         public async Task DieRoll([Remainder]string DiceExpression = "d20")
         {
@@ -218,6 +219,7 @@ namespace SAIL.Modules
         }
 
         [Command("Max")]
+        [RequireGuildSettings]
         [Summary("Shows the maximum possible roll for this dice roll.")]
         public async Task Max([Remainder]string DiceExpression){
             var valid = System.Text.RegularExpressions.Regex.IsMatch(DiceExpression.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
@@ -229,6 +231,7 @@ namespace SAIL.Modules
             await ReplyAsync(Context.User.Mention + ", The possible maximum roll for this expression is **"+result.Value+"**.");
         }
         [Command("Min")]
+        [RequireGuildSettings]
         [Summary("Shows the minimum possible roll for this dice roll.")]
         public async Task Min([Remainder]string DiceExpression){
             var valid = System.Text.RegularExpressions.Regex.IsMatch(DiceExpression.ToLower(), @"^[d-dk-k0-9\+\-\s\*]*$");
@@ -240,6 +243,7 @@ namespace SAIL.Modules
             await ReplyAsync(Context.User.Mention + ", The possible minimum roll for this expression is **"+result.Value+"**.");
         }
         [Command("Fate")]
+        [RequireGuildSettings]
         [Summary("Roll a set of [Fate dice](https://fate-srd.com/fate-core/what-you-need-play). This command only accepts non-decimal numbers added to it (Such as -5 or +2).")]
         public async Task FateRoll ([Remainder] int DiceExpression = 0)
         {

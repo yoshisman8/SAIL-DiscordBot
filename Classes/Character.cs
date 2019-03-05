@@ -20,7 +20,7 @@ namespace SAIL.Classes
         public ulong Guild {get;set;}
         public string Name {get;set;}
         public List<CharPage> Pages {get;set;} = new List<CharPage>();
-        public async Task<List<Embed>> PagesToEmbed()
+        public List<Embed> PagesToEmbed()
         {
             List<Embed> embeds = new List<Embed>();
             foreach (var c in Pages)

@@ -74,6 +74,7 @@ namespace SAIL.Classes
                 .WithTitle("[EVENT] "+Event.Name)
                 .WithDescription(Event.Description)
                 .AddField("Event Time",Event.OneTime?"This event is set to happen once and will not be repeated.":"This event happens on "+Event.Time.Get12h()+" every "+string.Join(",",Event.Days));
+            await ch.SendMessageAsync("",false,embed.Build());
         }
     }
 
