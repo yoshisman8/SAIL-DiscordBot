@@ -66,14 +66,14 @@ namespace SAIL.Classes
                 LoadedChannels.Add(Guild.GetTextChannel(x));
             }
         }
-        public async Task ReportMessage(DiscordSocketClient Client,GuildEvent Event)
+        public async Task PrintEvent(DiscordSocketClient Client,GuildEvent Event)
         {
             var guild = Client.GetGuild(Id);
             var ch = guild.GetTextChannel(NotificationChannel);
             var embed = new EmbedBuilder()
                 .WithTitle("[EVENT] "+Event.Name)
                 .WithDescription(Event.Description)
-                .AddField("Event Time",Event.OneTime?"This event is set to happen once and will not be repeated.":"This event happens on "+Event.Time.Get12h()+" every "+string.Join(",",Event.Days));
+                .AddField("Event Time",Event.Repeating == RepeatingState.Repeating?"This event is set to happen once and will not be repeated.":"This event happens on "+Event.Time.Get12h()+" every "+string.Join(",",Event.Days));
             await ch.SendMessageAsync("",false,embed.Build());
         }
     }
@@ -84,7 +84,7 @@ namespace SAIL.Classes
         public List<DayOfWeek> Days {get;set;} = new List<DayOfWeek>();
         public string Name {get;set;}
         public string Description {get;set;}
-        public bool OneTime {get;set;} = true;
+        public RepeatingState Repeating {get;set;} = RepeatingState.Unset;
     }
 
     public class Module
@@ -93,4 +93,5 @@ namespace SAIL.Classes
         public bool Active {get;set;} = true;
     }
     public enum ListMode {Blacklist, Whitelist, None}
+    public enum RepeatingState {Repeating,NonRepeating, Unset}
 }

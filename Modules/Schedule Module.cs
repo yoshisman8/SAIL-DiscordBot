@@ -13,6 +13,7 @@ using System.Net;
 using System.Globalization;
 using SAIL.Classes;
 using System.Text;
+using System.Threading;
 
 namespace SAIL_DiscordBot.Modules
 {
@@ -22,6 +23,7 @@ namespace SAIL_DiscordBot.Modules
     {
         public LiteDatabase Database {get;set;}
         public CommandCacheService Cache {get;set;}
+        private readonly System.Threading.EventWaitHandle waitHandle = new System.Threading.AutoResetEvent(false);
 
         [Command("CreateEvent"), Alias("NewEvent","AddEvent")]
         [RequireGuildSettings]
@@ -40,24 +42,43 @@ namespace SAIL_DiscordBot.Modules
             }
             var evnt = new GuildEvent(){Name = EventName};
             var msg = await ReplyAsync("What's the event's Description? Please Reply with the descroption of event.");
-            var reply = await NextMessageAsync(true,true,TimeSpan.FromMinutes(3));
+            SocketMessage reply = null;
+            SpinWait.SpinUntil(()=>
+            {
+                reply = NextMessageAsync(true,true,TimeSpan.FromMinutes(3)).GetAwaiter().GetResult();
+                if(reply.Content != "") return false;
+                else return true;
+            }
+            );
             evnt.Description = reply.Content;
-            await reply.DeleteAsync();
-            bool Lock = true;
-            
+            if(Context.Guild.CurrentUser.Roles.ToList().Exists(x=>x.Permissions.ManageMessages))
+                await reply.DeleteAsync();
             await msg.ModifyAsync(x=>x.Content="Does this event repeat on a weekly basis?");
             await msg.AddReactionsAsync(new Emoji[]{new Emoji("✅"),new Emoji("❎")});
+
             Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,
-                new ReactionCallbackData("",null,true,true,TimeSpan.FromMilliseconds(3),(c) => Task.Run(()=>{msg.ModifyAsync(x=>x.Content="You took too long to respond and the process has been terminated.").Start();return;}))
-                .WithCallback(new Emoji("✅"),(c,r) => Task.Run( () => {Lock=false; evnt.OneTime=false;}))
-                .WithCallback(new Emoji("❎"),(c,r) => Task.Run( () => {Lock=false; evnt.OneTime=false;}))
+            new ReactionCallbackData("",null,true,true,TimeSpan.FromMilliseconds(3))
+                .WithCallback(new Emoji("✅"),(c,r) => Task.Run( async() => 
+                    {
+                        evnt.Repeating=RepeatingState.Repeating;
+                        await msg.RemoveAllReactionsAsync();
+                    }))
+                .WithCallback(new Emoji("❎"),(c,r) => Task.Run( async() => 
+                    {
+                        evnt.Repeating=RepeatingState.NonRepeating;
+                        await msg.RemoveAllReactionsAsync();
+                    }))
                 )
             );
-            while(Lock)
+            SpinWait.SpinUntil(() => evnt.Repeating != RepeatingState.Unset,TimeSpan.FromMinutes(3));
+            Interactive.RemoveReactionCallback(msg);
+            if (evnt.Repeating==RepeatingState.Unset) return;
+            if(evnt.Repeating==RepeatingState.NonRepeating)
             {
-                await Task.Delay(1000);   
+                guild.Events.Add(evnt);
+                col.Update(guild);
             }
-            
+            await msg.ModifyAsync(x=>x.Content="");
         }
     }
 }

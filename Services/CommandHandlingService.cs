@@ -61,12 +61,14 @@ namespace SAIL.Services
                 foreach (var x in Guilds)
                 {
                     var events = x.Events.Where(T=>T.Time==DateTime.Now.RoundUp(TimeSpan.FromMinutes(15)).ToHourOfTheDay()&&T.Days.Contains(DateTime.Now.GetDayOfWeek()));
+                    var guild = _discord.GetGuild(x.Id);
+                    var channel = guild.GetTextChannel(x.NotificationChannel);
                     if (events != null && events.Count() > 0)
                     {
                         foreach(var E in events)
                         {
-                            //Event Execution Code
-                            if (E.OneTime)
+                            await x.PrintEvent(_discord,E);
+                            if (E.Repeating == RepeatingState.NonRepeating)
                             {
                                 x.Events.Remove(E);
                                 col.Update(x);
