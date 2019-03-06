@@ -12,6 +12,7 @@ using Discord.Addons.CommandCache;
 using LiteDB;
 using SAIL.Modules;
 using SAIL.Classes;
+using SAIL.Classes.Legacy;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
@@ -83,6 +84,44 @@ namespace SAIL.Services
         {
             await InitializeGuildsDB(_discord, _database);
             await UpdateModules(_discord,_database,_commands);
+            if (File.Exists(Directory.GetCurrentDirectory()+@"/Data/Old.db"))
+            {
+                await Migrate(_database,_discord);
+            }
+        }
+
+        private async Task Migrate(LiteDatabase database, DiscordSocketClient discord)
+        {
+            var legacydb = new LiteDatabase(Directory.GetCurrentDirectory()+@"/Data/Old.db");
+            var AllQuotes = legacydb.GetCollection<SAIL.Classes.Legacy.Quote>("Quotes").FindAll();
+            var AllChars = legacydb.GetCollection<SAIL.Classes.Legacy.Character>("Characters").FindAll();
+            var guild = discord.GetGuild(311970313158262784);
+            var sguild = database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==311970313158262784);
+            var AllLegacyChar = new LegacyCharacter().GetAll();
+
+            var CharCol = database.GetCollection<SAIL.Classes.Character>("Characters");
+            foreach(var x in AllLegacyChar)
+            {
+                var c = new SAIL.Classes.Character()
+                {
+                    Name = x.Name,
+                    Guild = 311970313158262784
+                };
+                if(guild.Users.ToList().Exists(a=>a.ToString() == x.Owner))
+                {
+                    c.Owner = guild.Users.Single(a=>a.ToString() == x.Owner).Id;
+                }
+                else
+                {
+                    c.Owner = guild.OwnerId;
+                }
+                c.Pages.Add(new CharPage());
+                c.Pages[0].Fields[0]= new Field()
+                {
+                    Title= "Sheet",
+                    Content=x.Sheet
+                };
+            }
         }
 
         private async Task UpdateModules(DiscordSocketClient discord, LiteDatabase database, CommandService commands)
@@ -122,7 +161,7 @@ namespace SAIL.Services
             var OldMsg = await _OldMsg.DownloadAsync();
             if (OldMsg.Source != MessageSource.User) return;
 
-            var col = _database.GetCollection<Quote>("Quotes");
+            var col = _database.GetCollection<SAIL.Modules.Quote>("Quotes");
             
             if(_cache.TryGetValue(NewMsg.Id, out var CacheMsg))
             {
@@ -140,7 +179,7 @@ namespace SAIL.Services
 
         public async Task OnMessageDeleted(Cacheable<IMessage, ulong> _msg, ISocketMessageChannel channel)
         {
-            var col = _database.GetCollection<Quote>("Quotes");
+            var col = _database.GetCollection<SAIL.Modules.Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
             if (msg == null || msg.Source != MessageSource.User) return;
 
@@ -153,7 +192,7 @@ namespace SAIL.Services
 
         private async Task OnReactRemoved(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel, SocketReaction reaction)
         {
-            var col = _database.GetCollection<Quote>("Quotes");
+            var col = _database.GetCollection<SAIL.Modules.Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
             if (msg.Source != MessageSource.User) return;
             if (col.Exists(x=> x.Message == msg.Id))
@@ -168,7 +207,7 @@ namespace SAIL.Services
         }
         public async Task OnReactionCleared(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel)
         {
-            var col = _database.GetCollection<Quote>("Quotes");
+            var col = _database.GetCollection<SAIL.Modules.Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
             if (msg.Source != MessageSource.User) return;
             if (col.Exists(x=> x.Message == msg.Id))
@@ -181,14 +220,14 @@ namespace SAIL.Services
         public async Task OnReactAdded(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel, SocketReaction reaction)
         {
             if (reaction.UserId == _discord.CurrentUser.Id) return;
-            var col = _database.GetCollection<Quote>("Quotes");
+            var col = _database.GetCollection<SAIL.Modules.Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
             var context = new CommandContext(_discord,msg);
             var guild = context.Guild;
 
             if (reaction.Emote.Name == "📌" && (col.Exists(x => x.Message == msg.Id)==false))
             {
-                Quote Q = new Quote()
+                SAIL.Modules.Quote Q = new SAIL.Modules.Quote()
                 {
                     Message = msg.Id,
                     SearchText = msg.Content,

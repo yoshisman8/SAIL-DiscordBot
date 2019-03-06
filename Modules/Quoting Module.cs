@@ -128,6 +128,7 @@ namespace SAIL.Modules
                     await msg.AddReactionAsync(kill);
                     var next = new Emoji("⏭");
                     await msg.AddReactionAsync(next);
+                    Controller.Pages.Clear();
                     foreach(var x in results)
                     {
                         await x.GenerateContext(Context);
@@ -288,6 +289,7 @@ namespace SAIL.Modules
             var channel = c.Guild.GetTextChannel(msg.Channel.Id);
             var raw = await quote.Context.Channel.GetMessagesAsync(quote.Context.Message.Id,Direction.Before,5).FlattenAsync();
             var context = raw.OfType<IUserMessage>().OrderBy(x=>x.Timestamp);
+            Controller.Pages.Clear();
             foreach(var x in context)
             {
                 Controller.Pages.Add(StaticMethods.EmbedMessage(c,channel,x));

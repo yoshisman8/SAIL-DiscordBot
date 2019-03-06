@@ -202,7 +202,7 @@ namespace SAIL.Modules
         [Command("ToggleNotifications"),Alias("ToggleNotif","TgglNotif")]
         [RequireGuildSettings]
         [RequireContext(ContextType.Guild)] [RequireUserPermission(GuildPermission.ManageGuild)]
-        [Summary("")]
+        [Summary("Toggles whether or not this server shows Notifications on the Notification channel. Admins can set the channel with `SetNotifChannel <Channel Name>`.")]
         public async Task ToggleNotif()
         {
             var col = Database.GetCollection<SysGuild>("Guilds");
@@ -212,6 +212,12 @@ namespace SAIL.Modules
             col.Update(guild);
             var msg = await ReplyAsync("Bot Notifications are now turned **"+(guild.Notifications?"On":"Off")+"**.");
             Cache.Add(Context.Message.Id,msg.Id);
+        }
+        [Command("TestQuote")]
+        [RequireOwner]
+        public async Task TestQuote([Remainder] string Query)
+        {
+            
         }
         // [Command("Return")]
         // [RequireContext(ContextType.DM)] [RequireOwner]

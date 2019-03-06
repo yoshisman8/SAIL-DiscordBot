@@ -15,7 +15,7 @@ using SAIL.Classes;
 using System.Text;
 using System.Threading;
 
-namespace SAIL_DiscordBot.Modules
+namespace SAIL.Modules
 {
     [Name("Schedule Module")]
     [Summary("This module allows for the use of the Weekly Scheduler. It requires a channel to be set as the Notification Channel and for said function to be turned on. Users need the Manage Roles permission in order to use the add/remove event commands.")]
