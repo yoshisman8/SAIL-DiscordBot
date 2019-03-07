@@ -41,7 +41,7 @@ namespace SAIL.Classes
     }
     public class CharPage
     {
-        public Field[] Fields {get;set;} = new Field[24];
+        public List<Field> Fields {get;set;} = new List<Field>();
         public Color Color {get;set;} = Color.DarkGrey;
         public string Image {get;set;} = "";
         public string Thumbnail {get;set;} = "";

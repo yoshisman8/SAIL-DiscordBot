@@ -35,26 +35,28 @@ namespace SAIL.Classes
             var sb = new StringBuilder();
             var embed = new EmbedBuilder()
                 .WithTitle(Guild.Name+"'s Control Panel")
+                .WithDescription("Current Prefix: `"+Prefix+"`.")
                 .WithThumbnailUrl(Guild.IconUrl);
-                embed.AddField("Current Prefix",Prefix,true);
             switch (ListMode)
             {
                 case ListMode.None:
-                    if (LoadedChannels != null && LoadedChannels.Count > 0) embed.AddField("Currently not filtering based on channel.",string.Join(", ",LoadedChannels.Select(x=>x.Name),true));
+                    if (LoadedChannels != null && LoadedChannels.Count > 0) embed.AddField("Currently not filtering based on channel.","```"+string.Join(", ",LoadedChannels.Select(x=>x.Mention)+"```",true));
                     else embed.AddField("Currently not filtering based on channel.","The list is Empty.",true);
                     break;
                 case ListMode.Whitelist:
-                    if (LoadedChannels != null && LoadedChannels.Count > 0) embed.AddField("Currently filtering using a Whitelist.",string.Join(", ",LoadedChannels.Select(x=>x.Name),true));
+                    if (LoadedChannels != null && LoadedChannels.Count > 0) embed.AddField("Currently filtering using a Whitelist.","```"+string.Join(", ",LoadedChannels.Select(x=>x.Mention)+"```",true));
                     else embed.AddField("Currently filtering using a Whitelist.","The list is Empty.",true);
                     break;
                 case ListMode.Blacklist:
-                    if (LoadedChannels != null && LoadedChannels.Count > 0) embed.AddField("Currently filtering using a Blacklist.",string.Join(", ",LoadedChannels.Select(x=>x.Name),true));
+                    if (LoadedChannels != null && LoadedChannels.Count > 0) embed.AddField("Currently filtering using a Blacklist.","```"+string.Join(", ",LoadedChannels.Select(x=>x.Mention)+"```",true));
                     else embed.AddField("Currently filtering using a Blacklist.","The list is Empty.",true);
                     break;
             }
+            embed.AddField(Notifications?"Notifications Active ✅":"Notifications Disabled ⛔",NotificationChannel==0?"No channel has been set.":Guild.GetTextChannel(NotificationChannel).Mention);
+            
             foreach(var x in Modules)
             {
-                embed.AddField(x.Name+" "+(x.Active? "✅":"⛔"),commandService.Modules.Single(y=>y.Name == x.Name).Summary,true);
+                embed.AddField(x.Name+" "+(x.Active? "✅":"⛔"),"```"+commandService.Modules.Single(y=>y.Name == x.Name).Summary+"```",true);
             }
             return embed.Build();
         }

@@ -213,12 +213,6 @@ namespace SAIL.Modules
             var msg = await ReplyAsync("Bot Notifications are now turned **"+(guild.Notifications?"On":"Off")+"**.");
             Cache.Add(Context.Message.Id,msg.Id);
         }
-        [Command("TestQuote")]
-        [RequireOwner]
-        public async Task TestQuote([Remainder] string Query)
-        {
-            
-        }
         // [Command("Return")]
         // [RequireContext(ContextType.DM)] [RequireOwner]
         // public async Task Restore()

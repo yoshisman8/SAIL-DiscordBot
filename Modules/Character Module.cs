@@ -22,7 +22,7 @@ namespace SAIL.Modules
     {
         public LiteDatabase Database {get;set;}
         public CommandCacheService CommandCache {get;set;}
-        public Controller Controller {get;set;}
+        private Controller Controller {get;set;} = new Controller();
 
 
         [Command("Character"),Alias("Char")]

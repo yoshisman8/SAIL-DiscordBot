@@ -94,7 +94,7 @@ namespace SAIL.Services
         {
             var legacydb = new LiteDatabase(Directory.GetCurrentDirectory()+@"/Data/Old.db");
             var AllQuotes = legacydb.GetCollection<SAIL.Classes.Legacy.Quote>("Quotes").FindAll();
-            var AllChars = legacydb.GetCollection<SAIL.Classes.Legacy.Character>("Characters").FindAll();
+            var AllChars = legacydb.GetCollection<SAIL.Classes.Legacy.Character>("Characters").IncludeAll().FindAll();
             var guild = discord.GetGuild(311970313158262784);
             var sguild = database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==311970313158262784);
             var AllLegacyChar = new LegacyCharacter().GetAll();
@@ -116,12 +116,104 @@ namespace SAIL.Services
                     c.Owner = guild.OwnerId;
                 }
                 c.Pages.Add(new CharPage());
-                c.Pages[0].Fields[0]= new Field()
+                c.Pages[0].Fields.Add(new Field()
                 {
                     Title= "Sheet",
                     Content=x.Sheet
-                };
+                });
             }
+            foreach(var x in AllChars)
+            {
+                x.Inventory.buildInv(legacydb);
+                var c = new SAIL.Classes.Character()
+                {
+                    Name = x.Name,
+                    Guild = 311970313158262784,
+                    Owner = x.Owner,
+                };
+                var p1 = new CharPage()
+                {
+                    Thumbnail = x.ImageUrl,
+                    Subtitle = "Basic Character Info",
+                    Fields = new List<Field>()
+                    {
+                        new Field()
+                        {
+                            Title = "Basic info",
+                            Content = "Class: " + x.Class + "\nRace: " + x.Race + "\nStress: " + x.BuildStress(x)
+                        },
+                        new Field()
+                        {
+                            Title = "Gear",
+                            Content = x.Buildequip(x)
+                        },
+                        new Field()
+                        {
+                            Title = "Afflictions",
+                            Content = x.BuildAfflictions(x)
+                        },
+                        new Field()
+                        {
+                            Title = x.ITrait.Name,
+                            Content = x.ITrait.Description
+                        },
+                        new Field()
+                        {
+                            Title = "Traits",
+                            Content = x.BuildTraits(x)
+                        }
+                    }
+                };
+                c.Pages.Add(p1);
+                var p2 = new CharPage()
+                {
+                    Subtitle = "Character Skills",
+                };
+                foreach(var s in x.Skills)
+                {
+                    p2.Fields.Add(new Field()
+                    {
+                        Title = s.Name+" ["+s.Level.ToRoman()+"]",
+                        Content = s.Description
+                    });
+                }
+                c.Pages.Add(p2);
+                var p3 = new CharPage()
+                {
+                    Subtitle = "Character Inventory",
+                    Thumbnail = "https://image.flaticon.com/icons/png/128/179/179507.png"
+                };
+                foreach(var i in x.Inventory.Items)
+                {
+                    p3.Fields.Add(new Field()
+                    {
+                        Title = i.BaseItem.Name,
+                        Content = "Amount: "+i.Quantity+"\n"+i.BaseItem.Description,
+                        Inline = true
+                    });
+                }
+                c.Pages.Add(p3);
+                CharCol.Insert(c);
+            }
+            var Quotecol = database.GetCollection<SAIL.Classes.Quote>("Quotes");
+            foreach(var x in AllQuotes)
+            {
+                var ch = guild.GetTextChannel(x.Channel);
+                if (ch == null) continue;
+                var _msg = await ch.GetMessageAsync(x.Message);
+                var msg = _msg as IUserMessage;
+                if (msg == null) continue;
+                var q = new SAIL.Classes.Quote()
+                {
+                    Author = x.User,
+                    Channel = x.Channel,
+                    Message = x.Message,
+                    SearchText = msg.Content,
+                    Guild = 311970313158262784
+                };
+                Quotecol.Insert(q);
+            }
+            legacydb.Dispose();
         }
 
         private async Task UpdateModules(DiscordSocketClient discord, LiteDatabase database, CommandService commands)
@@ -129,7 +221,7 @@ namespace SAIL.Services
             var col = database.GetCollection<SysGuild>("Guilds");
             var servers = col.FindAll();
             var modules = commands.Modules.Select(x=> x.Name).ToList();
-            foreach (var x in modules.Where(x=>x != "Control Module"))
+            foreach (var x in modules.Where(x=>x != "Administrative Module" || x != "Debugger Module"))
             {
                 foreach(var y in servers.Where(z=>!z.Modules.Exists(w=>w.Name == x)))
                 {
@@ -161,7 +253,7 @@ namespace SAIL.Services
             var OldMsg = await _OldMsg.DownloadAsync();
             if (OldMsg.Source != MessageSource.User) return;
 
-            var col = _database.GetCollection<SAIL.Modules.Quote>("Quotes");
+            var col = _database.GetCollection<SAIL.Classes.Quote>("Quotes");
             
             if(_cache.TryGetValue(NewMsg.Id, out var CacheMsg))
             {
@@ -179,7 +271,7 @@ namespace SAIL.Services
 
         public async Task OnMessageDeleted(Cacheable<IMessage, ulong> _msg, ISocketMessageChannel channel)
         {
-            var col = _database.GetCollection<SAIL.Modules.Quote>("Quotes");
+            var col = _database.GetCollection<SAIL.Classes.Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
             if (msg == null || msg.Source != MessageSource.User) return;
 
@@ -192,22 +284,12 @@ namespace SAIL.Services
 
         private async Task OnReactRemoved(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel, SocketReaction reaction)
         {
-            var col = _database.GetCollection<SAIL.Modules.Quote>("Quotes");
+            var col = _database.GetCollection<SAIL.Classes.Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
-            if (msg.Source != MessageSource.User) return;
-            if (col.Exists(x=> x.Message == msg.Id))
-            {
-                if(!msg.Reactions.ToList().Exists(x=> x.Key==reaction.Emote))
-                {
-                    var q = col.FindOne(x=>x.Message==msg.Id);
-                    q.Reactions.Remove(reaction.Emote);
-                    col.Update(q);
-                }
-            }
         }
         public async Task OnReactionCleared(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel)
         {
-            var col = _database.GetCollection<SAIL.Modules.Quote>("Quotes");
+            var col = _database.GetCollection<SAIL.Classes.Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
             if (msg.Source != MessageSource.User) return;
             if (col.Exists(x=> x.Message == msg.Id))
@@ -220,14 +302,14 @@ namespace SAIL.Services
         public async Task OnReactAdded(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel, SocketReaction reaction)
         {
             if (reaction.UserId == _discord.CurrentUser.Id) return;
-            var col = _database.GetCollection<SAIL.Modules.Quote>("Quotes");
+            var col = _database.GetCollection<SAIL.Classes.Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
             var context = new CommandContext(_discord,msg);
             var guild = context.Guild;
 
             if (reaction.Emote.Name == "📌" && (col.Exists(x => x.Message == msg.Id)==false))
             {
-                SAIL.Modules.Quote Q = new SAIL.Modules.Quote()
+                SAIL.Classes.Quote Q = new SAIL.Classes.Quote()
                 {
                     Message = msg.Id,
                     SearchText = msg.Content,
@@ -242,10 +324,6 @@ namespace SAIL.Services
                     "Please consider editing this message's contents in order to make it searchable in the future.");
                     _cache.Add(msg.Id,prompt.Id);
                 }
-                foreach(var x in msg.Reactions.Where(x=>x.Key!=new Emoji("📌") || x.Key!=new Emoji("🔖")))
-                {
-                    Q.Reactions.Add(x.Key);
-                }
                 col.Insert(Q);
                 col.EnsureIndex(x => x.Message);
                 col.EnsureIndex(x => x.Channel);
@@ -253,12 +331,6 @@ namespace SAIL.Services
                 col.EnsureIndex("SearchText","LOWER($.SearchText)");
                 await msg.AddReactionAsync(new Emoji("🔖"));
                 return;
-            }
-            if(col.Exists(x=>x.Message == msg.Id && !x.Reactions.Contains(reaction.Emote)))
-            {
-                var q = col.FindOne(x=>x.Message==msg.Id);
-                q.Reactions.Add(reaction.Emote);
-                col.Update(q);
             }
         }
 

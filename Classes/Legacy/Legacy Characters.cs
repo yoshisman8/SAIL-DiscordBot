@@ -20,7 +20,7 @@ namespace SAIL.Classes.Legacy
         public IOrderedEnumerable<LegacyCharacter> Query(string _Query)
         {
             Directory.CreateDirectory(@"Data/Legacy/");
-            var files = Directory.EnumerateFiles(Directory.GetCurrentDirectory()+@"Data/Legacy/");
+            var files = Directory.EnumerateFiles(Directory.GetCurrentDirectory()+@"/Data/Legacy/");
             List<LegacyCharacter> db = new List<LegacyCharacter> { };
             foreach (string x in files)
             {
@@ -31,8 +31,7 @@ namespace SAIL.Classes.Legacy
         }
         public List<LegacyCharacter> GetAll()
         {
-            Directory.CreateDirectory(@"Data/Legacy/");
-            var files = Directory.EnumerateFiles(Directory.GetCurrentDirectory()+@"Data/Legacy/");
+            var files = Directory.EnumerateFiles(Directory.GetCurrentDirectory()+@"/Data/Legacy/");
             List<LegacyCharacter> db = new List<LegacyCharacter> { };
             foreach (string x in files)
             {
@@ -75,7 +74,72 @@ namespace SAIL.Classes.Legacy
         public double Money { get; set; } = 0;
         public ulong Owner { get; set; }
 
-
+        public string BuildStress(Character character)
+        {
+            string msg = "";
+            int A = character.MaxStress - character.Stress;
+            
+            for (int x = 0; x < character.Stress; x++)
+            {
+                msg += "\\⚫ ";
+            }
+            for (int x = 0; x < A; x++)
+            {
+                msg += "\\⚪ ";
+            }
+            return msg;
+        }
+        public string BuildInv(Character player)
+        {
+            string msg = "";
+            msg += "\\💰 $" + Math.Round(player.Money, 2) + "\n";
+            foreach (Item x in player.Inventory.Items)
+            {
+                msg += "* " + x.BaseItem.Name + " x"+x.Quantity+"\n";
+            }
+            return msg;
+        }
+        public string Buildequip(Character player)
+        {
+            string msg = "";
+            foreach (BaseItem x in player.Equipment)
+            {
+                msg += "* " + x.Name + "\n";
+            }
+            if (msg.Length == 0) { return "None! Use `/Equip <Item>` to Equip an item!"; }
+            return msg;
+        }
+        public string BuildTraits(Character player)
+        {
+            string msg = "";
+            foreach (Trait x in player.Traits)
+            {
+                msg += "* " + x.Name + "\n";
+            }
+            if (msg.Length == 0) { return "None! Use `/Traits add <Name> <Description>` to add a trait!"; }
+            return msg;
+        }
+        public string BuildAfflictions(Character player)
+        {
+            string msg = "";
+            foreach (Affliction x in player.Afflictions)
+            {
+                msg += "* "+ x.Name + "\n";
+            }
+            if (msg.Length == 0) { return "No Afflictions so far!"; }
+            return msg;
+        }
+        public string BuildSkills(Character player)
+        {
+            string msg = "";
+            foreach (Skill x in player.Skills)
+            {
+                msg += "* " + x.Name + " [" + x.Level.ToRoman() + "]\n";
+            }
+            if (msg.Length == 0) { return "None! \nUse `/Skills Learn <Name> <Description>` \nTo learn a new Skill!"; }
+            return msg;
+        }
+        
         public void Update()
         {
             var col = Database.GetCollection<Character>("Characters");
