@@ -16,10 +16,14 @@ using Discord;
 
 namespace SAIL.Modules
 {
+    [Name("Debugger Module")]
+    [Summary("You shouldn't be reading this")]
     public class Debugger : InteractiveBase<SocketCommandContext>
     {
         public LiteDatabase Database {get;set;}
         public CommandCacheService CommandCache {get;set;}
+        public IServiceProvider Provider {get;set;}
+        public CommandService command {get;set;}
         private Controller Controller {get;set;} = new Controller();
 
         [Command("TestCharacter"),Alias("TChar")] [RequireOwner]
@@ -180,6 +184,26 @@ namespace SAIL.Modules
                 embed.AddField(Context.Client.GetGuild(x.Id).Name,"Characters in this server: "+All.Where(c=>c.Guild==x.Id).Count()+"\n"+"Quotes in this server: "+col.Where(c=>c.Guild==x.Id).Count());
             }
             await ReplyAsync("",false,embed.Build());
+        }
+        [Command("ResetSettings")] [RequireOwner]
+        public async Task Resetto()
+        {
+            var guilds = Database.GetCollection<SysGuild>("Guilds");
+            foreach (var x in guilds.FindAll())
+            {
+                var mds = new List<Module>();
+                foreach(var y in command.Modules)
+                {
+                    if(y.Name.ToLower().Contains("debug")) continue;
+                    mds.Add(new Module(){
+                        Name = y.Name,
+                        Active = true
+                    });
+                }
+                x.Modules = mds;
+                guilds.Update(x);
+            }
+            await ReplyAsync("Reset all guild module settings.");
         }
         public async Task GetContext(SocketCommandContext c, SocketReaction r, IUserMessage msg, InteractiveService interactive, Quote quote, ReactionCallbackData callback)
         {

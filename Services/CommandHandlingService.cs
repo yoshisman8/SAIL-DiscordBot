@@ -227,7 +227,7 @@ namespace SAIL.Services
 
             if (result.Error.HasValue && (result.Error.Value != CommandError.UnknownCommand))
             {
-                Console.WriteLine(result.Error); 
+                Console.WriteLine(result.Error+"\n"+result.ErrorReason); 
             }
         }
     }
