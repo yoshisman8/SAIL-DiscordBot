@@ -103,10 +103,18 @@ namespace SAIL.Modules
             guild.Load(Context);
             foreach (var x in guild.Modules.Where(x=>x.Active == true))
             {
+                var Md = command.Modules.Where(m=>m.Name==x.Name);
+                if (Md == null||Md.Count()<1)
+                {
+                    guild.Modules.Remove(x);
+                    col.Update(guild);
+                    continue;
+                }
                 var usr = Context.User as SocketGuildUser;
                 if (x.Name == "Administrative Module" &&
                     usr.Roles.Where(y=>y.Permissions.ManageGuild == true).Count() == 0) 
                     continue;
+                if (x.Name == "Debugger") continue;
                 Controller.Pages.Add(await GenerateEmbedPage(Context,command,Provider,x,guild));
             }
             var prev = new Emoji("⏮");

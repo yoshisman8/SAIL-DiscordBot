@@ -53,10 +53,17 @@ namespace SAIL.Classes
                     break;
             }
             embed.AddField(Notifications?"Notifications Active ✅":"Notifications Disabled ⛔",NotificationChannel==0?"No channel has been set.":Guild.GetTextChannel(NotificationChannel).Mention);
-            
-            foreach(var x in Modules)
+            var _mod = Modules;
+            foreach(var x in _mod)
             {
-                embed.AddField(x.Name+" "+(x.Active? "✅":"⛔"),"```"+commandService.Modules.Single(y=>y.Name == x.Name).Summary+"```",true);
+                if (x.Name == "Administrative Module" || x.Name == "Debugger") continue;
+                var Md = commandService.Modules.Where(m=>m.Name==x.Name);
+                if (Md == null||Md.Count()<1)
+                {
+                    Modules.Remove(x);
+                    continue;
+                }
+                embed.AddField(x.Name+" "+(x.Active? "✅":"⛔"),"```"+Md.FirstOrDefault().Summary+"```",true);
             }
             return embed.Build();
         }
