@@ -60,7 +60,7 @@ namespace SAIL.Classes
                 .Build();
 
             var embed = new EmbedBuilder()
-                .WithTitle("SAIL Message Sorage System")
+                .WithTitle("SAIL Message Storage System")
                 .WithTimestamp(message.Timestamp)
                 .WithFooter("On #"+channel.Name)
                 .WithUrl(message.GetJumpUrl());
@@ -175,12 +175,13 @@ namespace SAIL.Classes
             if(usr.Roles.ToList().Exists(x=>x.Permissions.ManageGuild)) return Task.FromResult(PreconditionResult.FromSuccess());
             var G = services.GetRequiredService<LiteDatabase>().GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id == context.Guild.Id);
             //If the module this command is from is disabled, Fail.
-            if(G.Modules.Find(x=> x.Name==command.Module.Name).Active == false) return Task.FromResult(PreconditionResult.FromError("This module is Disabled."));
+            var module = G.Modules.Find(x=> x.Name==command.Module.Name);
+            if(!module.Active) return Task.FromResult(PreconditionResult.FromError("This module is Disabled."));
             //If the server is in Blacklist mode and the channel this is being sent in is in the list, Fail.
             if(G.ListMode==ListMode.Blacklist && G.Channels.Contains(context.Channel.Id)) return Task.FromResult(PreconditionResult.FromError("This Channel is Blacklisted."));
             //If the server is in Whitelist mode and the channel this is being sent in isn't in the list, fail.
             if(G.ListMode==ListMode.Whitelist && !G.Channels.Contains(context.Channel.Id)) return Task.FromResult(PreconditionResult.FromError("This Channel isn't in the whitelist."));
-            return Task.FromResult(PreconditionResult.FromError("Unspecified."));
+            return Task.FromResult(PreconditionResult.FromSuccess());
         }
     }
 }
