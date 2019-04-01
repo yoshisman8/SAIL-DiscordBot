@@ -223,6 +223,15 @@ namespace SAIL.Services
             if (Guild == null && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos))return;
             if (Guild!= null && !message.HasStringPrefix(Guild.Prefix, ref argPos) && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
 
+            if(DateTime.Now.Month == 4 && DateTime.Now.Day == 1)
+            {
+                var chance = new Random().Next(0,100);
+                if(chance <= 25)
+                {
+                    await context.Channel.SendMessageAsync("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!! A wittle fucko boingo! The code monkeys at our headquarters are working VEWY HAWD to fix this!");
+                    return;
+                }
+            }
             var result = await _commands.ExecuteAsync(context, argPos, _provider);
 
             if (result.Error.HasValue && (result.Error.Value != CommandError.UnknownCommand))
