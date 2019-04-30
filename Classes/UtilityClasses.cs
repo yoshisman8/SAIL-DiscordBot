@@ -175,8 +175,8 @@ namespace SAIL.Classes
             if(usr.Roles.ToList().Exists(x=>x.Permissions.ManageGuild)) return Task.FromResult(PreconditionResult.FromSuccess());
             var G = services.GetRequiredService<LiteDatabase>().GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id == context.Guild.Id);
             //If the module this command is from is disabled, Fail.
-            var module = G.Modules.Find(x=> x.Name==command.Module.Name);
-            if(!module.Active) return Task.FromResult(PreconditionResult.FromError("This module is Disabled."));
+            var module = G.Modules[command.Module];
+            if(!module) return Task.FromResult(PreconditionResult.FromError("This module is Disabled."));
             //If the server is in Blacklist mode and the channel this is being sent in is in the list, Fail.
             if(G.ListMode==ListMode.Blacklist && G.Channels.Contains(context.Channel.Id)) return Task.FromResult(PreconditionResult.FromError("This Channel is Blacklisted."));
             //If the server is in Whitelist mode and the channel this is being sent in isn't in the list, fail.
@@ -184,4 +184,68 @@ namespace SAIL.Classes
             return Task.FromResult(PreconditionResult.FromSuccess());
         }
     }
+    public class CharacterTypeReader : TypeReader
+    {
+        public async override Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
+        {
+            var collection = services.GetService<LiteDatabase>().GetCollection<Character>("Characters");
+            var results = collection.Find(x=>x.Name.StartsWith(input.ToLower()) && (x.Guild==context.Guild.Id || x.Owner == context.User.Id));
+            if (results.Count()<=0) return TypeReaderResult.FromError(CommandError.ObjectNotFound,"Could not find any Character whose name started with \""+input+"\".");
+            else if(results.Count()>1)
+            {
+                var options = new List<Menu.MenuOption>();
+                foreach(var x in results)
+                {
+                    options.Add(new Menu.MenuOption(x.Name,(index,charlist) =>
+                    {
+                        var list = (IEnumerable<Character>)charlist;
+                        return list.ElementAt(index); 
+                    }));
+                }
+                var menu = new Menu("Multiple results found.",
+                    "Multiple results were found, please specify which one you're trying to see:",
+                    options.ToArray(),results);
+                var character = (Character)await menu.StartMenu((SocketCommandContext)context,services.GetService<InteractiveService>());
+                return TypeReaderResult.FromSuccess(character);
+            }
+            else
+            {
+                return TypeReaderResult.FromSuccess(results.FirstOrDefault());
+            }
+        }
+    }
+    public class ModuleTypeReader : TypeReader
+    {
+        public async override Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
+        {
+            var commands = services.GetService<CommandService>();
+            var results = commands.Modules.Where(x=>x.Name.ToLower().StartsWith(input.ToLower())
+            && !x.Attributes.Any(y=>y.GetType()==typeof(Exclude))
+            && !x.Attributes.Any(y=>y.GetType()==typeof(Untoggleable)));
+            if (results.Count()<=0) return TypeReaderResult.FromError(CommandError.ObjectNotFound,"Could not find any modules whose name started with \""+input+"\".");
+            else if(results.Count()>1)
+            {
+                var options = new List<Menu.MenuOption>();
+                foreach(var x in results)
+                {
+                    options.Add(new Menu.MenuOption(x.Name,(index,charlist) =>
+                    {
+                        var list = (IEnumerable<ModuleInfo>)charlist;
+                        return list.ElementAt(index); 
+                    }));
+                }
+                var menu = new Menu("Multiple results found.",
+                    "Multiple results were found, please specify which one you're trying to see:",
+                    options.ToArray(),results);
+                var Module = (ModuleInfo)await menu.StartMenu((SocketCommandContext)context,services.GetService<InteractiveService>());
+                return TypeReaderResult.FromSuccess(Module);
+            }
+            else
+            {
+                return TypeReaderResult.FromSuccess(results.FirstOrDefault());
+            }
+        }
+    }
+    public class Exclude : Attribute {}
+    public class Untoggleable : Attribute {}
 }

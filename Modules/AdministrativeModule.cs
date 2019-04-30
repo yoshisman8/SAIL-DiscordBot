@@ -16,7 +16,7 @@ using Discord;
 
 namespace SAIL.Modules
 {
-    [Name("Administrative Module")]
+    [Name("Administrative Module")] [Untoggleable]
     [Summary("This module contains a series of Administrative commands for the bot. It cannot be dissabled.")]
     public class AdministrativeModule : InteractiveBase<SocketCommandContext>
     {
@@ -56,41 +56,16 @@ namespace SAIL.Modules
         [Summary("Toggles a module On or Off, The Administrative Module cannot be toggled Off. You can find the names of the modules by using the AdminPanel command.")]
         [RequireContext(ContextType.Guild)] [RequireUserPermission(GuildPermission.ManageGuild)]
         [RequireGuildSettings]
-        public async Task ToggleModule([Remainder] string ModuleName)
+        public async Task ToggleModule([Remainder] ModuleInfo ModuleName)
         {
             var col = Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
-            var _module = guild.Modules.FindAll(x=>x.Name.ToLower().Contains(ModuleName.ToLower()));
-            if(_module == null || _module.Count == 0)
-            {
-                var msg = await ReplyAsync("I could not find any modules whose name contains the word **"+ModuleName+"** in their name. Please be more specific with the module name.");
-                Cache.Add(Context.Message.Id,msg.Id);
-                return;
-            }
-            if(_module.Count>1)
-            {
-                var msg = await ReplyAsync("There are more than one modules that contain the word **"+ModuleName+"** in their name. Please be more specific with the module name.");
-                Cache.Add(Context.Message.Id,msg.Id);
-                return;
-            }
-            if (_module.Exists(x=> x.Name == "Administrative Module"))
-            {
-                var msg = await ReplyAsync("You cannot toggle the administrative module off.");
-                Cache.Add(Context.Message.Id,msg.Id);
-                return;
-            }
-            else
-            {
-                var module = _module.First();
-                guild.Modules.Remove(module);
-                module.Active = !module.Active;
-                guild.Modules.Add(module);
-                col.Update(guild);
+            guild.Modules[ModuleName] ^= true;
+            col.Update(guild);
 
-                var msg = await ReplyAsync("The "+module.Name+" has been toggled **"+(module.Active?"On":"Off")+"**.");
-                Cache.Add(Context.Message.Id,msg.Id);
-                return;
-            }
+            var msg = await ReplyAsync("The "+ModuleName.Name+" has been toggled **"+(guild.Modules[ModuleName]?"On":"Off")+"**.");
+            Cache.Add(Context.Message.Id,msg.Id);
+            return;
         }
         [Command("Help")][Alias("Commands")]
         [Summary("Shows all commands along with their parameters, aliases and information.")]
@@ -101,27 +76,23 @@ namespace SAIL.Modules
             var col = Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
             guild.Load(Context);
-            foreach (var x in guild.Modules.Where(x=>x.Active == true))
+            foreach (var x in guild.Modules.Where(x=>x.Value == true || !x.Key.Attributes.Any(a =>a.GetType() == typeof(Exclude))))
             {
-                var Md = command.Modules.Where(m=>m.Name==x.Name);
-                if (Md == null||Md.Count()<1)
+                if (!command.Modules.Any(m => m == x.Key))
                 {
-                    guild.Modules.Remove(x);
-                    col.Update(guild);
-                    continue;
+                    guild.Modules.Remove(x.Key);
                 }
                 var usr = Context.User as SocketGuildUser;
-                if (x.Name == "Administrative Module" &&
+                if (x.Key.Name == "Administrative Module" &&
                     usr.Roles.Where(y=>y.Permissions.ManageGuild == true).Count() == 0) 
                     continue;
-                if (x.Name == "Debugger") continue;
-                Controller.Pages.Add(await GenerateEmbedPage(Context,command,Provider,x,guild));
             }
             var prev = new Emoji("⏮");
             var kill = new Emoji("⏹");
             var next = new Emoji("⏭");
             var msg = await ReplyAsync(Context.User.Mention+", Here are all Available Commands you can use.");
-            Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,new ReactionCallbackData("",null,false,false,TimeSpan.FromMinutes(3))
+            Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,
+            new ReactionCallbackData("",null,false,false,TimeSpan.FromMinutes(3))
                 .WithCallback(prev,(ctx,rea)=>Controller.Previous(ctx,rea,msg))
                 .WithCallback(kill,(ctx,rea)=>Controller.Kill(Interactive,msg))
                 .WithCallback(next,(ctx,rea)=>Controller.Next(ctx,rea,msg))));
@@ -221,19 +192,18 @@ namespace SAIL.Modules
             var msg = await ReplyAsync("Bot Notifications are now turned **"+(guild.Notifications?"On":"Off")+"**.");
             Cache.Add(Context.Message.Id,msg.Id);
         }
-        // [Command("Return")]
-        // [RequireContext(ContextType.DM)] [RequireOwner]
-        // public async Task Restore()
-        // {
-        //     if (Context.User.Id == 165212654388903936){
-        //         var guild = Context.Client.GetGuild(311970313158262784);
-        //         var roles = guild.Roles.Where(x=>x.Permissions.ManageRoles==true);
-        //         var user = guild.GetUser(165212654388903936);
-        //         await user.AddRolesAsync(roles);
-
-        //         await ReplyAsync("Done");
-        //     }
-        // }
+        [Command("SetNotificationChannel"),Alias("SetNotifChannel","SetNotif")]
+        [RequireGuildSettings] 
+        [RequireContext(ContextType.Guild),RequireUserPermission(GuildPermission.ManageGuild)]
+        [Summary("Sets the Channel to be used for Notification Messages (User Joined/Left, Scheduled Messages, Raffles, Etc)")]
+        public async Task SetNotifChannel(ITextChannel Channel)
+        {
+            var col = Database.GetCollection<SysGuild>("Guilds");
+            var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
+            guild.NotificationChannel = Channel.Id;
+            col.Update(guild);
+            var msg = await ReplyAsync("Server notifications are now going to be sent to "+Channel.Mention);
+        }
         private async Task<Embed> GenerateEmbedPage(SocketCommandContext ctx, CommandService cmd,IServiceProvider _provider, Module _module,SysGuild guild)
         {
             

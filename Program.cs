@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using LiteDB;
 using SAIL.Services;
+using System.Reflection;
 
 namespace SAIL
 {
@@ -24,7 +25,7 @@ namespace SAIL
 
         public async Task MainAsync()
         {
-            Directory.CreateDirectory(Directory.GetCurrentDirectory()+@"/Data/");
+            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(),"Data"));
             _client = new DiscordSocketClient();
             _config = BuildConfig();
             
@@ -58,7 +59,7 @@ namespace SAIL
                 .AddSingleton(new ScheduleService())
                 .AddSingleton(new CommandCacheService(_client))
                 .AddSingleton(new InteractiveService(_client))
-                .AddSingleton(new LiteDatabase(Directory.GetCurrentDirectory()+@"/Data/Database.db"))
+                .AddSingleton(new LiteDatabase(Path.Combine(Directory.GetCurrentDirectory(),"Data","Database.db")))
                 // Add additional services here...
                 .BuildServiceProvider();
         }
@@ -67,8 +68,8 @@ namespace SAIL
         {
             return new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile(Directory.GetCurrentDirectory()+@"/Data/config.json")
+                .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(),"Data","config.json"))
                 .Build();
-}
+        }
     }
 }

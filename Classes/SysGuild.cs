@@ -19,7 +19,7 @@ namespace SAIL.Classes
         [BsonId]
         public ulong Id {get;set;}
         public string Prefix {get;set;} = "!";
-        public List<Module> Modules {get;set;} = new List<Module>();
+        public Dictionary<ModuleInfo,bool> Modules {get;set;} = new Dictionary<ModuleInfo,bool>();
         public ListMode ListMode {get;set;} = ListMode.None;
         public List<ulong> Channels {get;set;} = new List<ulong>();
         public ulong NotificationChannel {get;set;} = 0;
@@ -55,7 +55,7 @@ namespace SAIL.Classes
             embed.AddField(Notifications?"Notifications Active ✅":"Notifications Disabled ⛔",NotificationChannel==0?"No channel has been set.":Guild.GetTextChannel(NotificationChannel).Mention);
             foreach(var x in Modules)
             {
-                embed.AddField(x.Name+" "+(x.Active? "✅":"⛔"),"```"+commandService.Modules.SingleOrDefault(m=>m.Name==x.Name).Summary+"```",true);
+                embed.AddField(x.Key.Name+" "+(x.Value? "✅":"⛔"),"```"+x.Key.Summary+"```",true);
             }
             return embed.Build();
         }

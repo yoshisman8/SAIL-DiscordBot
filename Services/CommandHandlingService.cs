@@ -28,6 +28,7 @@ namespace SAIL.Services
         private readonly IConfiguration _config;
         private CommandCacheService _cache;
         private ScheduleService _timer;
+        private bool Ready = false;
 
         public CommandHandlingService(IConfiguration config, IServiceProvider provider, DiscordSocketClient discord, CommandService commands,LiteDatabase database, CommandCacheService cache,InteractiveService interactive,ScheduleService timer)
         {
@@ -54,8 +55,11 @@ namespace SAIL.Services
 
         public async Task OnTimerTick()
         {
+            if(!Ready) return;
             var col = _database.GetCollection<SysGuild>("Guilds");
-            var Guilds = col.Find(x=>x.Modules.Contains(new SAIL.Classes.Module(){Name = "Schedule Module",Active = true}) && x.Notifications && x.NotificationChannel > 0);
+            var schedulemod = _commands.Modules.Single(x=> x.Name == "Schedule Module");
+            var _guilds = col.FindAll();
+            var Guilds = _guilds.Where(x=>x.Modules[schedulemod] && x.Notifications && x.NotificationChannel > 0);
             if(Guilds != null && Guilds.Count() > 1)
             {
                 foreach (var x in Guilds)
@@ -83,18 +87,19 @@ namespace SAIL.Services
         {
             await InitializeGuildsDB(_discord, _database);
             await UpdateModules(_discord,_database,_commands);
+            Ready = true;
         }
 
         private async Task UpdateModules(DiscordSocketClient discord, LiteDatabase database, CommandService commands)
         {
             var col = database.GetCollection<SysGuild>("Guilds");
             var servers = col.FindAll();
-            var modules = commands.Modules.Select(x=> x.Name).ToList();
-            foreach (var x in modules.Where(x=>x != "Administrative Module" || x != "Debugger Module"))
+            var modules = commands.Modules.Where(x=>!x.Attributes.Any(y=>y.GetType()==typeof(Exclude)));
+            foreach (var x in modules)
             {
-                foreach(var y in servers.Where(z=>!z.Modules.Exists(w=>w.Name == x)))
+                foreach(var y in servers.Where(z=>!z.Modules.Keys.Any(w=>w == x)))
                 {
-                    y.Modules.Add(new Classes.Module(){Name=x});
+                    y.Modules.Add(x,true);
                     col.Update(y);
                 }
             }
@@ -206,6 +211,8 @@ namespace SAIL.Services
         public async Task InitializeAsync(IServiceProvider provider)
         {
             _provider = provider;
+            _commands.AddTypeReader(typeof(Character),new CharacterTypeReader());
+            _commands.AddTypeReader(typeof(ModuleInfo),new ModuleTypeReader());
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(),_provider);
             // Add additional initialization code here...
         }

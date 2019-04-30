@@ -16,8 +16,7 @@ using Discord;
 
 namespace SAIL.Modules
 {
-    [Name("Debugger Module")]
-    [Summary("You shouldn't be reading this")]
+    [Name("Debugger Module")][Exclude]
     public class Debugger : InteractiveBase<SocketCommandContext>
     {
         public LiteDatabase Database {get;set;}
@@ -191,14 +190,11 @@ namespace SAIL.Modules
             var guilds = Database.GetCollection<SysGuild>("Guilds");
             foreach (var x in guilds.FindAll())
             {
-                var mds = new List<Module>();
+                var mds = new Dictionary<ModuleInfo,bool>();
                 foreach(var y in command.Modules)
                 {
                     if(y.Name.ToLower().Contains("debug")) continue;
-                    mds.Add(new Module(){
-                        Name = y.Name,
-                        Active = true
-                    });
+                    mds.Add(y,true);
                 }
                 x.Modules = mds;
                 guilds.Update(x);
