@@ -15,8 +15,10 @@ using System.Reflection;
 
 namespace SAIL
 {
+    
     class Program
     {
+        public static LiteDatabase Database = new LiteDatabase(Path.Combine(Directory.GetCurrentDirectory(),"Data","Database.db"));
         static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
 
@@ -59,7 +61,7 @@ namespace SAIL
                 .AddSingleton(new ScheduleService())
                 .AddSingleton(new CommandCacheService(_client))
                 .AddSingleton(new InteractiveService(_client))
-                .AddSingleton(new LiteDatabase(Path.Combine(Directory.GetCurrentDirectory(),"Data","Database.db")))
+                
                 // Add additional services here...
                 .BuildServiceProvider();
         }

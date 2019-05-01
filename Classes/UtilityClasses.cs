@@ -101,7 +101,26 @@ namespace SAIL.Classes
             }
             return embed.Build();
         }
-       
+        public static string ToPlacement(this int number)
+        {
+            string text;
+            switch (Math.Abs(number))
+            {
+                case 1:
+                    text = number+"st";
+                    break;
+                case 2:
+                    text = number+"nd";
+                    break;
+                case 3:
+                    text = number+"rd";
+                    break;
+                default:
+                    text = number+"th";
+                    break;
+            }
+            return text;
+        }
     }
     public static class DateTimeExtension 
     {
@@ -111,7 +130,7 @@ namespace SAIL.Classes
         }
         public static HourOfTheDay ToHourOfTheDay(this DateTime dt)
         {
-            return new HourOfTheDay(dt.Hour,dt.Minute,dt.Second);
+            return new HourOfTheDay(){Hours=dt.Hour,Minutes=dt.Minute,Seconds=dt.Second};
         }
         public static DayOfWeek GetDayOfWeek(this DateTime dt)
         {
@@ -145,18 +164,11 @@ namespace SAIL.Classes
             }
             return day;
         }
-        
         public class HourOfTheDay 
         {
             public int Hours;
             public int Minutes;
             public int Seconds;
-            public HourOfTheDay(int h,int m, int s)
-            {
-                Hours = h;
-                Minutes = m;
-                Seconds = s;
-            }
             public string Get12h()
             {
                 string d = (Hours>=12)? " PM":" AM";
@@ -174,7 +186,7 @@ namespace SAIL.Classes
             var usr = context.User as SocketGuildUser;
             //If the user has the ManageGuild permission, Pass.
             if(usr.Roles.ToList().Exists(x=>x.Permissions.ManageGuild)) return Task.FromResult(PreconditionResult.FromSuccess());
-            var G = services.GetRequiredService<LiteDatabase>().GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id == context.Guild.Id);
+            var G = Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id == context.Guild.Id);
             //If the module this command is from is disabled, Fail.
             var module = G.CommandModules.Find(x=>x.Name == command.Module.Name).Value;
             if(!module) return Task.FromResult(PreconditionResult.FromError("This module is Disabled."));
@@ -189,30 +201,10 @@ namespace SAIL.Classes
     {
         public async override Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
         {
-            var collection = services.GetService<LiteDatabase>().GetCollection<Character>("Characters");
+            var collection = Program.Database.GetCollection<Character>("Characters");
             var results = collection.Find(x=>x.Name.StartsWith(input.ToLower()) && (x.Guild==context.Guild.Id || x.Owner == context.User.Id));
             if (results.Count()<=0) return TypeReaderResult.FromError(CommandError.ObjectNotFound,"Could not find any Character whose name started with \""+input+"\".");
-            else if(results.Count()>1)
-            {
-                var options = new List<Menu.MenuOption>();
-                foreach(var x in results)
-                {
-                    options.Add(new Menu.MenuOption(x.Name,(index,charlist) =>
-                    {
-                        var list = (IEnumerable<Character>)charlist;
-                        return list.ElementAt(index); 
-                    }));
-                }
-                var menu = new Menu("Multiple results found.",
-                    "Multiple results were found, please specify which one you're trying to see:",
-                    options.ToArray(),results);
-                var character = (Character)await menu.StartMenu((SocketCommandContext)context,services.GetService<InteractiveService>());
-                return TypeReaderResult.FromSuccess(character);
-            }
-            else
-            {
-                return TypeReaderResult.FromSuccess(results.FirstOrDefault());
-            }
+            else return TypeReaderResult.FromSuccess(results);
         }
     }
     public class ModuleTypeReader : TypeReader
@@ -224,27 +216,7 @@ namespace SAIL.Classes
             && !x.Attributes.Any(y=>y.GetType()==typeof(Exclude))
             && !x.Attributes.Any(y=>y.GetType()==typeof(Untoggleable)));
             if (results.Count()<=0) return TypeReaderResult.FromError(CommandError.ObjectNotFound,"Could not find any modules whose name started with \""+input+"\".");
-            else if(results.Count()>1)
-            {
-                var options = new List<Menu.MenuOption>();
-                foreach(var x in results)
-                {
-                    options.Add(new Menu.MenuOption(x.Name,(index,charlist) =>
-                    {
-                        var list = (IEnumerable<ModuleInfo>)charlist;
-                        return list.ElementAt(index); 
-                    }));
-                }
-                var menu = new Menu("Multiple results found.",
-                    "Multiple results were found, please specify which one you're trying to see:",
-                    options.ToArray(),results);
-                var Module = (ModuleInfo)await menu.StartMenu((SocketCommandContext)context,services.GetService<InteractiveService>());
-                return TypeReaderResult.FromSuccess(Module);
-            }
-            else
-            {
-                return TypeReaderResult.FromSuccess(results.FirstOrDefault());
-            }
+            else return TypeReaderResult.FromSuccess(results);
         }
     }
     public class Exclude : Attribute {}

@@ -73,33 +73,39 @@ namespace SAIL.Classes
         }
         public string Name {get;set;}
         public string MenuInfo {get;set;}
-        public Emoji NextButton = new Emoji("⏭");
-        public Emoji PrevButton = new Emoji("⏮");
-        public Emoji SelectButton = new Emoji("⏏");
         public Menu PreviousMenu {get;set;} = null;
-        private int Index {get; set;} = 0;
         public MenuOption[] Options {get;set;}
-
-        private RestUserMessage Message {get;set;}
-        private object Storage {get;set;}
-        private object Result {get;set;} = new Exclude();
         public bool Active {get; private set;} = true;
+
+        public SocketCommandContext Context {get;private set;}
+        public InteractiveService Interactive {get;private set;}
+
+        public object Storage {get;private set;}
+        private int Index {get; set;} = 0;
+        private Emoji NextButton = new Emoji("⏭");
+        private Emoji SelectButton = new Emoji("⏏");
+        private Emoji PrevButton = new Emoji("⏮");
+        private RestUserMessage Message {get;set;}
+        private object Result {get;set;} = null;
         
         public class MenuOption
         {
-            public MenuOption(string Name, Func<int,object,object> _Logic = null, bool _EndsMenu = true)
+            public MenuOption(string _Name, Func<Menu,int,object> _Logic = null, string _summary = "", bool _EndsMenu = true)
             {
-                Option = Name;
+                Name = _Name;
                 Logic = _Logic;
                 EndsMenu = _EndsMenu;
+                Description = _summary;
             }
-            public string Option {get;set;}
+            public string Name {get;set;}
+            public string Description {get;set;}
             public bool EndsMenu {get;set;} = true;
-            public Func<int,object,object> Logic {get;set;}
+            public Func<Menu,int,object> Logic {get;set;}
         }
-        public async Task<object> StartMenu(SocketCommandContext Context,InteractiveService Interactive)
+        public async Task<object> StartMenu(SocketCommandContext _Context,InteractiveService _Interactive)
         {
-            
+            Context = _Context;
+            Interactive = _Interactive;
             Message = await Context.Channel.SendMessageAsync(BuildMenu());
             await Message.AddReactionsAsync(new Emoji[] {PrevButton,SelectButton,NextButton});
             Interactive.AddReactionCallback(Message, new InlineReactionCallback(Interactive,Context,
@@ -118,7 +124,8 @@ namespace SAIL.Classes
         }
         public async Task ReloadMenu()
         {
-            await Message.ModifyAsync(x => x.Content = BuildMenu());
+            if(Options.Any(x=>x.Description!="")) await Message.ModifyAsync(x=>x.Embed = BuildEmbeddedMenu());
+            else await Message.ModifyAsync(x => x.Content = BuildMenu());
         }
         public async Task SelectNext(SocketReaction r)
         {
@@ -143,7 +150,7 @@ namespace SAIL.Classes
         public async Task SelectOption(SocketReaction r,object input = null)
         {
             await Message.RemoveReactionAsync(r.Emote,r.User.Value);
-            Result = Options[Index].Logic?.Invoke(Index,input);
+            Result = Options[Index].Logic?.Invoke(this,Index);
             Active = Options[Index].EndsMenu? false : true;
         }
         public string BuildMenu()
@@ -151,9 +158,22 @@ namespace SAIL.Classes
             var returnstring = new StringBuilder().AppendLine(MenuInfo);
             for (int i = 0; i < Options.Length;i++)
             {
-                returnstring.AppendLine((Index==i?"💠 ":"🔹 ") + Options[i].Option);
+                returnstring.AppendLine((Index==i?"💠 ":"🔹 ") + Options[i].Name);
             }
             return returnstring.ToString();
+        }
+        public Embed BuildEmbeddedMenu()
+        {
+            var Embed = new EmbedBuilder()
+                .WithTitle(Name)
+                .WithColor(new Color(88, 196, 239))
+                .WithDescription(MenuInfo)
+                .WithFooter("Use "+PrevButton+" and "+NextButton+" to move the cursor and "+SelectButton+" to select the selected item.");
+            for (int i = 0; i < Options.Length;i++)
+            {
+                Embed.AddField((Index==i?"💠 ":"")+Options[i].Name,Options[i].Description==""?Options[i].Name:Options[i].Description,true);
+            }
+            return Embed.Build();
         }
     }
 }

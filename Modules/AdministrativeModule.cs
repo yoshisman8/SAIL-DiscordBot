@@ -20,7 +20,6 @@ namespace SAIL.Modules
     [Summary("This module contains a series of Administrative commands for the bot. It cannot be dissabled.")]
     public class AdministrativeModule : InteractiveBase<SocketCommandContext>
     {
-        public LiteDatabase Database {get;set;}
         public CommandCacheService Cache {get;set;}
         public IServiceProvider Provider {get;set;}
         public CommandService command {get;set;}
@@ -32,7 +31,7 @@ namespace SAIL.Modules
         [RequireGuildSettings]
         public async Task ConfigPanel()
         {
-            var col = Database.GetCollection<SysGuild>("Guilds");
+            var col = Program.Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
             guild.Load(Context);
 
@@ -45,7 +44,7 @@ namespace SAIL.Modules
         [RequireGuildSettings]
         public async Task SetPrefix([Remainder] string prefix)
         {
-            var col = Database.GetCollection<SysGuild>("Guilds");
+            var col = Program.Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
             guild.Prefix = prefix;
             col.Update(guild);
@@ -56,9 +55,31 @@ namespace SAIL.Modules
         [Summary("Toggles a module On or Off, The Administrative Module cannot be toggled Off. You can find the names of the modules by using the AdminPanel command.")]
         [RequireContext(ContextType.Guild)] [RequireUserPermission(GuildPermission.ManageGuild)]
         [RequireGuildSettings]
-        public async Task ToggleModule([Remainder] ModuleInfo ModuleName)
+        public async Task ToggleModule([Remainder] ModuleInfo[] Name)
         {
-            var col = Database.GetCollection<SysGuild>("Guilds");
+            ModuleInfo ModuleName = null;
+            if(Name.Count()>1)
+            {
+                var options = new List<Menu.MenuOption>();
+                foreach(var x in Name)
+                {
+                    options.Add(new Menu.MenuOption(x.Name,(Menu,Index) =>
+                    {
+                        var list = (ModuleInfo[])Menu.Storage;
+                        return list.ElementAt(Index); 
+                    },x.Summary));
+                }
+                var menu = new Menu("Please choose:",
+                    "Multiple modules were found, please specify which one you're trying to toggle.",
+                    options.ToArray(),Name);
+                var Module = (ModuleInfo)await menu.StartMenu(Context,Interactive);
+                
+            }
+            else
+            {
+                ModuleName = Name.FirstOrDefault();
+            }
+            var col = Program.Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
             int index = guild.CommandModules.FindIndex(x => x.Name == ModuleName.Name);
             guild.CommandModules[index].Value ^= true;
@@ -74,7 +95,7 @@ namespace SAIL.Modules
         [RequireContext(ContextType.Guild)]
         public async Task GetHelp()
         {
-            var col = Database.GetCollection<SysGuild>("Guilds");
+            var col = Program.Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
             guild.Load(Context);
             foreach (var x in guild.CommandModules.Where(x=>x.Value == true))
@@ -105,7 +126,7 @@ namespace SAIL.Modules
         [Summary("Cycles between the Server channel list modes. This command will cycle between None, Blacklist and Whitelist (in that order)")]
         public async Task Cyclemode()
         {
-            var col = Database.GetCollection<SysGuild>("Guilds");
+            var col = Program.Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
             
             switch (guild.ListMode)
@@ -133,7 +154,7 @@ namespace SAIL.Modules
         [Summary("Cycles between the Server channel list modes. This command will cycle between None, Blacklist and Whitelist (in that order)")]
         public async Task Addtolist(ITextChannel Channel)
         {
-            var col = Database.GetCollection<SysGuild>("Guilds");
+            var col = Program.Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
             
             if(!guild.Channels.Contains(Channel.Id))
@@ -157,7 +178,7 @@ namespace SAIL.Modules
         [Summary("Cycles between the Server channel list modes. This command will cycle between None, Blacklist and Whitelist (in that order)")]
         public async Task Remtolist(ITextChannel Channel)
         {
-            var col = Database.GetCollection<SysGuild>("Guilds");
+            var col = Program.Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
             
             if(guild.Channels.Contains(Channel.Id))
@@ -181,7 +202,7 @@ namespace SAIL.Modules
         [Summary("Toggles whether or not this server shows Notifications on the Notification channel. Admins can set the channel with `SetNotifChannel <Channel Name>`.")]
         public async Task ToggleNotif()
         {
-            var col = Database.GetCollection<SysGuild>("Guilds");
+            var col = Program.Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
             
             guild.Notifications = !guild.Notifications;
@@ -195,7 +216,7 @@ namespace SAIL.Modules
         [Summary("Sets the Channel to be used for Notification Messages (User Joined/Left, Scheduled Messages, Raffles, Etc)")]
         public async Task SetNotifChannel(ITextChannel Channel)
         {
-            var col = Database.GetCollection<SysGuild>("Guilds");
+            var col = Program.Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
             guild.NotificationChannel = Channel.Id;
             col.Update(guild);

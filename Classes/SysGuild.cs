@@ -11,6 +11,7 @@ using Discord.WebSocket;
 using Discord.Rest;
 using Discord;
 using static SAIL.Classes.DateTimeExtension;
+using System.Globalization;
 
 namespace SAIL.Classes
 {
@@ -33,6 +34,8 @@ namespace SAIL.Classes
         public ulong NotificationChannel {get;set;} = 0;
         public bool Notifications {get;set;} = true;
         public List<GuildEvent> Events {get;set;} = new List<GuildEvent>();
+        [BsonRef("Users")]
+        public List<SysUser> Users {get;set;} = new List<SysUser>();
 
         [BsonIgnore]
         private SocketGuild Guild {get;set;}
@@ -80,20 +83,34 @@ namespace SAIL.Classes
             var guild = Client.GetGuild(Id);
             var ch = guild.GetTextChannel(NotificationChannel);
             var embed = new EmbedBuilder()
-                .WithTitle("[EVENT] "+Event.Name)
+                .WithTitle(Event.Name)
                 .WithDescription(Event.Description)
-                .AddField("Event Time",Event.Repeating == RepeatingState.Repeating?"This event is set to happen once and will not be repeated.":"This event happens on "+Event.Time.Get12h()+" every "+string.Join(",",Event.Days));
+                .WithColor(Color.LightOrange);
+            switch(Event.Repeating)
+            {
+                case RepeatingState.Anually:
+                    embed.AddField("When is it happening?","Every "+Event.Date.ToString("MMMM")+" the "+Event.Date.Day.ToPlacement()+" at "+Event.Date.ToString("hh:mm tt"));
+                    break;
+                case RepeatingState.Monhtly:
+                    embed.AddField("When is it happening?","The "+Event.Date.Day.ToPlacement()+" of every month at "+" at "+Event.Date.ToString("hh:mm tt"));
+                    break;
+                case RepeatingState.Weekly:
+                    embed.AddField("When is it happening?","Every "+Event.Date.ToString("DDDD")+" at "+Event.Date.ToString("hh:mm tt"));
+                    break;
+                case RepeatingState.Once:
+                    embed.AddField("When is it happening?","On "+Event.Date.ToString("DD/MMM/YYYY")+" at "+Event.Date.ToString("hh:mm tt")+"UTC");
+                    break;
+            }
             await ch.SendMessageAsync("",false,embed.Build());
         }
     }
 
     public class GuildEvent
     {
-        public HourOfTheDay Time {get;set;}
-        public List<DayOfWeek> Days {get;set;} = new List<DayOfWeek>();
+        public DateTime Date {get;set;}
         public string Name {get;set;}
         public string Description {get;set;}
-        public RepeatingState Repeating {get;set;} = RepeatingState.Unset;
+        public RepeatingState Repeating {get;set;} = RepeatingState.Once;
     }
 
     public class Module
@@ -103,5 +120,5 @@ namespace SAIL.Classes
         public bool Value {get;set;} = true;
     }
     public enum ListMode {Blacklist, Whitelist, None}
-    public enum RepeatingState {Repeating,NonRepeating, Unset}
+    public enum RepeatingState {Unset = -1,Weekly, Monhtly,Anually,Once}
 }

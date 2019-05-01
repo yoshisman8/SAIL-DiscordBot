@@ -22,7 +22,6 @@ namespace SAIL.Services
     {
         private readonly DiscordSocketClient _discord;
         private readonly CommandService _commands;
-        private LiteDatabase _database;
         private IServiceProvider _provider;
         private InteractiveService _interactive;
         private readonly IConfiguration _config;
@@ -30,12 +29,11 @@ namespace SAIL.Services
         private ScheduleService _timer;
         private bool Ready = false;
 
-        public CommandHandlingService(IConfiguration config, IServiceProvider provider, DiscordSocketClient discord, CommandService commands,LiteDatabase database, CommandCacheService cache,InteractiveService interactive,ScheduleService timer)
+        public CommandHandlingService(IConfiguration config, IServiceProvider provider, DiscordSocketClient discord, CommandService commands, CommandCacheService cache,InteractiveService interactive,ScheduleService timer)
         {
             _discord = discord;
             _commands = commands;
             _provider = provider;
-            _database = database;
             _config = config;
             _interactive = interactive;
             _cache = cache;
@@ -55,10 +53,10 @@ namespace SAIL.Services
 
         public async Task OnJoinedGuild(SocketGuild arg)
         {
-            var col = _database.GetCollection<SysGuild>("Guilds");
+            var col = Program.Database.GetCollection<SysGuild>("Guilds");
             if(col.Exists(x=>x.Id==arg.Id))
             {
-                await UpdateModules(_discord,_database,_commands);
+                await UpdateModules(_discord,Program.Database,_commands);
                 return;
             }
             col.Insert(new SysGuild() {Id=arg.Id});
@@ -67,7 +65,7 @@ namespace SAIL.Services
         public async Task OnTimerTick()
         {
             if(!Ready) return;
-            var col = _database.GetCollection<SysGuild>("Guilds");
+            var col = Program.Database.GetCollection<SysGuild>("Guilds");
             var schedulemod = _commands.Modules.Single(x=> x.Name.Contains("Schedule"));
             var Guilds = col.FindAll().ToList();
             foreach (var x in Guilds)
@@ -76,15 +74,16 @@ namespace SAIL.Services
                 if(!x.CommandModules[index].Value) continue;
                 if(!x.Notifications) continue;
                 if(x.NotificationChannel<=0) continue;
-                var events = x.Events.Where(T=>T.Time==DateTime.Now.RoundUp(TimeSpan.FromMinutes(15)).ToHourOfTheDay()&&T.Days.Contains(DateTime.Now.GetDayOfWeek()));
+                GuildEvent[] events = null; //TODO
+
                 var guild = _discord.GetGuild(x.Id);
                 var channel = guild.GetTextChannel(x.NotificationChannel);
-                if (events != null && events.Count() > 0)
+                if (events != null && events.Length > 0)
                 {
                     foreach(var E in events)
                     {
                         await x.PrintEvent(_discord,E);
-                        if (E.Repeating == RepeatingState.NonRepeating)
+                        if (E.Repeating == RepeatingState.Once)
                         {
                             x.Events.Remove(E);
                             col.Update(x);
@@ -96,8 +95,8 @@ namespace SAIL.Services
 
         public async Task OnReady()
         {
-            await InitializeGuildsDB(_discord, _database);
-            await UpdateModules(_discord,_database,_commands);
+            await InitializeGuildsDB(_discord, Program.Database);
+            await UpdateModules(_discord,Program.Database,_commands);
             Ready = true;
         }
 
@@ -145,7 +144,7 @@ namespace SAIL.Services
             var OldMsg = await _OldMsg.DownloadAsync();
             if (OldMsg.Source != MessageSource.User) return;
 
-            var col = _database.GetCollection<SAIL.Classes.Quote>("Quotes");
+            var col = Program.Database.GetCollection<SAIL.Classes.Quote>("Quotes");
             
             if(_cache.TryGetValue(NewMsg.Id, out var CacheMsg))
             {
@@ -163,7 +162,7 @@ namespace SAIL.Services
 
         public async Task OnMessageDeleted(Cacheable<IMessage, ulong> _msg, ISocketMessageChannel channel)
         {
-            var col = _database.GetCollection<SAIL.Classes.Quote>("Quotes");
+            var col = Program.Database.GetCollection<SAIL.Classes.Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
             if (msg == null || msg.Source != MessageSource.User) return;
 
@@ -176,12 +175,12 @@ namespace SAIL.Services
 
         private async Task OnReactRemoved(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel, SocketReaction reaction)
         {
-            var col = _database.GetCollection<SAIL.Classes.Quote>("Quotes");
+            var col = Program.Database.GetCollection<SAIL.Classes.Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
         }
         public async Task OnReactionCleared(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel)
         {
-            var col = _database.GetCollection<SAIL.Classes.Quote>("Quotes");
+            var col = Program.Database.GetCollection<SAIL.Classes.Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
             if (msg.Source != MessageSource.User) return;
             if (col.Exists(x=> x.Message == msg.Id))
@@ -194,7 +193,7 @@ namespace SAIL.Services
         public async Task OnReactAdded(Cacheable<IUserMessage, ulong> _msg, ISocketMessageChannel channel, SocketReaction reaction)
         {
             if (reaction.UserId == _discord.CurrentUser.Id) return;
-            var col = _database.GetCollection<SAIL.Classes.Quote>("Quotes");
+            var col = Program.Database.GetCollection<SAIL.Classes.Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
             var context = new CommandContext(_discord,msg);
             var guild = context.Guild;
@@ -242,7 +241,7 @@ namespace SAIL.Services
             if (message.Source != MessageSource.User) return;
 
             var context = new SocketCommandContext(_discord, message);
-            var Guild = (context.Guild==null)?null:_database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==context.Guild.Id);
+            var Guild = (context.Guild==null)?null:Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==context.Guild.Id);
 
             int argPos = 0;
             if (Guild == null && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos))return;

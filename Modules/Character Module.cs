@@ -20,7 +20,6 @@ namespace SAIL.Modules
     [Summary("Create and store character sheets for roleplay and similar purposes!")]
     public class CharacterModule : InteractiveBase<SocketCommandContext>
     {
-        public LiteDatabase Database {get;set;}
         public CommandCacheService CommandCache {get;set;}
         private Controller Controller {get;set;} = new Controller();
 
@@ -28,9 +27,32 @@ namespace SAIL.Modules
         [Command("Character"),Alias("Char")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
         [Summary("Find a character from this server using their name.")]
-        public async Task GetCharacter([Remainder] Character Name)
+        public async Task GetCharacter([Remainder] Character[] Name)
         {
-            var All = Database.GetCollection<Character>("Characters").Find(x=>x.Guild==Context.Guild.Id);
+            Character character = null;
+            if(Name.Length >1)
+            {
+                var options = new List<Menu.MenuOption>();
+                foreach(var x in Name)
+                {
+                    options.Add(new Menu.MenuOption(x.Name,(Menu,index) =>
+                    {
+                        var list = (Character[])Menu.Storage;
+                        return list.ElementAt(index); 
+                    }));
+                }
+                var menu = new Menu("Multiple Characters found.",
+                    "Multiple results were found, please specify which one you're trying to see:",
+                    options.ToArray(),Name);
+                character = (Character)await menu.StartMenu(Context,Interactive);
+               
+            }
+            else
+            {
+                character=Name.FirstOrDefault();
+            }
+
+            var All = Program.Database.GetCollection<Character>("Characters").Find(x=>x.Guild==Context.Guild.Id);
             
             var msg = await ReplyAsync("Searching for \""+Name+"\"...");
 
@@ -42,7 +64,7 @@ namespace SAIL.Modules
             await msg.AddReactionAsync(next);
 
             Controller.Pages.Clear();
-            Controller.Pages = Name.PagesToEmbed();
+            Controller.Pages = character.PagesToEmbed(Context);
             await msg.ModifyAsync(x=> x.Embed = Controller.Pages.ElementAt(Controller.Index));
 
             Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,
@@ -56,7 +78,7 @@ namespace SAIL.Modules
         [Summary("Create a new character.")] [RequireGuildSettings] [RequireContext(ContextType.Guild)]
         public async Task CreateCharacter(string Name, string bio = null)
         {
-            var col = Database.GetCollection<Character>("Characters");
+            var col = Program.Database.GetCollection<Character>("Characters");
             var All = col.Find(x=>x.Guild==Context.Guild.Id);
             if (All.Any(x=>x.Name.ToLower() == Name.ToLower()))
             {
@@ -83,7 +105,7 @@ namespace SAIL.Modules
             col.Insert(character);
             col.EnsureIndex("Name","LOWER($.Name)");
 
-            var plrs = Database.GetCollection<SysUser>("Users");
+            var plrs = Program.Database.GetCollection<SysUser>("Users");
             if (!plrs.Exists(x=>x.Id==Context.User.Id)) plrs.Insert(new SysUser(){Id=Context.User.Id});
             var plr = plrs.FindById(Context.User.Id);
 
@@ -95,11 +117,11 @@ namespace SAIL.Modules
         }
         [Command("AddField"),Alias("NewField")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
-        [Summary("Adds a field to your active character sheet. By default it adds it to the first page.")]
+        [Summary("Adds a field to your active character sheet. By default, it adds it to the first page.")]
         public async Task CreateField(string Name, string Contents, bool Inline = false,int page = 1)
         {
-            var guild = Database.GetCollection<SysGuild>("Guilds").FindById(Context.Guild.Id);
-            var plrs = Database.GetCollection<SysUser>("Users").IncludeAll();
+            var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindById(Context.Guild.Id);
+            var plrs = Program.Database.GetCollection<SysUser>("Users").IncludeAll();
             if (!plrs.Exists(x=>x.Id==Context.User.Id)) plrs.Insert(new SysUser(){Id=Context.User.Id});
             var plr = plrs.FindById(Context.User.Id);
             if(plr.Active == null)
@@ -116,14 +138,46 @@ namespace SAIL.Modules
                 CommandCache.Add(Context.Message.Id,msg1.Id);
                 return;
             }
-            character.Pages[page].Fields.Add(
-                new Field()
-                {
-                    Title = Name,
-                    Content = Contents,
-                    Inline = Inline
-                }
-            );
+            try 
+            {
+                character.Pages[page].Fields.Add(
+                    new Field()
+                    {
+                        Title = Name,
+                        Content = Contents,
+                        Inline = Inline
+                    }
+                );
+                var col = Program.Database.GetCollection<Character>("Characters");
+                col.Update(character);
+                var msg2 = await ReplyAsync("Created new field "+Name+" on page "+page+" of "+character+"'s sheet",false,character.GetPage(page,Context));
+                CommandCache.Add(Context.Message.Id,msg2.Id);
+            }
+            catch (Exception e)
+            {
+                var msg2 = await ReplyAsync("Error! You're trying to add field to a page that doesn't exist. "+character.Name+"'s sheet only has "+character.Pages.Count+" page(s).");
+                CommandCache.Add(Context.Message.Id,msg2.Id);
+            }
+        }
+        [Command("NewPage"),Alias("AddPage")] 
+        [RequireGuildSettings] [RequireContext(ContextType.Guild)]
+        [Summary("Adds a new page to your active character's sheet.")]
+        public async Task addpage()
+        {
+            var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindById(Context.Guild.Id);
+            var plrs = Program.Database.GetCollection<SysUser>("Users").IncludeAll();
+            if (!plrs.Exists(x=>x.Id==Context.User.Id)) plrs.Insert(new SysUser(){Id=Context.User.Id});
+            var plr = plrs.FindById(Context.User.Id);
+            if(plr.Active == null)
+            {
+                var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
+                CommandCache.Add(Context.Message.Id,msg1.Id);
+                return;
+            }
+            var character = plr.Active;
+            character.Pages.Add(new CharPage());
+
+            
         }
     }
 }

@@ -21,7 +21,6 @@ namespace SAIL.Modules
     [Summary("This module contains all commands related to Finding Quotes! Keep in mind that even if you disable this module, existing quotes will not be deleted.")]
     public class QuoteModule : InteractiveBase<SocketCommandContext>
     {
-        public LiteDatabase Database {get;set;}
         public CommandCacheService CommandCache {get;set;}
         
         private Controller Controller {get;set;} = new Controller();
@@ -32,7 +31,7 @@ namespace SAIL.Modules
         [RequireContext(ContextType.Guild)]
         public async Task RandomQuote()
         {
-            var All = Database.GetCollection<Quote>("Quotes").Find(x=> x.Guild==Context.Guild.Id);
+            var All = Program.Database.GetCollection<Quote>("Quotes").Find(x=> x.Guild==Context.Guild.Id);
             if (All.Count() == 0)
             {
                 var msg = await ReplyAsync("This server has no recorded quotes. React with 📌 on a message said by someone on the server to add the first quote.");
@@ -57,7 +56,7 @@ namespace SAIL.Modules
             }
             catch (Exception e)
             {
-                Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Quote.Message);
+                Program.Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Quote.Message);
                 var msg = await ReplyAsync("It seems like this quote has returned the error `"+e.Message+"` and has beed deleted from the databanks, Appologies!");
                 CommandCache.Add(Context.Message.Id,msg.Id);
             }
@@ -68,7 +67,7 @@ namespace SAIL.Modules
         [Priority(0)] [RequireContext(ContextType.Guild)]
         public async Task SearchQuoteText([Remainder] string Query)
         {
-            var col = Database.GetCollection<Quote>("Quotes").Find(x=>x.Guild == Context.Guild.Id);
+            var col = Program.Database.GetCollection<Quote>("Quotes").Find(x=>x.Guild == Context.Guild.Id);
             if (col.Count() == 0)
             {
                 var msg = await ReplyAsync("This server has no recorded quotes. React with 📌 on a message said by someone on the server to add the first quote.");
@@ -121,7 +120,7 @@ namespace SAIL.Modules
                     }
                     catch (Exception e)
                     {
-                        Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Q.Message);
+                        Program.Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Q.Message);
                         await msg.ModifyAsync(x=>x.Content = "It seems like this quote has returned the error `"+e.Message+"` and has beed deleted from the databanks, Appologies!");
                         CommandCache.Add(Context.Message.Id,msg.Id);
                     }
@@ -134,7 +133,7 @@ namespace SAIL.Modules
         [Priority(1)] [RequireContext(ContextType.Guild)]
         public async Task SearchChannel(ITextChannel channel)
         {
-            var col = Database.GetCollection<Quote>("Quotes").Find(x=>x.Guild == Context.Guild.Id);
+            var col = Program.Database.GetCollection<Quote>("Quotes").Find(x=>x.Guild == Context.Guild.Id);
             if (col.Count() == 0)
             {
                 var msg = await ReplyAsync("This server has no recorded quotes. React with 📌 on a message said by someone on the server to add the first quote.");
@@ -144,7 +143,7 @@ namespace SAIL.Modules
             var results = col.Where(x => x.Channel == channel.Id);
             if (results.Count() == 0) 
             {
-                var msg = await ReplyAsync("There are no quotes from "+channel+" on the database.");
+                var msg = await ReplyAsync("There are no quotes from "+channel+" on record.");
                 CommandCache.Add(Context.Message.Id,msg.Id);
             }
             else
@@ -167,7 +166,7 @@ namespace SAIL.Modules
                 }
                 catch (Exception e)
                 {
-                    Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Quote.Message);
+                    Program.Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Quote.Message);
                     var msg = await ReplyAsync("It seems like this quote has returned the error `"+e.Message+"` and has beed deleted from the databanks, Appologies!");
                     CommandCache.Add(Context.Message.Id,msg.Id);
                 }
@@ -185,7 +184,7 @@ namespace SAIL.Modules
             var next = new Emoji("⏭");
             await msg.AddReactionAsync(next);
 
-            var channel = c.Guild.GetTextChannel(msg.Channel.Id);
+            var channel = c.Guild.GetTextChannel(quote.Context.Channel.Id);
             var raw = await quote.Context.Channel.GetMessagesAsync(quote.Context.Message.Id,Direction.Before,5).FlattenAsync();
             var context = raw.OfType<IUserMessage>().OrderBy(x=>x.Timestamp);
             Controller.Pages.Clear();

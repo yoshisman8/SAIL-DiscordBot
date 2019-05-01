@@ -20,16 +20,18 @@ namespace SAIL.Classes
         public ulong Guild {get;set;}
         public string Name {get;set;}
         public List<CharPage> Pages {get;set;} = new List<CharPage>();
-        public List<Embed> PagesToEmbed()
+        public List<Embed> PagesToEmbed(SocketCommandContext context)
         {
             List<Embed> embeds = new List<Embed>();
+            var user = context.Client.GetUser(Owner);
             foreach (var c in Pages)
             {
                 var eb = new EmbedBuilder()
                     .WithColor(c.Color)
-                    .WithTitle(Name + "("+c.Subtitle+")")
+                    .WithTitle(Name + "("+(Pages.IndexOf(c)+1)+"/"+Pages.Count+")")
                     .WithImageUrl(c.Image)
-                    .WithThumbnailUrl(c.Thumbnail);
+                    .WithThumbnailUrl(c.Thumbnail)
+                    .WithFooter("Made by: "+user.ToString(),user.GetAvatarUrl());
                 foreach(var f in c.Fields)
                 {
                     eb.AddField(f.Title,f.Content,f.Inline);
@@ -38,6 +40,22 @@ namespace SAIL.Classes
             }
             return embeds;
         }
+        public Embed GetPage(int PageNumber, SocketCommandContext context)
+        {
+            var c = Pages.ElementAt(PageNumber);
+            var user = context.Client.GetUser(Owner);
+            var eb = new EmbedBuilder()
+                    .WithColor(c.Color)
+                    .WithTitle(Name + "("+(Pages.IndexOf(c)+1)+"/"+Pages.Count+")")
+                    .WithImageUrl(c.Image)
+                    .WithThumbnailUrl(c.Thumbnail)
+                    .WithFooter("Made by: "+user.ToString(),user.GetAvatarUrl());
+                foreach(var f in c.Fields)
+                {
+                    eb.AddField(f.Title,f.Content,f.Inline);
+                }
+            return eb.Build();
+        }
     }
     public class CharPage
     {
@@ -45,7 +63,6 @@ namespace SAIL.Classes
         public Color Color {get;set;} = Color.DarkGrey;
         public string Image {get;set;} = "";
         public string Thumbnail {get;set;} = "";
-        public string Subtitle {get;set;} = "";
     }
 
     public class Field

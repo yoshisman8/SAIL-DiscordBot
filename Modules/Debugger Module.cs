@@ -19,7 +19,6 @@ namespace SAIL.Modules
     [Name("Debugger Module")][Exclude]
     public class Debugger : InteractiveBase<SocketCommandContext>
     {
-        public LiteDatabase Database {get;set;}
         public CommandCacheService CommandCache {get;set;}
         public IServiceProvider Provider {get;set;}
         public CommandService command {get;set;}
@@ -30,7 +29,7 @@ namespace SAIL.Modules
         [Summary("[DEBUGGER COMMAND] Find a character from this server using their name. If multiple characters are found, only the first one (ordered alphabetically) will be displayed.")]
         public async Task GetCharacter([Remainder] string Name)
         {
-            var All = Database.GetCollection<Character>("Characters").FindAll();
+            var All = Program.Database.GetCollection<Character>("Characters").FindAll();
             Character character = null;
             if (All.Count() == 0)
             {
@@ -51,17 +50,16 @@ namespace SAIL.Modules
                 var options = new List<Menu.MenuOption>();
                 foreach(var x in results)
                 {
-                    options.Add(new Menu.MenuOption(x.Name,(index,charlist) =>
+                    options.Add(new Menu.MenuOption(x.Name,(Menu,index) =>
                     {
-                        var list = (IEnumerable<Character>)charlist;
+                        var list = (Character[])Menu.Storage;
                         return list.ElementAt(index); 
                     }));
                 }
-                var menu = new Menu("Multiple results found.",
-                    "Multiple results were found, please specify which one you're trying to see:",
+                var menu = new Menu("Multiple characters found.",
+                    "Your search prompted multiple characters, please select which one you want to see:",
                     options.ToArray(),results);
                 character = (Character)await menu.StartMenu((SocketCommandContext)Context,Interactive);
-                
             }
             else character = results.OrderBy(x=>x.Name).FirstOrDefault();
             
@@ -74,7 +72,7 @@ namespace SAIL.Modules
             await msg.AddReactionsAsync(new Emoji[]{prev,kill,next});
 
             Controller.Pages.Clear();
-            Controller.Pages = character.PagesToEmbed();
+            Controller.Pages = character.PagesToEmbed(Context);
             await msg.ModifyAsync(x=> x.Embed = Controller.Pages.ElementAt(Controller.Index));
 
             Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,
@@ -89,7 +87,7 @@ namespace SAIL.Modules
         [RequireContext(ContextType.Guild)]
         public async Task RandomQuote()
         {
-            var All = Database.GetCollection<Quote>("Quotes").FindAll();
+            var All = Program.Database.GetCollection<Quote>("Quotes").FindAll();
             if (All.Count() == 0)
             {
                 var msg = await ReplyAsync("This server has no recorded quotes. React with 📌 on a message said by someone on the server to add the first quote.");
@@ -114,7 +112,7 @@ namespace SAIL.Modules
             }
             catch (Exception e)
             {
-                Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Quote.Message);
+                Program.Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Quote.Message);
                 var msg = await ReplyAsync("It seems like this quote has returned the error `"+e.Message+"` and has beed deleted from the databanks, Appologies!");
                 CommandCache.Add(Context.Message.Id,msg.Id);
             }
@@ -124,7 +122,7 @@ namespace SAIL.Modules
         [Priority(0)] [RequireContext(ContextType.Guild)]
         public async Task SearchQuoteText([Remainder] string Query)
         {
-            var col = Database.GetCollection<Quote>("Quotes").FindAll();
+            var col = Program.Database.GetCollection<Quote>("Quotes").FindAll();
             if (col.Count() == 0)
             {
                 var msg = await ReplyAsync("This server has no recorded quotes. React with 📌 on a message said by someone on the server to add the first quote.");
@@ -177,7 +175,7 @@ namespace SAIL.Modules
                     }
                     catch (Exception e)
                     {
-                        Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Q.Message);
+                        Program.Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Q.Message);
                         await msg.ModifyAsync(x=>x.Content = "It seems like this quote has returned the error `"+e.Message+"` and has beed deleted from the databanks, Appologies!");
                         CommandCache.Add(Context.Message.Id,msg.Id);
                     }
@@ -187,9 +185,9 @@ namespace SAIL.Modules
         [Command("Statistics")] [RequireOwner]
         public async Task Stats()
         {
-            var guilds = Database.GetCollection<SysGuild>("Guilds").FindAll();
-            var col = Database.GetCollection<Quote>("Quotes").FindAll();
-            var All = Database.GetCollection<Character>("Characters").FindAll();
+            var guilds = Program.Database.GetCollection<SysGuild>("Guilds").FindAll();
+            var col = Program.Database.GetCollection<Quote>("Quotes").FindAll();
+            var All = Program.Database.GetCollection<Character>("Characters").FindAll();
 
             var embed = new EmbedBuilder();
             foreach(var x in guilds)
@@ -201,7 +199,7 @@ namespace SAIL.Modules
         [Command("ResetSettings")] [RequireOwner]
         public async Task Resetto()
         {
-            var guilds = Database.GetCollection<SysGuild>("Guilds");
+            var guilds = Program.Database.GetCollection<SysGuild>("Guilds");
             foreach (var x in guilds.FindAll())
             {
                 var mds = new List<Module>();
