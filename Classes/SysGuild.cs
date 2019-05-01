@@ -14,12 +14,20 @@ using static SAIL.Classes.DateTimeExtension;
 
 namespace SAIL.Classes
 {
+    public class SysUser
+    {
+        [BsonId]
+        public ulong Id {get;set;}
+        [BsonRef("Characters")]
+        public Character Active {get;set;}
+    }
+
     public class SysGuild
     {
         [BsonId]
         public ulong Id {get;set;}
         public string Prefix {get;set;} = "!";
-        public Dictionary<ModuleInfo,bool> Modules {get;set;} = new Dictionary<ModuleInfo,bool>();
+        public List<Module> CommandModules {get;set;} = new List<Module>();
         public ListMode ListMode {get;set;} = ListMode.None;
         public List<ulong> Channels {get;set;} = new List<ulong>();
         public ulong NotificationChannel {get;set;} = 0;
@@ -53,9 +61,9 @@ namespace SAIL.Classes
                     break;
             }
             embed.AddField(Notifications?"Notifications Active ✅":"Notifications Disabled ⛔",NotificationChannel==0?"No channel has been set.":Guild.GetTextChannel(NotificationChannel).Mention);
-            foreach(var x in Modules)
+            foreach(var x in CommandModules)
             {
-                embed.AddField(x.Key.Name+" "+(x.Value? "✅":"⛔"),"```"+x.Key.Summary+"```",true);
+                embed.AddField(x.Name+" "+(x.Value? "✅":"⛔"),"```"+x.Summary+"```",true);
             }
             return embed.Build();
         }
@@ -91,7 +99,8 @@ namespace SAIL.Classes
     public class Module
     {
         public string Name {get;set;}
-        public bool Active {get;set;} = true;
+        public string Summary {get;set;}
+        public bool Value {get;set;} = true;
     }
     public enum ListMode {Blacklist, Whitelist, None}
     public enum RepeatingState {Repeating,NonRepeating, Unset}

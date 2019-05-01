@@ -31,44 +31,58 @@ namespace SAIL.Modules
         public async Task GetCharacter([Remainder] string Name)
         {
             var All = Database.GetCollection<Character>("Characters").FindAll();
-            
+            Character character = null;
             if (All.Count() == 0)
             {
-                var msg = await ReplyAsync("Character count is 0.");
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                var msg2 = await ReplyAsync("Character count is 0.");
+                CommandCache.Add(Context.Message.Id,msg2.Id);
                 return;
             }
 
-            var results = All.Where(x=>x.Name.ToLower().Contains(Name.ToLower()));
-            if(results.Count() == 0)
+            var results = All.Where(x=>x.Name.ToLower().StartsWith(Name.ToLower()));
+            if (results.Count()<=0) 
             {
-                var msg = await ReplyAsync("There are no characters whose names contain \""+Name+"\".");
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                var msg2 = await ReplyAsync("Character count is 0.");
+                CommandCache.Add(Context.Message.Id,msg2.Id);
                 return;
             }
-            else
+            else if(results.Count()>1)
             {
-                var msg = await ReplyAsync("Searching for \""+Name+"\"...");
-
-                var prev = new Emoji("⏮");
-                await msg.AddReactionAsync(prev);
-                var kill = new Emoji("⏹");
-                await msg.AddReactionAsync(kill);
-                var next = new Emoji("⏭");
-                await msg.AddReactionAsync(next);
-
-                var character = results.OrderBy(x=>x.Name).FirstOrDefault();
-                Controller.Pages.Clear();
-                Controller.Pages = character.PagesToEmbed();
-                await msg.ModifyAsync(x=> x.Embed = Controller.Pages.ElementAt(Controller.Index));
-
-                Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,
-                new ReactionCallbackData("",null,false,false,TimeSpan.FromMinutes(3))
-                    .WithCallback(prev,(ctx,rea)=>Controller.Previous(ctx,rea,msg))
-                    .WithCallback(kill,(ctx,rea)=>Controller.Kill(Interactive,msg))
-                    .WithCallback(next,(ctx,rea)=>Controller.Next(ctx,rea,msg))));
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                var options = new List<Menu.MenuOption>();
+                foreach(var x in results)
+                {
+                    options.Add(new Menu.MenuOption(x.Name,(index,charlist) =>
+                    {
+                        var list = (IEnumerable<Character>)charlist;
+                        return list.ElementAt(index); 
+                    }));
+                }
+                var menu = new Menu("Multiple results found.",
+                    "Multiple results were found, please specify which one you're trying to see:",
+                    options.ToArray(),results);
+                character = (Character)await menu.StartMenu((SocketCommandContext)Context,Interactive);
+                
             }
+            else character = results.OrderBy(x=>x.Name).FirstOrDefault();
+            
+            var msg = await ReplyAsync("Loading character \""+character.Name+"\"...");
+
+            var prev = new Emoji("⏮");
+            var kill = new Emoji("⏹");
+            var next = new Emoji("⏭");
+
+            await msg.AddReactionsAsync(new Emoji[]{prev,kill,next});
+
+            Controller.Pages.Clear();
+            Controller.Pages = character.PagesToEmbed();
+            await msg.ModifyAsync(x=> x.Embed = Controller.Pages.ElementAt(Controller.Index));
+
+            Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,
+            new ReactionCallbackData("",null,false,false,TimeSpan.FromMinutes(3))
+                .WithCallback(prev,(ctx,rea)=>Controller.Previous(ctx,rea,msg))
+                .WithCallback(kill,(ctx,rea)=>Controller.Kill(Interactive,msg))
+                .WithCallback(next,(ctx,rea)=>Controller.Next(ctx,rea,msg))));
+            CommandCache.Add(Context.Message.Id,msg.Id);
         }
         [Command("TQuote"),Alias("TQ")] [RequireOwner]
         [Summary("[DEBUGGER COMMAND] Fetches a random quote in this server.")]
@@ -190,13 +204,13 @@ namespace SAIL.Modules
             var guilds = Database.GetCollection<SysGuild>("Guilds");
             foreach (var x in guilds.FindAll())
             {
-                var mds = new Dictionary<ModuleInfo,bool>();
-                foreach(var y in command.Modules)
+                var mds = new List<Module>();
+                foreach(var y in command.Modules.Where(y=>y.Attributes.Any(z=>z.GetType()==typeof(Exclude))))
                 {
                     if(y.Name.ToLower().Contains("debug")) continue;
-                    mds.Add(y,true);
+                    mds.Add(new Module(){Name=y.Name,Summary = y.Summary});
                 }
-                x.Modules = mds;
+                x.CommandModules = mds;
                 guilds.Update(x);
             }
             await ReplyAsync("Reset all guild module settings.");

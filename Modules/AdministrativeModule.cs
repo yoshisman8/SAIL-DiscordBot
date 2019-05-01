@@ -60,10 +60,11 @@ namespace SAIL.Modules
         {
             var col = Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
-            guild.Modules[ModuleName] ^= true;
+            int index = guild.CommandModules.FindIndex(x => x.Name == ModuleName.Name);
+            guild.CommandModules[index].Value ^= true;
             col.Update(guild);
 
-            var msg = await ReplyAsync("The "+ModuleName.Name+" has been toggled **"+(guild.Modules[ModuleName]?"On":"Off")+"**.");
+            var msg = await ReplyAsync("The "+ModuleName.Name+" has been toggled **"+(guild.CommandModules[index].Value?"On":"Off")+"**.");
             Cache.Add(Context.Message.Id,msg.Id);
             return;
         }
@@ -76,14 +77,10 @@ namespace SAIL.Modules
             var col = Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
             guild.Load(Context);
-            foreach (var x in guild.Modules.Where(x=>x.Value == true || !x.Key.Attributes.Any(a =>a.GetType() == typeof(Exclude))))
+            foreach (var x in guild.CommandModules.Where(x=>x.Value == true))
             {
-                if (!command.Modules.Any(m => m == x.Key))
-                {
-                    guild.Modules.Remove(x.Key);
-                }
                 var usr = Context.User as SocketGuildUser;
-                if (x.Key.Name == "Administrative Module" &&
+                if (x.Name == "Administrative Module" &&
                     usr.Roles.Where(y=>y.Permissions.ManageGuild == true).Count() == 0) 
                     continue;
             }

@@ -83,7 +83,7 @@ namespace SAIL.Classes
         private RestUserMessage Message {get;set;}
         private object Storage {get;set;}
         private object Result {get;set;} = new Exclude();
-        private bool Active;
+        public bool Active {get; private set;} = true;
         
         public class MenuOption
         {
@@ -94,7 +94,7 @@ namespace SAIL.Classes
                 EndsMenu = _EndsMenu;
             }
             public string Option {get;set;}
-            public bool EndsMenu {get;set;}
+            public bool EndsMenu {get;set;} = true;
             public Func<int,object,object> Logic {get;set;}
         }
         public async Task<object> StartMenu(SocketCommandContext Context,InteractiveService Interactive)
@@ -111,13 +111,14 @@ namespace SAIL.Classes
 
             while (Active)
             {
-                await Task.Delay(-1);
+                await Task.Delay(100);
             }
+            await Message.DeleteAsync();
             return Result; 
         }
         public async Task ReloadMenu()
         {
-            await Message.ModifyAsync(x => x = new MessageProperties(){Content = BuildMenu()});
+            await Message.ModifyAsync(x => x.Content = BuildMenu());
         }
         public async Task SelectNext(SocketReaction r)
         {
@@ -147,10 +148,10 @@ namespace SAIL.Classes
         }
         public string BuildMenu()
         {
-            var returnstring = new StringBuilder().Append(MenuInfo);
-            for (int i = 0; i > Options.Length-1;i++)
+            var returnstring = new StringBuilder().AppendLine(MenuInfo);
+            for (int i = 0; i < Options.Length;i++)
             {
-                returnstring.Append((Index==i?"• ":"> ")+Options[i].Option);
+                returnstring.AppendLine((Index==i?"💠 ":"🔹 ") + Options[i].Option);
             }
             return returnstring.ToString();
         }

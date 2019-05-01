@@ -47,40 +47,51 @@ namespace SAIL.Services
             _discord.ReactionRemoved += OnReactRemoved;
             _discord.MessageDeleted += OnMessageDeleted;
             _discord.MessageUpdated += OnMessageUpdated;
+            _discord.JoinedGuild += OnJoinedGuild;
             _discord.Ready += OnReady;
 
             _timer.Tick += OnTimerTick;
         }
 
+        public async Task OnJoinedGuild(SocketGuild arg)
+        {
+            var col = _database.GetCollection<SysGuild>("Guilds");
+            if(col.Exists(x=>x.Id==arg.Id))
+            {
+                await UpdateModules(_discord,_database,_commands);
+                return;
+            }
+            col.Insert(new SysGuild() {Id=arg.Id});
+        }
 
         public async Task OnTimerTick()
         {
             if(!Ready) return;
             var col = _database.GetCollection<SysGuild>("Guilds");
-            var schedulemod = _commands.Modules.Single(x=> x.Name == "Schedule Module");
-            var _guilds = col.FindAll();
-            var Guilds = _guilds.Where(x=>x.Modules[schedulemod] && x.Notifications && x.NotificationChannel > 0);
-            if(Guilds != null && Guilds.Count() > 1)
+            var schedulemod = _commands.Modules.Single(x=> x.Name.Contains("Schedule"));
+            var Guilds = col.FindAll().ToList();
+            foreach (var x in Guilds)
             {
-                foreach (var x in Guilds)
+                var index = x.CommandModules.FindIndex(y=>y.Name == schedulemod.Name);
+                if(!x.CommandModules[index].Value) continue;
+                if(!x.Notifications) continue;
+                if(x.NotificationChannel<=0) continue;
+                var events = x.Events.Where(T=>T.Time==DateTime.Now.RoundUp(TimeSpan.FromMinutes(15)).ToHourOfTheDay()&&T.Days.Contains(DateTime.Now.GetDayOfWeek()));
+                var guild = _discord.GetGuild(x.Id);
+                var channel = guild.GetTextChannel(x.NotificationChannel);
+                if (events != null && events.Count() > 0)
                 {
-                    var events = x.Events.Where(T=>T.Time==DateTime.Now.RoundUp(TimeSpan.FromMinutes(15)).ToHourOfTheDay()&&T.Days.Contains(DateTime.Now.GetDayOfWeek()));
-                    var guild = _discord.GetGuild(x.Id);
-                    var channel = guild.GetTextChannel(x.NotificationChannel);
-                    if (events != null && events.Count() > 0)
+                    foreach(var E in events)
                     {
-                        foreach(var E in events)
+                        await x.PrintEvent(_discord,E);
+                        if (E.Repeating == RepeatingState.NonRepeating)
                         {
-                            await x.PrintEvent(_discord,E);
-                            if (E.Repeating == RepeatingState.NonRepeating)
-                            {
-                                x.Events.Remove(E);
-                                col.Update(x);
-                            }
+                            x.Events.Remove(E);
+                            col.Update(x);
                         }
                     }
                 }
-            } 
+            }
         }
 
         public async Task OnReady()
@@ -93,15 +104,22 @@ namespace SAIL.Services
         private async Task UpdateModules(DiscordSocketClient discord, LiteDatabase database, CommandService commands)
         {
             var col = database.GetCollection<SysGuild>("Guilds");
-            var servers = col.FindAll();
-            var modules = commands.Modules.Where(x=>!x.Attributes.Any(y=>y.GetType()==typeof(Exclude)));
-            foreach (var x in modules)
+            var servers = col.IncludeAll().FindAll().ToArray();
+            var modules = commands.Modules.Where(x=>!x.Attributes.Any(y=>y.GetType()==typeof(Exclude))).ToList();
+            foreach(var y in servers)
             {
-                foreach(var y in servers.Where(z=>!z.Modules.Keys.Any(w=>w == x)))
+                var mds = y.CommandModules;
+                foreach (var x in modules)
                 {
-                    y.Modules.Add(x,true);
-                    col.Update(y);
+                    foreach(var z in y.CommandModules)
+                    {
+                        if (!modules.Any(m=>m.Name == z.Name)) mds.Remove(z);
+                    }
+                    if (!y.CommandModules.Any(m=>m.Name == x.Name)) y.CommandModules.Add(new SAIL.Classes.Module(){Name=x.Name,Summary = x.Summary});
                 }
+                
+                if(mds != y.CommandModules) y.CommandModules = mds;
+                col.Update(y);
             }
         }
 
@@ -117,7 +135,7 @@ namespace SAIL.Services
                     {
                         Id = x
                     });
-                    col.EnsureIndex("Modules","$.Modules[*].Name",false);
+                    col.EnsureIndex("CommandModules","$.CommandModules[*].Name",false);
                 }
             }
         }
