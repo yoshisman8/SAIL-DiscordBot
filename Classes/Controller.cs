@@ -151,6 +151,7 @@ namespace SAIL.Classes
         {
             await Message.RemoveReactionAsync(r.Emote,r.User.Value);
             Result = Options[Index].Logic?.Invoke(this,Index);
+            await ReloadMenu();
             Active = Options[Index].EndsMenu? false : true;
         }
         public string BuildMenu()

@@ -17,13 +17,13 @@ using Discord;
 namespace SAIL.Modules 
 {
     [Name("Character Module")]
-    [Summary("Create and store character sheets for roleplay and similar purposes!")]
+    [Summary("Create and store character sheets for roleplay and similar purposes!\nUsers with the permission to Manage Messages are considered Character Admins who can delete other people's characters.")]
     public class CharacterModule : InteractiveBase<SocketCommandContext>
     {
         public CommandCacheService CommandCache {get;set;}
         private Controller Controller {get;set;} = new Controller();
 
-
+        #region CoreCommands
         [Command("Character"),Alias("Char")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
         [Summary("Find a character from this server using their name.")]
@@ -57,11 +57,9 @@ namespace SAIL.Modules
             var msg = await ReplyAsync("Searching for \""+Name+"\"...");
 
             var prev = new Emoji("⏮");
-            await msg.AddReactionAsync(prev);
             var kill = new Emoji("⏹");
-            await msg.AddReactionAsync(kill);
             var next = new Emoji("⏭");
-            await msg.AddReactionAsync(next);
+            await msg.AddReactionsAsync(new Emoji[]{prev,kill,next});
 
             Controller.Pages.Clear();
             Controller.Pages = character.PagesToEmbed(Context);
@@ -115,11 +113,81 @@ namespace SAIL.Modules
             var msg = await ReplyAsync("Created character **"+Name+"**. This character has also been assigned as your active character for all edit commands.");
             CommandCache.Add(Context.Message.Id,msg.Id);
         }
+
+        [Command("DeleteCharater"),Alias("DelCharacter","RemoveCharacter","DelChar","RemoveChar","RemChar")] [RequireGuildSettings]
+        [RequireContext(ContextType.Guild)]
+        [Summary("Deletes a character you own. Administrators can delete other people's characters.")]
+        public async Task DeleteCharater([Remainder] Character[] Name)
+        {
+            Character character = null;
+            if(Name.Length >1)
+            {
+                var options = new List<Menu.MenuOption>();
+                foreach(var x in Name)
+                {
+                    options.Add(new Menu.MenuOption(x.Name,(Menu,index) =>
+                    {
+                        var list = (Character[])Menu.Storage;
+                        return list.ElementAt(index); 
+                    }));
+                }
+                var menu = new Menu("Multiple Characters found.",
+                    "Multiple results were found, please specify which one you're trying to see:",
+                    options.ToArray(),Name);
+                character = (Character)await menu.StartMenu(Context,Interactive);
+            }
+            else
+            {
+                character=Name.FirstOrDefault();
+            }
+            var user = (SocketGuildUser)Context.User;
+            if(character.Owner!=user.Id && !user.GuildPermissions.ManageMessages)
+            {
+                var msg1 = await ReplyAsync("This isn't your character, you cannot delete it.");
+                CommandCache.Add(Context.Message.Id,msg1.Id);
+                return;
+            }
+            var confirm = new Emoji("✅"); 
+            var cancel = new Emoji("❎");
+            object Confirmed = null;
+            var msg = await InlineReactionReplyAsync(new ReactionCallbackData("Are you sure you want to delete "+character.Name+"?",null,true,true,TimeSpan.FromMinutes(1),async (ctx)=>{Confirmed= false;})
+                .WithCallback(confirm, async (ctx,r) =>
+                {
+                    Confirmed = true;
+                })
+                .WithCallback(cancel,async (ctx,r) =>
+                {
+                    Confirmed = false;
+                }));
+            while(Confirmed==null)
+            {
+                await Task.Delay(100);
+            }
+            if((bool)Confirmed)
+            {
+                var col = Program.Database.GetCollection<Character>("Characters");
+                col.Delete(character.Id);
+                await msg.RemoveAllReactionsAsync();
+                await msg.ModifyAsync(x=>x.Content ="Deleted character "+character.Name+"!");
+                CommandCache.Add(Context.Message.Id,msg.Id);
+            }
+            else
+            {
+                await msg.RemoveAllReactionsAsync();
+                await msg.ModifyAsync(x=>x.Content ="Character was **not** deleted.");
+                CommandCache.Add(Context.Message.Id,msg.Id);
+            }
+        }
+        #endregion
+
+        #region FieldManagement
+
         [Command("AddField"),Alias("NewField")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
         [Summary("Adds a field to your active character sheet. By default, it adds it to the first page.")]
         public async Task CreateField(string Name, string Contents, bool Inline = false,int page = 1)
         {
+            page = Math.Abs(page-1);
             var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindById(Context.Guild.Id);
             var plrs = Program.Database.GetCollection<SysUser>("Users").IncludeAll();
             if (!plrs.Exists(x=>x.Id==Context.User.Id)) plrs.Insert(new SysUser(){Id=Context.User.Id});
@@ -159,6 +227,10 @@ namespace SAIL.Modules
                 CommandCache.Add(Context.Message.Id,msg2.Id);
             }
         }
+
+        #endregion
+
+        #region PageManagement
         [Command("NewPage"),Alias("AddPage")] 
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
         [Summary("Adds a new page to your active character's sheet.")]
@@ -177,7 +249,12 @@ namespace SAIL.Modules
             var character = plr.Active;
             character.Pages.Add(new CharPage());
 
-            
+            var col = Program.Database.GetCollection<Character>("Characters");
+            col.Update(character);
+            var msg2 = await ReplyAsync("Created a new page to "+character+"'s sheet.");
+            CommandCache.Add(Context.Message.Id,msg2.Id);
         }
+        
+        #endregion
     }
 }

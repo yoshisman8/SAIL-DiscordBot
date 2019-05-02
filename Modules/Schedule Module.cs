@@ -78,14 +78,52 @@ namespace SAIL.Modules
                 {
                     var prompt = Menu.Context.Channel.SendMessageAsync("Please type the event's Date in the corresponding to the event type:"+
                     "\nOnce: \"18:24 27/Febuary/2019\"."+
-                    "\nWeekly: \"18:24 Monday\"."+
-                    "\nMonthly: ").GetAwaiter().GetResult();
+                    "\nWeekly: \"10:24 Monday\"."+
+                    "\nMonthly: \"5:30 20\"."+
+                    "\nYearly: \"20:24 November 15").GetAwaiter().GetResult();
                     var reply = Menu.Interactive.NextMessageAsync(Menu.Context).GetAwaiter().GetResult();
                     prompt.DeleteAsync().RunSynchronously();
-                    
+                    switch (((GuildEvent)Menu.Storage).Repeating)
+                    {
+                        case RepeatingState.Once:
+                            ((GuildEvent)Menu.Storage).Date = DateTime.ParseExact(reply.Content,"H:mm dd/MMMM/yyyy",null);
+                            Menu.Options[Index].Description = ((GuildEvent)Menu.Storage).Date.ToString("hh:mm tt dd/MMM/yyyy");
+                        break;
+                        case RepeatingState.Weekly:
+                            ((GuildEvent)Menu.Storage).Date = DateTime.ParseExact(reply.Content,"H:mm DDDD",null);
+                            Menu.Options[Index].Description = ((GuildEvent)Menu.Storage).Date.ToString("hh:mm tt DDDD");
+                            break;
+                        case RepeatingState.Monhtly:
+                            ((GuildEvent)Menu.Storage).Date = DateTime.ParseExact(reply.Content,"H:m d",null);
+                            Menu.Options[Index].Description = ((GuildEvent)Menu.Storage).Date.ToString("hh:mm tt")+" on the "+((GuildEvent)Menu.Storage).Date.Day.ToPlacement()+" of every month.";
+                            break;
+                        case RepeatingState.Anually:
+                            ((GuildEvent)Menu.Storage).Date = DateTime.ParseExact(reply.Content,"HH:mm dd/MMMM",null);
+                            Menu.Options[Index].Description = ((GuildEvent)Menu.Storage).Date.ToString("HH:mm tt MMMM dd");
+                            break;
+                    }
                     return null;
-                },DateTime.UtcNow.ToString("hh:mm tt DD/MM/YY"),false)
+                },DateTime.UtcNow.ToString("hh:mm tt DD/MM/YY"),false),
+                new Menu.MenuOption("Save Changes",(Menu,index)=>
+                {
+                    return Menu.Storage;
+                },"Save the event it is being shown right now."),
+                new Menu.MenuOption("Discard and Exit",(Menu,Index)=>
+                {
+                    return null;
+                },"Discard this event and cancel scheduling.",true)
             };
+
+            var ScheduleMenu = new Menu("Creating event \""+EventName+"\"","Use the options bellow to create your new event.",Options,new GuildEvent(){Name=EventName});
+            var result = await ScheduleMenu.StartMenu(Context,Interactive);
+            if (result == null) return;
+            else 
+            {
+                guild.Events.Add((GuildEvent)result);
+                col.Update(guild);
+                var msg = await ReplyAsync("Successfully created event \""+EventName+"\"!");
+                Cache.Add(Context.Message.Id,msg.Id);
+            }
         }
     }
 }
