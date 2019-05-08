@@ -104,10 +104,12 @@ namespace SAIL.Modules
                 if (x.Name == "Administrative Module" &&
                     usr.Roles.Where(y=>y.Permissions.ManageGuild == true).Count() == 0) 
                     continue;
+                Controller.Pages.Add(await GenerateEmbedPage(Context,command,Provider,x,guild));
             }
             var prev = new Emoji("⏮");
             var kill = new Emoji("⏹");
             var next = new Emoji("⏭");
+            
             var msg = await ReplyAsync(Context.User.Mention+", Here are all Available Commands you can use.");
             Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,
             new ReactionCallbackData("",null,false,false,TimeSpan.FromMinutes(3))

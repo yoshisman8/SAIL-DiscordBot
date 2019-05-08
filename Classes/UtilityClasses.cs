@@ -204,7 +204,7 @@ namespace SAIL.Classes
             var collection = Program.Database.GetCollection<Character>("Characters");
             var results = collection.Find(x=>x.Name.StartsWith(input.ToLower()) && (x.Guild==context.Guild.Id || x.Owner == context.User.Id));
             if (results.Count()<=0) return TypeReaderResult.FromError(CommandError.ObjectNotFound,"Could not find any Character whose name started with \""+input+"\".");
-            else return TypeReaderResult.FromSuccess(results);
+            else return TypeReaderResult.FromSuccess(results.ToArray());
         }
     }
     public class ModuleTypeReader : TypeReader
@@ -216,7 +216,7 @@ namespace SAIL.Classes
             && !x.Attributes.Any(y=>y.GetType()==typeof(Exclude))
             && !x.Attributes.Any(y=>y.GetType()==typeof(Untoggleable)));
             if (results.Count()<=0) return TypeReaderResult.FromError(CommandError.ObjectNotFound,"Could not find any modules whose name started with \""+input+"\".");
-            else return TypeReaderResult.FromSuccess(results);
+            else return TypeReaderResult.FromSuccess(results.ToArray());
         }
     }
     public class Exclude : Attribute {}

@@ -46,7 +46,7 @@ namespace SAIL.Classes
             var user = context.Client.GetUser(Owner);
             var eb = new EmbedBuilder()
                     .WithColor(c.Color)
-                    .WithTitle(Name + "("+(Pages.IndexOf(c)+1)+"/"+Pages.Count+")")
+                    .WithTitle(Name + " ("+(Pages.IndexOf(c)+1)+"/"+Pages.Count+")")
                     .WithImageUrl(c.Image)
                     .WithThumbnailUrl(c.Thumbnail)
                     .WithFooter("Made by: "+user.ToString(),user.GetAvatarUrl());

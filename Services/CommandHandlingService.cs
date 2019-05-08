@@ -142,7 +142,8 @@ namespace SAIL.Services
         public async Task OnMessageUpdated(Cacheable<IMessage, ulong> _OldMsg, SocketMessage NewMsg, ISocketMessageChannel Channel)
         {
             var OldMsg = await _OldMsg.DownloadAsync();
-            if (OldMsg.Source != MessageSource.User) return;
+            if (OldMsg== null||NewMsg==null) return;
+            if (OldMsg.Source != MessageSource.User||NewMsg.Source != MessageSource.User) return;
 
             var col = Program.Database.GetCollection<SAIL.Classes.Quote>("Quotes");
             
@@ -228,8 +229,8 @@ namespace SAIL.Services
         public async Task InitializeAsync(IServiceProvider provider)
         {
             _provider = provider;
-            _commands.AddTypeReader(typeof(Character),new CharacterTypeReader());
-            _commands.AddTypeReader(typeof(ModuleInfo),new ModuleTypeReader());
+            _commands.AddTypeReader(typeof(Character[]),new CharacterTypeReader());
+            _commands.AddTypeReader(typeof(ModuleInfo[]),new ModuleTypeReader());
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(),_provider);
             // Add additional initialization code here...
         }
