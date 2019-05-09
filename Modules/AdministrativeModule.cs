@@ -63,7 +63,8 @@ namespace SAIL.Modules
                 var options = new List<Menu.MenuOption>();
                 foreach(var x in Name)
                 {
-                    options.Add(new Menu.MenuOption(x.Name,(Menu,Index) =>
+                    options.Add(new Menu.MenuOption(x.Name,
+                    async (Menu,Index) =>
                     {
                         var list = (ModuleInfo[])Menu.Storage;
                         return list.ElementAt(Index); 

@@ -35,7 +35,7 @@ namespace SAIL.Modules
                 var options = new List<Menu.MenuOption>();
                 foreach(var x in Name)
                 {
-                    options.Add(new Menu.MenuOption(x.Name,(Menu,index) =>
+                    options.Add(new Menu.MenuOption(x.Name,async(Menu,index) =>
                     {
                         var list = (Character[])Menu.Storage;
                         return list.ElementAt(index); 
@@ -125,7 +125,7 @@ namespace SAIL.Modules
                 var options = new List<Menu.MenuOption>();
                 foreach(var x in Name)
                 {
-                    options.Add(new Menu.MenuOption(x.Name,(Menu,index) =>
+                    options.Add(new Menu.MenuOption(x.Name, async(Menu,index) =>
                     {
                         var list = (Character[])Menu.Storage;
                         return list.ElementAt(index); 
@@ -190,7 +190,7 @@ namespace SAIL.Modules
                 var options = new List<Menu.MenuOption>();
                 foreach(var x in Name)
                 {
-                    options.Add(new Menu.MenuOption(x.Name,(Menu,index) =>
+                    options.Add(new Menu.MenuOption(x.Name,async (Menu,index) =>
                     {
                         var list = (Character[])Menu.Storage;
                         return list.ElementAt(index); 
@@ -262,7 +262,7 @@ namespace SAIL.Modules
                 );
                 var col = Program.Database.GetCollection<Character>("Characters");
                 col.Update(character);
-                var msg2 = await ReplyAsync("Created new field "+Name+" on page "+page+" of "+character+"'s sheet",false,character.GetPage(index,Context));
+                var msg2 = await ReplyAsync("Created new field "+Name+" on page "+page+" of "+character.Name+"'s sheet",false,character.GetPage(index,Context));
                 CommandCache.Add(Context.Message.Id,msg2.Id);
             }
             catch (Exception e)
@@ -301,29 +301,37 @@ namespace SAIL.Modules
             foreach(var x in EditPage.Fields)
             {
                 Options.Add(new Menu.MenuOption(x.Title,
-                (menu,idx) =>
+                async (menu,idx) =>
                 {
-                    var prompt = menu.Context.Channel.SendMessageAsync("Please reply with the new contents of this field.").GetAwaiter().GetResult();
-                    var result = menu.Interactive.NextMessageAsync(menu.Context).GetAwaiter().GetResult();
-                    prompt.DeleteAsync().RunSynchronously();
+                    var prompt =  await menu.Context.Channel.SendMessageAsync("Please reply with the new contents of this field.");
+                    SocketMessage result = await menu.Interactive.NextMessageAsync(menu.Context,true,true,TimeSpan.FromMinutes(3));
+                    
+                    await prompt.DeleteAsync();
+                    
                     ((Field[])menu.Storage)[idx].Content = result.Content;
-                    result.DeleteAsync().RunSynchronously();
+                    
+                    await result.DeleteAsync();
+
                     menu.Options[idx].Description = result.Content;
+                    menu.ReloadMenu().RunSynchronously();
+
                     return null;
                 },x.Content,false));
             }
             Options.Add(new Menu.MenuOption("Save Changes",
-            (Menu,idx)=>
+            async (Menu,idx)=>
             {
                 return Menu.Storage;
             },"Save Changes and update your Character",true));
             Options.Add(new Menu.MenuOption("Discard Changes",
-            (Menu,idx) =>
+            async (Menu,idx) =>
             {
                 return null;
             },"Discard all changes and stop editing.",true));
+            
+            Menu editmenu = new Menu("Editing Page "+Page+" of "+character.Name+"'s sheet.","Use the cursor to select the field you want to edit, or press Save/Discard to either save the chanes or discard all changes.",Options.ToArray(),EditPage.Fields.ToArray());
+            Field[] fields = (Field[])await editmenu.StartMenu(Context,Interactive);
 
-            Field[] fields = (Field[])await new Menu("Editing Page "+Page+" of "+character.Name+"'s sheet.","Use the cursor to select the field you want to edit, or press Save/Discard to either save the chanes or discard all changes.",Options.ToArray(),EditPage.Fields.ToArray()).StartMenu(Context,Interactive);
             if (fields==null)
             {
                 var msg1 = await ReplyAsync("You have discarded all changes to "+character.Name+"'s sheet.");
@@ -336,7 +344,7 @@ namespace SAIL.Modules
                 var col = Program.Database.GetCollection<Character>("Characters");
                 col.Update(character);
 
-                var msg1 = await ReplyAsync("Saved chanes to"+character.Name+"'s sheet!");
+                var msg1 = await ReplyAsync("💾 Saved chanes to "+character.Name+"'s sheet!");
                 CommandCache.Add(Context.Message.Id,msg1.Id);
                 return;
             }
@@ -350,7 +358,7 @@ namespace SAIL.Modules
             var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindById(Context.Guild.Id);
             var plrs = Program.Database.GetCollection<SysUser>("Users").IncludeAll();
             if (!plrs.Exists(x=>x.Id==Context.User.Id)) plrs.Insert(new SysUser(){Id=Context.User.Id});
-            var plr = plrs.FindById(Context.User.Id);
+            var plr = plrs.FindOne(x=> x.Id == Context.User.Id);
             if(plr.Active == null)
             {
                 var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
@@ -364,7 +372,7 @@ namespace SAIL.Modules
                 CommandCache.Add(Context.Message.Id,msg1.Id);
                 return;
             }
-            if(character.Pages[Page-1].Fields.Exists(x=>x.Title.ToLower().StartsWith(Name.ToLower())))
+            if(!character.Pages[Page-1].Fields.Exists(x=>x.Title.ToLower().StartsWith(Name.ToLower())))
             {
                 var msg1 = await ReplyAsync("There is no field on page "+Page+" of "+character.Name+"'s sheet.");
                 CommandCache.Add(Context.Message.Id,msg1.Id);
@@ -378,7 +386,7 @@ namespace SAIL.Modules
                 foreach(var x in fields)
                 {
                     options.Add(new Menu.MenuOption(x.Content,
-                    (Menu,idx)=>
+                    async (Menu,idx)=>
                     {
                         return ((Field[])Menu.Storage)[idx];
                     },x.Content));
@@ -404,10 +412,10 @@ namespace SAIL.Modules
         [Summary("Adds a new page to your active character's sheet.")]
         public async Task addpage()
         {
-            var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindById(Context.Guild.Id);
+            var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==Context.Guild.Id);
             var plrs = Program.Database.GetCollection<SysUser>("Users").IncludeAll();
             if (!plrs.Exists(x=>x.Id==Context.User.Id)) plrs.Insert(new SysUser(){Id=Context.User.Id});
-            var plr = plrs.FindById(Context.User.Id);
+            var plr = plrs.FindOne(x=>x.Id ==Context.User.Id);
             if(plr.Active == null)
             {
                 var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
@@ -419,7 +427,7 @@ namespace SAIL.Modules
 
             var col = Program.Database.GetCollection<Character>("Characters");
             col.Update(character);
-            var msg2 = await ReplyAsync("Created a new page to "+character+"'s sheet.");
+            var msg2 = await ReplyAsync("Created a new page to "+character.Name+"'s sheet.");
             CommandCache.Add(Context.Message.Id,msg2.Id);
         }
         #endregion

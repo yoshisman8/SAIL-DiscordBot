@@ -42,18 +42,18 @@ namespace SAIL.Modules
             Menu.MenuOption[] Options = new Menu.MenuOption[]
             {
                 new Menu.MenuOption("Set Event Description",
-                (Menu,index) =>
+                async (Menu,index) =>
                 {
-                    var prompt = Menu.Context.Channel.SendMessageAsync("Please type and send the event's description now.").GetAwaiter().GetResult();
-                    var reply = Menu.Interactive.NextMessageAsync(Menu.Context).GetAwaiter().GetResult();
-                    prompt.DeleteAsync().RunSynchronously();
+                    var prompt = await Menu.Context.Channel.SendMessageAsync("Please type and send the event's description now.");
+                    var reply = await Menu.Interactive.NextMessageAsync(Menu.Context);
+                    await prompt.DeleteAsync();
                     ((GuildEvent)Menu.Storage).Description = reply.Content;
-                    reply.DeleteAsync().RunSynchronously();
+                    await reply.DeleteAsync();
                     Menu.Options[index].Description = ((GuildEvent)Menu.Storage).Description;
                     return null;
                 },"No Description set",false),
                 new Menu.MenuOption("Change Repeat Frequency",
-                (Menu,Index)=>
+                async (Menu,Index)=>
                 {
                     switch (((GuildEvent)Menu.Storage).Repeating)
                     {
@@ -74,15 +74,15 @@ namespace SAIL.Modules
                     return null;
                 },RepeatingState.Once.ToString(),false),
                 new Menu.MenuOption("Set the Date",
-                (Menu,Index)=>
+                async (Menu,Index)=>
                 {
-                    var prompt = Menu.Context.Channel.SendMessageAsync("Please type the event's Date in the corresponding to the event type:"+
+                    var prompt = await Menu.Context.Channel.SendMessageAsync("Please type the event's Date in the corresponding to the event type:"+
                     "\nOnce: \"18:24 27/Febuary/2019\"."+
                     "\nWeekly: \"10:24 Monday\"."+
                     "\nMonthly: \"5:30 20\"."+
-                    "\nYearly: \"20:24 November 15").GetAwaiter().GetResult();
-                    var reply = Menu.Interactive.NextMessageAsync(Menu.Context).GetAwaiter().GetResult();
-                    prompt.DeleteAsync().RunSynchronously();
+                    "\nYearly: \"20:24 November 15");
+                    var reply = await Menu.Interactive.NextMessageAsync(Menu.Context);
+                    await prompt.DeleteAsync();
                     switch (((GuildEvent)Menu.Storage).Repeating)
                     {
                         case RepeatingState.Once:
@@ -104,11 +104,13 @@ namespace SAIL.Modules
                     }
                     return null;
                 },DateTime.UtcNow.ToString("hh:mm tt DD/MM/YY"),false),
-                new Menu.MenuOption("Save Changes",(Menu,index)=>
+                new Menu.MenuOption("Save Changes",
+                async (Menu,index)=>
                 {
                     return Menu.Storage;
                 },"Save the event it is being shown right now."),
-                new Menu.MenuOption("Discard and Exit",(Menu,Index)=>
+                new Menu.MenuOption("Discard and Exit",
+                async (Menu,Index)=>
                 {
                     return null;
                 },"Discard this event and cancel scheduling.",true)

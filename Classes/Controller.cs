@@ -86,11 +86,11 @@ namespace SAIL.Classes
         private Emoji SelectButton = new Emoji("⏏");
         private Emoji PrevButton = new Emoji("⏮");
         private RestUserMessage Message {get;set;}
-        private object Result {get;set;} = null;
+        private Task<object> Result {get;set;} = null;
         
         public class MenuOption
         {
-            public MenuOption(string _Name, Func<Menu,int,object> _Logic = null, string _summary = "", bool _EndsMenu = true)
+            public MenuOption(string _Name, Func<Menu,int,Task<object>> _Logic = null, string _summary = "", bool _EndsMenu = true)
             {
                 Name = _Name;
                 Logic = _Logic;
@@ -100,32 +100,41 @@ namespace SAIL.Classes
             public string Name {get;set;}
             public string Description {get;set;}
             public bool EndsMenu {get;set;} = true;
-            public Func<Menu,int,object> Logic {get;set;}
+            public Func<Menu,int,Task<object>> Logic {get;set;}
         }
         public async Task<object> StartMenu(SocketCommandContext _Context,InteractiveService _Interactive)
         {
             Context = _Context;
             Interactive = _Interactive;
-            Message = await Context.Channel.SendMessageAsync(BuildMenu());
+            Message = await Context.Channel.SendMessageAsync("Loading...");
+            await ReloadMenu();
             await Message.AddReactionsAsync(new Emoji[] {PrevButton,SelectButton,NextButton});
             Interactive.AddReactionCallback(Message, new InlineReactionCallback(Interactive,Context,
                 new ReactionCallbackData("",null,false,false,TimeSpan.FromMinutes(2),
                 async (x) => {await Message.RemoveAllReactionsAsync(); Result = null;})
-                    .WithCallback(PrevButton,(x,y)=>SelectPrevious(y))
+                    .WithCallback(PrevButton,async (x,y) => await SelectPrevious(y))
                     .WithCallback(SelectButton,(x,y) => SelectOption(y,Storage))
-                    .WithCallback(NextButton,(x,y) => SelectNext(y))));
+                    .WithCallback(NextButton,async (x,y) => await SelectNext(y))));
 
             while (Active)
             {
                 await Task.Delay(100);
             }
             await Message.DeleteAsync();
-            return Result; 
+            return Result.Result; 
         }
         public async Task ReloadMenu()
         {
-            if(Options.Any(x=>x.Description!="")) await Message.ModifyAsync(x=>x.Embed = BuildEmbeddedMenu());
-            else await Message.ModifyAsync(x => x.Content = BuildMenu());
+            if(Options.Any(x=>x.Description!="")) 
+            {
+                await Message.ModifyAsync(x=>x.Content = " ");
+                await Message.ModifyAsync(x=>x.Embed = BuildEmbeddedMenu());
+            }
+            else 
+            {
+                await Message.ModifyAsync(x=>x.Embed = null);
+                await Message.ModifyAsync(x => x.Content = BuildMenu());
+            }
         }
         public async Task SelectNext(SocketReaction r)
         {
@@ -140,7 +149,7 @@ namespace SAIL.Classes
         public async Task SelectPrevious(SocketReaction r)
         {
             await Message.RemoveReactionAsync(r.Emote,r.User.Value);
-            if(Index-1 <= 0)
+            if(Index-1 < 0)
             {
                 Index = Options.Length-1;
             }
@@ -150,9 +159,9 @@ namespace SAIL.Classes
         public async Task SelectOption(SocketReaction r,object input = null)
         {
             await Message.RemoveReactionAsync(r.Emote,r.User.Value);
-            Result = Options[Index].Logic?.Invoke(this,Index);
-            await ReloadMenu();
+            Result = Options[Index].Logic.Invoke(this,Index);
             Active = Options[Index].EndsMenu? false : true;
+            
         }
         public string BuildMenu()
         {
