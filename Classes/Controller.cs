@@ -118,7 +118,8 @@ namespace SAIL.Classes
 
             while (Active)
             {
-                await Task.Delay(100);
+                await ReloadMenu();
+                await Task.Delay(1000);
             }
             await Message.DeleteAsync();
             return Result.Result; 

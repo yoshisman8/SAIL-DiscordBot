@@ -30,10 +30,10 @@ namespace SAIL.Modules
         [Summary("Creates a new event and adds to it to the Guild Calendar.")]
         public async Task NewEvent([Remainder] string EventName)
         {
-            var col = Program.Database.GetCollection<SysGuild>("Guilds");
-            var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
+            var col = Program.Database.GetCollection<GuildEvent>("Events").IncludeAll();
+            var guild = Program.Database.GetCollection<SysGuild>().FindOne(x=>x.Id == Context.Guild.Id);
             
-            if(guild.Events.Exists(x=>x.Name.ToLower()==EventName.ToLower()))
+            if(col.Exists(x=>x.Name==EventName.ToLower()&& x.Server.Id==guild.Id))
             {
                 var msg2 = await ReplyAsync("There's an event with that exact name already.");
                 Cache.Add(Context.Message.Id,msg2.Id);
@@ -77,28 +77,28 @@ namespace SAIL.Modules
                 async (Menu,Index)=>
                 {
                     var prompt = await Menu.Context.Channel.SendMessageAsync("Please type the event's Date in the corresponding to the event type:"+
-                    "\nOnce: \"18:24 27/Febuary/2019\"."+
-                    "\nWeekly: \"10:24 Monday\"."+
+                    "\nOnce: \"18:15 27/Febuary/2019\"."+
+                    "\nWeekly: \"10:00 Monday\"."+
                     "\nMonthly: \"5:30 20\"."+
-                    "\nYearly: \"20:24 November 15");
+                    "\nYearly: \"20:45 November 15");
                     var reply = await Menu.Interactive.NextMessageAsync(Menu.Context);
                     await prompt.DeleteAsync();
                     switch (((GuildEvent)Menu.Storage).Repeating)
                     {
                         case RepeatingState.Once:
-                            ((GuildEvent)Menu.Storage).Date = DateTime.ParseExact(reply.Content,"H:mm dd/MMMM/yyyy",null);
+                            ((GuildEvent)Menu.Storage).Date = DateTime.ParseExact(reply.Content,"H:mm dd/MMMM/yyyy",null).RoundUp(TimeSpan.FromMinutes(15));
                             Menu.Options[Index].Description = ((GuildEvent)Menu.Storage).Date.ToString("hh:mm tt dd/MMM/yyyy");
                         break;
                         case RepeatingState.Weekly:
-                            ((GuildEvent)Menu.Storage).Date = DateTime.ParseExact(reply.Content,"H:mm DDDD",null);
+                            ((GuildEvent)Menu.Storage).Date = DateTime.ParseExact(reply.Content,"H:mm DDDD",null).RoundUp(TimeSpan.FromMinutes(15));
                             Menu.Options[Index].Description = ((GuildEvent)Menu.Storage).Date.ToString("hh:mm tt DDDD");
                             break;
                         case RepeatingState.Monhtly:
-                            ((GuildEvent)Menu.Storage).Date = DateTime.ParseExact(reply.Content,"H:m d",null);
+                            ((GuildEvent)Menu.Storage).Date = DateTime.ParseExact(reply.Content,"H:m d",null).RoundUp(TimeSpan.FromMinutes(15));
                             Menu.Options[Index].Description = ((GuildEvent)Menu.Storage).Date.ToString("hh:mm tt")+" on the "+((GuildEvent)Menu.Storage).Date.Day.ToPlacement()+" of every month.";
                             break;
                         case RepeatingState.Anually:
-                            ((GuildEvent)Menu.Storage).Date = DateTime.ParseExact(reply.Content,"HH:mm dd/MMMM",null);
+                            ((GuildEvent)Menu.Storage).Date = DateTime.ParseExact(reply.Content,"HH:mm dd/MMMM",null).RoundUp(TimeSpan.FromMinutes(15));
                             Menu.Options[Index].Description = ((GuildEvent)Menu.Storage).Date.ToString("HH:mm tt MMMM dd");
                             break;
                     }
@@ -116,14 +116,17 @@ namespace SAIL.Modules
                 },"Discard this event and cancel scheduling.",true)
             };
 
-            var ScheduleMenu = new Menu("Creating event \""+EventName+"\"","Use the options bellow to create your new event.",Options,new GuildEvent(){Name=EventName});
-            var result = await ScheduleMenu.StartMenu(Context,Interactive);
+            var ScheduleMenu = new Menu("Creating event \""+EventName+"\"",
+            "Use the options bellow to create your new event.\n"+
+            "In order to ensure bot functionality, events are bound to 15 min intervals (4:15, 12:30, 8:45, 10:00, etc).\n"+
+            "Current UTC time: "+DateTime.UtcNow.ToString("hh:mm tt dd/mm/yyyy")+
+            "[__Timezone Converter__](https://www.timeanddate.com/worldclock/converter.html?iso=20190510T200000&p1=1440)",Options,new GuildEvent(){Name=EventName});
+            var result = (GuildEvent)await ScheduleMenu.StartMenu(Context,Interactive);
             if (result == null) return;
             else 
             {
-                guild.Events.Add((GuildEvent)result);
-                col.Update(guild);
-                var msg = await ReplyAsync("Successfully created event \""+EventName+"\"!");
+                col.Insert(result);
+                var msg = await ReplyAsync("Successfully created event \""+result.Name+"\"!");
                 Cache.Add(Context.Message.Id,msg.Id);
             }
         }

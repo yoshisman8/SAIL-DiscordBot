@@ -105,14 +105,6 @@ namespace SAIL.Classes
         }
     }
 
-    public class GuildEvent
-    {
-        public DateTime Date {get;set;}
-        public string Name {get;set;}
-        public string Description {get;set;}
-        public RepeatingState Repeating {get;set;} = RepeatingState.Once;
-    }
-
     public class Module
     {
         public string Name {get;set;}

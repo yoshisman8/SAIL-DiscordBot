@@ -2,37 +2,25 @@
 using System.Timers;
 using System.Threading.Tasks;
 using SAIL.Classes;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace SAIL.Services
 {
     public class ScheduleService
     {
-        private Timer timer {get;set;} = new Timer(1000);
-        public event Func<Task> Tick;
-        private System.DateTime _last {get;set;}
+        private readonly GlobalTimer Timer;
         
-        public ScheduleService()
+        public ScheduleService(GlobalTimer _timer)
         {
-            Timer timer = new Timer();
-            timer.Elapsed += timer_Tick;
-            timer.Enabled = true;
+            Timer = _timer;
+
+            Timer.OnSecondPassed += CheckEvents;
         }
-        private double MilliSecondsLeftTilTheHour()
+
+        private async Task CheckEvents(DateTime MomentOfTrigger)
         {
-            double interval = (DateTime.Now.RoundUp(TimeSpan.FromMinutes(15))-DateTime.Now).TotalMilliseconds;
-            if (interval == 0)
-            {
-                interval = TimeSpan.FromMinutes(15).TotalMilliseconds;
-            }
-            return interval;
-        }
-        void timer_Tick(object sender, EventArgs e)
-        {
-            timer.Interval = MilliSecondsLeftTilTheHour();
-            if(Tick != null)
-            {
-                Tick();
-            }
+            MomentOfTrigger = MomentOfTrigger.RoundUp(TimeSpan.FromMinutes(1));
+            
         }
     }
 }

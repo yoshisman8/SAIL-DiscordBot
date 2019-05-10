@@ -48,7 +48,7 @@ namespace SAIL.Services
             _discord.JoinedGuild += OnJoinedGuild;
             _discord.Ready += OnReady;
 
-            _timer.Tick += OnTimerTick;
+            
         }
 
         public async Task OnJoinedGuild(SocketGuild arg)
