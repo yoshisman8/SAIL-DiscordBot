@@ -26,10 +26,10 @@ namespace SAIL.Services
         private InteractiveService _interactive;
         private readonly IConfiguration _config;
         private CommandCacheService _cache;
-        private ScheduleService _timer;
+        private GlobalTimer _timer;
         private bool Ready = false;
 
-        public CommandHandlingService(IConfiguration config, IServiceProvider provider, DiscordSocketClient discord, CommandService commands, CommandCacheService cache,InteractiveService interactive,ScheduleService timer)
+        public CommandHandlingService(IConfiguration config, IServiceProvider provider, DiscordSocketClient discord, CommandService commands, CommandCacheService cache,InteractiveService interactive,GlobalTimer timer)
         {
             _discord = discord;
             _commands = commands;

@@ -18,13 +18,13 @@ namespace SAIL.Services
 
             Clock.Elapsed += Tick;
             Clock.AutoReset = true;
-            Clock.Interval = TimeSpan.FromMilliseconds(10).Milliseconds;
+            Clock.Interval = 100;   
             Clock.Enabled = true;
         }
 
         private void Tick(object sender, ElapsedEventArgs e)
         {
-            OnSecondPassed?.Invoke(DateTime.Now);
+            if(e.SignalTime.Second == 0) OnSecondPassed?.Invoke(e.SignalTime);
         }
     }
 }
