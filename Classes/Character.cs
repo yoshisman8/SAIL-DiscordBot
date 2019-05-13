@@ -28,6 +28,7 @@ namespace SAIL.Classes
             {
                 var eb = new EmbedBuilder()
                     .WithColor(c.Color)
+                    .WithDescription(c.Summary)
                     .WithTitle(Name + "("+(Pages.IndexOf(c)+1)+"/"+Pages.Count+")")
                     .WithImageUrl(c.Image)
                     .WithThumbnailUrl(c.Thumbnail)

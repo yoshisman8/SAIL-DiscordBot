@@ -118,8 +118,7 @@ namespace SAIL.Classes
 
             while (Active)
             {
-                await ReloadMenu();
-                await Task.Delay(1000);
+                await Task.Delay(100);
             }
             await Message.DeleteAsync();
             return Result.Result; 
@@ -139,7 +138,9 @@ namespace SAIL.Classes
         }
         public async Task SelectNext(SocketReaction r)
         {
+            await Task.Delay(100);
             await Message.RemoveReactionAsync(r.Emote,r.User.Value);
+            await Task.Delay(100);
             if(Index+1 >= Options.Length)
             {
                 Index = 0;
@@ -149,7 +150,9 @@ namespace SAIL.Classes
         }
         public async Task SelectPrevious(SocketReaction r)
         {
+            await Task.Delay(100);
             await Message.RemoveReactionAsync(r.Emote,r.User.Value);
+            await Task.Delay(100);
             if(Index-1 < 0)
             {
                 Index = Options.Length-1;

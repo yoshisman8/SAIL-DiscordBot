@@ -52,7 +52,49 @@ namespace SAIL.Modules
                 character=Name.FirstOrDefault();
             }
             
-            var msg = await ReplyAsync("Loading"+character.Name+"'s sheet...");
+            var msg = await ReplyAsync("Loading "+character.Name+"'s sheet...");
+
+            var prev = new Emoji("⏮");
+            var kill = new Emoji("⏹");
+            var next = new Emoji("⏭");
+            await msg.AddReactionsAsync(new Emoji[]{prev,kill,next});
+
+            Controller.Pages.Clear();
+            Controller.Pages = character.PagesToEmbed(Context);
+            await msg.ModifyAsync(x=> x.Embed = Controller.Pages.ElementAt(Controller.Index));
+
+            Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,
+            new ReactionCallbackData("",null,false,false,TimeSpan.FromMinutes(3))
+                .WithCallback(prev,(ctx,rea)=>Controller.Previous(ctx,rea,msg))
+                .WithCallback(kill,(ctx,rea)=>Controller.Kill(Interactive,msg))
+                .WithCallback(next,(ctx,rea)=>Controller.Next(ctx,rea,msg))));
+            CommandCache.Add(Context.Message.Id,msg.Id);
+        }
+        [Command("CurrentCharacter"),Alias("CurrentChar","Char","Character")]
+        [RequireGuildSettings] [RequireContext(ContextType.Guild)]
+        [Summary("Fetch your current active character.")]
+        
+        public async Task GetActive()
+        {
+            var plrs = Program.Database.GetCollection<SysUser>("Users").IncludeAll();
+            var col = Program.Database.GetCollection<Character>("Characters");
+            var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==Context.Guild.Id);  
+            if (!plrs.Exists(x=>x.Id==Context.User.Id)) 
+            {
+                var usr=new SysUser(){Id=Context.User.Id};
+                plrs.Insert(usr);
+            }
+            var plr = plrs.FindOne(x=>x.Id==Context.User.Id);
+            
+            if(plr.Active == null)
+            {
+                var msg2 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
+                CommandCache.Add(Context.Message.Id,msg2.Id);
+                return;
+            }
+
+            var character = plr.Active;
+            var msg = await ReplyAsync("Loading "+character.Name+"'s sheet...");
 
             var prev = new Emoji("⏮");
             var kill = new Emoji("⏹");
