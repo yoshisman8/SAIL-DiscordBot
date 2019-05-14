@@ -80,6 +80,12 @@ namespace SAIL.Modules
             {
                 ModuleName = Name.FirstOrDefault();
             }
+            if(ModuleName.Attributes.Any(x=>x.GetType()==typeof(Untoggleable)))
+            {
+                var msg1 = await ReplyAsync("You cannot toggle this module off.");
+                Cache.Add(Context.Message.Id,msg1.Id);
+                return;
+            }
             var col = Program.Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
             int index = guild.CommandModules.FindIndex(x => x.Name == ModuleName.Name);

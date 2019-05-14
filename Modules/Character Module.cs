@@ -639,6 +639,14 @@ namespace SAIL.Modules
                 return;
             }
         }
+
+        [Command("EditPage")]
+        [RequireGuildSettings] [RequireContext(ContextType.Guild)]
+        [Summary("Adds a new page to your active character's sheet.")]
+        public async Task Editpage([Remainder] int Page = 1)
+        {
+            
+        }
         #endregion
     }
 }

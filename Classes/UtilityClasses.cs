@@ -213,8 +213,7 @@ namespace SAIL.Classes
         {
             var commands = services.GetService<CommandService>();
             var results = commands.Modules.Where(x=>x.Name.ToLower().StartsWith(input.ToLower())
-            && !x.Attributes.Any(y=>y.GetType()==typeof(Exclude))
-            && !x.Attributes.Any(y=>y.GetType()==typeof(Untoggleable)));
+            && !x.Attributes.Any(y=>y.GetType()==typeof(Exclude)));
             if (results.Count()<=0) return TypeReaderResult.FromError(CommandError.ObjectNotFound,"Could not find any modules whose name started with \""+input+"\".");
             else return TypeReaderResult.FromSuccess(results.ToArray());
         }
