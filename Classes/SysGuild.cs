@@ -36,6 +36,7 @@ namespace SAIL.Classes
         public List<GuildEvent> Events {get;set;} = new List<GuildEvent>();
         [BsonRef("Users")]
         public List<SysUser> Users {get;set;} = new List<SysUser>();
+        public List<Template> CharacterTemplates {get;set;} = new List<Template>();
 
         [BsonIgnore]
         private SocketGuild Guild {get;set;}

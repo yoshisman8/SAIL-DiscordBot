@@ -25,11 +25,12 @@ namespace SAIL.Classes
             List<Embed> embeds = new List<Embed>();
             var user = context.Client.GetUser(Owner);
             foreach (var c in Pages)
-            {
+            {  
+                Color colr = new Color((uint)c.Color);
                 var eb = new EmbedBuilder()
-                    .WithColor(c.Color)
+                    .WithColor(colr)
                     .WithDescription(c.Summary)
-                    .WithTitle(Name + "("+(Pages.IndexOf(c)+1)+"/"+Pages.Count+")")
+                    .WithTitle(Name + " ("+(Pages.IndexOf(c)+1)+"/"+Pages.Count+")")
                     .WithImageUrl(c.Image)
                     .WithThumbnailUrl(c.Thumbnail)
                     .WithFooter("Made by: "+user.ToString(),user.GetAvatarUrl());
@@ -45,8 +46,9 @@ namespace SAIL.Classes
         {
             var c = Pages.ElementAt(PageNumber);
             var user = context.Client.GetUser(Owner);
+            Color colr = new Color((uint)c.Color);
             var eb = new EmbedBuilder()
-                    .WithColor(c.Color)
+                    .WithColor(colr)
                     .WithTitle(Name + " ("+(Pages.IndexOf(c)+1)+"/"+Pages.Count+")")
                     .WithImageUrl(c.Image)
                     .WithThumbnailUrl(c.Thumbnail)
@@ -62,7 +64,7 @@ namespace SAIL.Classes
     {
         public List<Field> Fields {get;set;} = new List<Field>();
         public string Summary {get;set;} = "";
-        public Color Color {get;set;} = Color.DarkGrey;
+        public int Color {get;set;} = (int)0x87CEFA;
         public string Image {get;set;} = "";
         public string Thumbnail {get;set;} = "";
     }
@@ -72,5 +74,12 @@ namespace SAIL.Classes
         public string Title {get;set;}
         public string Content {get;set;}
         public bool Inline {get;set;} = false;
+    }
+
+    public class Template
+    {
+        public string Name {get;set;}
+        public ulong Owner {get;set;}
+        public List<CharPage> Pages {get;set;} = new List<CharPage>();
     }
 }

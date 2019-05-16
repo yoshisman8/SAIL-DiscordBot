@@ -349,16 +349,16 @@ namespace SAIL.Modules
             }
             var character = plr.Active;
 
+            if (page > character.Pages.Count)
+            {
+                var msg1 = await ReplyAsync("Error! You're trying to add field to a page that doesn't exist. "+character.Name+"'s sheet only has "+character.Pages.Count+" page(s).");
+                CommandCache.Add(Context.Message.Id,msg1.Id);
+            }
             if(character.Pages[index].Fields.Count>=20)
             {
                 var msg1 = await ReplyAsync("You already have too many fields on page "+(page+1)+" of "+character.Name+"'s sheet. Try making a new using `"+guild.Prefix+"NewPage PageName`.");
                 CommandCache.Add(Context.Message.Id,msg1.Id);
                 return;
-            }
-            if (page>= character.Pages.Count)
-            {
-                var msg1 = await ReplyAsync("Error! You're trying to add field to a page that doesn't exist. "+character.Name+"'s sheet only has "+character.Pages.Count+" page(s).");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
             }
             character.Pages[index].Fields.Add(
                 new Field()
@@ -643,9 +643,217 @@ namespace SAIL.Modules
         [Command("EditPage")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
         [Summary("Adds a new page to your active character's sheet.")]
-        public async Task Editpage([Remainder] int Page = 1)
+        public async Task Editpage([Remainder] int page = 1)
         {
+            page = Math.Abs(page);
+            var index = page-1;
+            var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==Context.Guild.Id);
+            var plrs = Program.Database.GetCollection<SysUser>("Users").IncludeAll();
+            if (!plrs.Exists(x=>x.Id==Context.User.Id)) plrs.Insert(new SysUser(){Id=Context.User.Id});
+            var plr = plrs.FindOne(x=>x.Id==Context.User.Id);
+            if(plr.Active == null)
+            {
+                var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
+                CommandCache.Add(Context.Message.Id,msg1.Id);
+                return;
+            }
+            var character = plr.Active;
+
+            if (page > character.Pages.Count)
+            {
+                var msg1 = await ReplyAsync("Error! You're trying to edit a page that doesn't exist. "+character.Name+"'s sheet only has "+character.Pages.Count+" page(s).");
+                CommandCache.Add(Context.Message.Id,msg1.Id);
+                return;
+            }
+
+            var pagetoedit = character.Pages[index];
+
+            var MenuOption = new Menu.MenuOption[]
+            {
+                new Menu.MenuOption("Change Page description",
+                async (m,i)=>
+                {
+                    var prompt =  await m.Context.Channel.SendMessageAsync("Please reply with the new description for this page.");
+                    SocketMessage result = await m.Interactive.NextMessageAsync(m.Context,true,true,TimeSpan.FromMinutes(3));
+                    
+                    await prompt.DeleteAsync();
+                    
+                    ((CharPage)m.Storage).Summary = result.Content;
+                    
+                    await result.DeleteAsync();
+
+                    m.Options[i].Description = "Current Description:\n"+result.Content;
+                    return null;
+                },"Current Description:\n"+pagetoedit.Summary,false),
+                new Menu.MenuOption("Set page's thumnail image",
+                async (m,i)=>
+                {
+                    var prompt =  await m.Context.Channel.SendMessageAsync("Please reply with the new thumbnail image url for this page or set it to any non-url text to remove it.");
+                    SocketMessage result = await m.Interactive.NextMessageAsync(m.Context,true,true,TimeSpan.FromMinutes(3));
+                    
+                    await prompt.DeleteAsync();
+                    
+                    ((CharPage)m.Storage).Thumbnail = result.Content;
+                    
+                    await result.DeleteAsync();
+
+                    m.Options[i].Description = "Current thumbnail: "+result.Content;
+                    return null;
+                },"Current thumbnail: "+pagetoedit.Thumbnail,false),
+                new Menu.MenuOption("Set page's Large image",
+                async (m,i)=>
+                {
+                    var prompt =  await m.Context.Channel.SendMessageAsync("Please reply with the new image url for this page or set it to any non-url text to remove it.");
+                    SocketMessage result = await m.Interactive.NextMessageAsync(m.Context,true,true,TimeSpan.FromMinutes(3));
+                    
+                    await prompt.DeleteAsync();
+                    
+                    ((CharPage)m.Storage).Image = result.Content;
+                    
+                    await result.DeleteAsync();
+
+                    m.Options[i].Description = "Current image: "+result.Content;
+                    return null;
+                },"Current image: "+pagetoedit.Image,false),
+                new Menu.MenuOption("Set Page Color",
+                async (m,i)=>
+                {
+                    var prompt =  await m.Context.Channel.SendMessageAsync("Please send the __Hex code__ (ie: 00BFFF, not including the #) of the color you want to set. Invalid Hex Codes will be ignored.");
+                    SocketMessage result = await m.Interactive.NextMessageAsync(m.Context,true,true,TimeSpan.FromMinutes(3));
+                    
+                    await prompt.DeleteAsync();
+
+                    if(uint.TryParse(result.Content,NumberStyles.HexNumber,null,out uint colorvalue))
+                    {
+                        var color = new Color(colorvalue);
+                        ((CharPage)m.Storage).Color = (int)color.RawValue;
+                        m.Options[i].Description = "[Color Picker](https://www.rapidtables.com/web/color/html-color-codes.html).\nColor Assigned: "+color.R+", "+color.G+", "+color.B+".";
+                    }
+                    await result.DeleteAsync();
+
+                    return null;
+                },"[Color Picker](https://www.rapidtables.com/web/color/html-color-codes.html).",false),
+                new Menu.MenuOption("Save Changes",
+                async (Menu,idx)=>
+                {
+                    return Menu.Storage;
+                },"Save Changes and update your Character",true),
+                new Menu.MenuOption("Discard Changes",
+                async (Menu,idx) =>
+                {
+                    return null;
+                },"Discard all changes and stop editing.",true)
+            };
+
+            var menu = await new Menu("Editing page "+page+" of "+character.Name+"'s sheet."," ",MenuOption,pagetoedit).StartMenu(Context,Interactive);
+
+            if (menu == null)
+            {
+                var msg1 = await ReplyAsync("Discarded all changes.");
+                CommandCache.Add(Context.Message.Id,msg1.Id);
+                return;
+            }
+            else
+            {
+                character.Pages[index] = (CharPage)menu;
+
+                var col = Program.Database.GetCollection<Character>("Characters");
+                col.Update(character);
+                var msg1 = await ReplyAsync("💾 Saved chanes to "+character.Name+"'s sheet!");
+                CommandCache.Add(Context.Message.Id,msg1.Id);
+                return;
+            }
+        }
+        #endregion
+        #region Templates
+        [Command("SaveTemplate"),Alias("CreateTemplate")]
+        [RequireGuildSettings] [RequireContext(ContextType.Guild)]
+        [Summary("Saves your current character as a template for anyone in your guild to use.")]
+        public async Task newtemplate([Remainder]string TemplateName)
+        {
+            var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==Context.Guild.Id);
+            var plrs = Program.Database.GetCollection<SysUser>("Users").IncludeAll();
+            if (!plrs.Exists(x=>x.Id==Context.User.Id)) plrs.Insert(new SysUser(){Id=Context.User.Id});
+            var plr = plrs.FindOne(x=>x.Id==Context.User.Id);
+            if(plr.Active == null)
+            {
+                var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
+                CommandCache.Add(Context.Message.Id,msg1.Id);
+                return;
+            }
+            var character = plr.Active;
+            if(guild.CharacterTemplates.Exists(x=>x.Name.ToLower()==TemplateName.ToLower()))
+            {
+                var msg1 = await ReplyAsync("There's already a template in this server that has that exact name!");
+                CommandCache.Add(Context.Message.Id,msg1.Id);
+                return;
+            }
             
+            var template = new Template()
+            {
+                Name = TemplateName,
+                Owner = Context.User.Id,
+                Pages = character.Pages
+            };
+            guild.CharacterTemplates.Add(template);
+            var col = Program.Database.GetCollection<SysGuild>("Guilds");
+            col.Update(guild);
+
+            var msg = await ReplyAsync("Created new template \""+TemplateName+"\".");
+            CommandCache.Add(Context.Message.Id,msg.Id);
+            return;
+        }
+        [Command("CopyTemplate"),Alias("FromTemplate")]
+        [RequireGuildSettings] [RequireContext(ContextType.Guild)]
+        [Summary("Create a character based on a template.")]
+        public async Task copyTemplate(string TemplateName, [Remainder]string CharacterName)
+        {
+            var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==Context.Guild.Id);
+            var plrs = Program.Database.GetCollection<SysUser>("Users").IncludeAll();
+            var col = Program.Database.GetCollection<Character>("Characters");
+            var All = col.Find(x=>x.Guild==Context.Guild.Id);
+            if (!plrs.Exists(x=>x.Id==Context.User.Id)) plrs.Insert(new SysUser(){Id=Context.User.Id});
+            var plr = plrs.FindOne(x=>x.Id==Context.User.Id);
+            if (All.Any(x=>x.Name.ToLower() == CharacterName.ToLower()))
+            {
+                var msg2 = await ReplyAsync("There's already a character whose name is \""+CharacterName+"\", please choose a different name.");
+                CommandCache.Add(Context.Message.Id,msg2.Id);
+                return;
+            }
+            if(!guild.CharacterTemplates.Exists(x=>x.Name.ToLower().StartsWith(TemplateName.ToLower())))
+            {
+                var msg1 = await ReplyAsync("There's no template on this server whose name starts with \""+TemplateName+"\".");
+                CommandCache.Add(Context.Message.Id,msg1.Id);
+                return;
+            }
+            var templates  = guild.CharacterTemplates.FindAll(x=>x.Name.ToLower().StartsWith(TemplateName.ToLower()));
+            if(templates.Count>1)
+            {
+                var options = new List<Menu.MenuOption>();
+                foreach(var x in templates)
+                {
+                    options.Add(new Menu.MenuOption(x.Name,
+                    async(m,i)=>
+                    {
+                        return ((Template[])m.Storage)[i];
+                    }));
+                }
+
+                templates[0] = (Template)await new Menu("Multiple Templates Found.","Multiple Templates found, please choose one.",options.ToArray(),templates.ToArray()).StartMenu(Context,Interactive);
+            }
+            Template temp = templates[0];
+
+            var character = new Character()
+            {
+                Name = CharacterName,
+                Pages = temp.Pages
+            };
+
+            plr.Active=character;
+            plrs.Update(plr);
+
+            var msg = await ReplyAsync("Created character **"+character.Name+"**. This character has also been assigned as your active character for all edit commands.");
+            CommandCache.Add(Context.Message.Id,msg.Id);
         }
         #endregion
     }
