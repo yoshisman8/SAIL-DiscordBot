@@ -13,7 +13,7 @@ namespace SAIL.Modules
 {
     [Name("Dice Roller")]
     [Summary("This module contains multiple commands for rolling all sorts of dice. Useful for games and roleplay!")]
-    public class Diceroller : CommandCacheModuleBase<SocketCommandContext>
+    public class Diceroller : ModuleBase<SocketCommandContext>
     {
         IDiceParser parser = new DiceParser();
 
