@@ -21,7 +21,6 @@ namespace SAIL.Modules
     public class CharacterModule : InteractiveBase<SocketCommandContext>
     {
         public CommandCacheService CommandCache {get;set;}
-        private Controller Controller {get;set;} = new Controller();
 
         #region CoreCommands
         [Command("Character"),Alias("Char")]
@@ -51,23 +50,33 @@ namespace SAIL.Modules
             {
                 character=Name.FirstOrDefault();
             }
+
+            var msg = await new Controller(character.PagesToEmbed(Context),"Finished Looking at "+character.Name+"'s sheet.").Start(Context,Interactive);
             
-            var msg = await ReplyAsync("Loading "+character.Name+"'s sheet...");
-
-            var prev = new Emoji("⏮");
-            var kill = new Emoji("⏹");
-            var next = new Emoji("⏭");
-            await msg.AddReactionsAsync(new Emoji[]{prev,kill,next});
-
-            Controller.Pages.Clear();
-            Controller.Pages = character.PagesToEmbed(Context);
-            await msg.ModifyAsync(x=> x.Embed = Controller.Pages.ElementAt(Controller.Index));
-
-            Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,
-            new ReactionCallbackData("",null,false,false,TimeSpan.FromMinutes(3))
-                .WithCallback(prev,(ctx,rea)=>Controller.Previous(ctx,rea,msg))
-                .WithCallback(kill,(ctx,rea)=>Controller.Kill(Interactive,msg))
-                .WithCallback(next,(ctx,rea)=>Controller.Next(ctx,rea,msg))));
+            CommandCache.Add(Context.Message.Id,msg.Id);
+        }
+        [Command("Characters"),Alias("Chars")]
+        [RequireGuildSettings] [RequireContext(ContextType.Guild)]
+        [Summary("List all characters and who made them.")]
+        public async Task GetAllCharacter()
+        {
+            var all = Program.Database.GetCollection<Character>("Characters").Find(x=>x.Guild==Context.Guild.Id).OrderBy(x=>x.Name);
+            
+            int pagecount = (int)Math.Ceiling((decimal)all.Count()/10);
+            var pages = new List<Embed>();
+            for (int i = 0;i<pagecount;i++)
+            {
+                var b = all.Skip(i*10);
+                var a = b.Take(10);
+                string[] names = a.Select(x=>x.Name).ToArray();
+                pages.Add(new EmbedBuilder()
+                .WithTitle("Characters of "+Context.Guild.Name+" (Page "+(1+i)+" of "+pagecount+")")
+                .WithTimestamp(DateTime.Now)
+                .WithDescription(String.Join("\n",names))
+                .Build());
+            }
+            
+           var msg = await new Controller(pages,"Finished Browsing all characters.").Start(Context,Interactive);
             CommandCache.Add(Context.Message.Id,msg.Id);
         }
         [Command("CurrentCharacter"),Alias("CurrentChar","Char","Character")]
@@ -93,23 +102,8 @@ namespace SAIL.Modules
                 return;
             }
 
-            var character = plr.Active;
-            var msg = await ReplyAsync("Loading "+character.Name+"'s sheet...");
-
-            var prev = new Emoji("⏮");
-            var kill = new Emoji("⏹");
-            var next = new Emoji("⏭");
-            await msg.AddReactionsAsync(new Emoji[]{prev,kill,next});
-
-            Controller.Pages.Clear();
-            Controller.Pages = character.PagesToEmbed(Context);
-            await msg.ModifyAsync(x=> x.Embed = Controller.Pages.ElementAt(Controller.Index));
-
-            Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,
-            new ReactionCallbackData("",null,false,false,TimeSpan.FromMinutes(3))
-                .WithCallback(prev,(ctx,rea)=>Controller.Previous(ctx,rea,msg))
-                .WithCallback(kill,(ctx,rea)=>Controller.Kill(Interactive,msg))
-                .WithCallback(next,(ctx,rea)=>Controller.Next(ctx,rea,msg))));
+            var msg = await new Controller(plr.Active.PagesToEmbed(Context),"Finished Looking at "+plr.Active.Name+"'s sheet.").Start(Context,Interactive);
+            
             CommandCache.Add(Context.Message.Id,msg.Id);
         }
         [Command("NewCharacter"), Alias("AddCharacter","CreateCharacter","NewChar","AddChar","CreateChar")]

@@ -13,10 +13,45 @@ namespace SAIL.Classes
 {
     public class Controller
     {
-        public int Index {get;set;}
+        public Controller(IEnumerable<Embed> _Pages,string _endmsg = "",RestUserMessage _Message = null)
+        {
+            if(_Message!=null) Message = _Message;
+            if(_Pages!=null)Pages = _Pages.ToList();
+            if(_endmsg.NullorEmpty()) EndMessage =_endmsg;
+        }
+        public int Index {get;set;} = 0;
         public List<Embed> Pages {get;set;} = new List<Embed>();
-        
-        public async Task Next(SocketCommandContext c, SocketReaction r, IUserMessage msg)
+        public RestUserMessage Message {get; private set;} = null;
+        public string EndMessage {get;set;} = "Menu closed";
+        private Emoji First =  new Emoji("⏮");
+        private Emoji Previous =  new Emoji("⏪");
+        private Emoji End = new Emoji("⏹");
+        private Emoji Next =  new Emoji("⏩");
+        private Emoji Last = new Emoji("⏭");
+
+        private Emoji[] Buttons {
+            get
+            {
+                return new Emoji[]{First,Previous,End,Next,Last};
+            }}
+        public async Task<RestUserMessage> Start(SocketCommandContext Context,InteractiveService Interactive)
+        {
+            if(Message==null)await Context.Channel.SendMessageAsync("Loading...");
+
+            await Message.AddReactionsAsync(Buttons);
+            await Message.ModifyAsync(x=>x.Content = " ");
+            await Message.ModifyAsync(x=> x.Embed = Pages.First());
+
+            Interactive.AddReactionCallback(Message,new InlineReactionCallback(Interactive,Context,
+            new ReactionCallbackData("",null,false,false,TimeSpan.FromMinutes(3),(ctx)=>Kill(Interactive,Message))
+                .WithCallback(First,(ctx,rea)=>FirstP(rea,Message))
+                .WithCallback(Previous,(ctx,rea)=>PreviousP(ctx,rea,Message))
+                .WithCallback(End,(ctx,rea)=>Kill(Interactive,Message))
+                .WithCallback(Next,(ctx,rea)=>NextP(ctx,rea,Message))
+                .WithCallback(Last,(ctx,rea)=>LastP(rea,Message))));
+            return Message;
+        }
+        public async Task NextP(SocketCommandContext c, SocketReaction r, IUserMessage msg)
         {
             if(Index+1 >= Pages.Count) 
             {
@@ -31,7 +66,7 @@ namespace SAIL.Classes
                 await msg.RemoveReactionAsync(r.Emote,r.User.Value);
             }
         }
-        public async Task Previous(SocketCommandContext c, SocketReaction r, IUserMessage msg)
+        public async Task PreviousP(SocketCommandContext c, SocketReaction r, IUserMessage msg)
         {
             if(Index-1 < 0) 
             {
@@ -46,12 +81,12 @@ namespace SAIL.Classes
                 await msg.RemoveReactionAsync(r.Emote,r.User.Value);
             }
         }
-        public async Task First(SocketReaction r, IUserMessage msg)
+        public async Task FirstP(SocketReaction r, IUserMessage msg)
         {
             await msg.ModifyAsync(x=> x.Embed = Pages.First());
             await msg.RemoveReactionAsync(r.Emote,r.User.Value);
         }
-        public async Task Last(SocketReaction r, IUserMessage msg)
+        public async Task LastP(SocketReaction r, IUserMessage msg)
         {
             await msg.ModifyAsync(x=> x.Embed = Pages.Last());
             await msg.RemoveReactionAsync(r.Emote,r.User.Value);
@@ -60,6 +95,8 @@ namespace SAIL.Classes
         {
             await msg.RemoveAllReactionsAsync();
             interactive.RemoveReactionCallback(msg.Id);
+            await msg.ModifyAsync(x=>x.Embed = null);
+            await msg.ModifyAsync(x=>x.Content = EndMessage);
         }
     }
     public class Menu

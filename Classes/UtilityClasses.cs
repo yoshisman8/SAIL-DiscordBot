@@ -29,6 +29,12 @@ namespace SAIL.Classes
                         .StartsWith("image/");
             }
         }
+        public static bool NullorEmpty(this string _string)
+        {
+            if(_string == null) return true;
+            if(_string =="") return true;
+            else return false;
+        }
         public static string ToRoman(this int number)
         {
             if ((number < 0) || (number > 3999)) throw new ArgumentOutOfRangeException("insert value betwheen 1 and 3999");

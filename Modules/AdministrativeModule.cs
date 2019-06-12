@@ -23,7 +23,6 @@ namespace SAIL.Modules
         public CommandCacheService Cache {get;set;}
         public IServiceProvider Provider {get;set;}
         public CommandService command {get;set;}
-        private Controller Controller {get;set;} = new Controller();
 
         [Command("AdminPanel"),Alias("Panel","Config")]
         [Summary("Shows the current settings and what modules are on or off")]
@@ -105,28 +104,16 @@ namespace SAIL.Modules
             var col = Program.Database.GetCollection<SysGuild>("Guilds");
             var guild = col.FindOne(x=>x.Id == Context.Guild.Id);
             guild.Load(Context);
+            List<Embed> pages = new List<Embed>(); 
             foreach (var x in guild.CommandModules.Where(x=>x.Value == true))
             {
                 var usr = Context.User as SocketGuildUser;
                 if (x.Name == "Administrative Module" &&
                     usr.Roles.Where(y=>y.Permissions.ManageGuild == true).Count() == 0) 
                     continue;
-                Controller.Pages.Add(await GenerateEmbedPage(Context,command,Provider,x,guild));
+                pages.Add(await GenerateEmbedPage(Context,command,Provider,x,guild));
             }
-            var prev = new Emoji("⏮");
-            var kill = new Emoji("⏹");
-            var next = new Emoji("⏭");
-            
-            var msg = await ReplyAsync(Context.User.Mention+", Here are all Available Commands you can use.");
-            Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,
-            new ReactionCallbackData("",null,false,false,TimeSpan.FromMinutes(3))
-                .WithCallback(prev,(ctx,rea)=>Controller.Previous(ctx,rea,msg))
-                .WithCallback(kill,(ctx,rea)=>Controller.Kill(Interactive,msg))
-                .WithCallback(next,(ctx,rea)=>Controller.Next(ctx,rea,msg))));
-            await msg.ModifyAsync(x=> x.Embed = Controller.Pages.ElementAt(Controller.Index));
-            await msg.AddReactionAsync(prev);
-            await msg.AddReactionAsync(kill);
-            await msg.AddReactionAsync(next);
+            var msg = await new Controller(pages,"Closed Help menu. Use `"+guild.Prefix+"Help` to see it again.").Start(Context,Interactive);
             Cache.Add(Context.Message.Id,msg.Id);
         }
         [Command("ToggleListMode"),Alias("ToggleBlacklist","ToggleWhitelist")]
