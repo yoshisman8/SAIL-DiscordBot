@@ -33,9 +33,6 @@ namespace SAIL.Classes
         public List<ulong> Channels {get;set;} = new List<ulong>();
         public ulong NotificationChannel {get;set;} = 0;
         public bool Notifications {get;set;} = true;
-        public List<GuildEvent> Events {get;set;} = new List<GuildEvent>();
-        [BsonRef("Users")]
-        public List<SysUser> Users {get;set;} = new List<SysUser>();
         public List<Template> CharacterTemplates {get;set;} = new List<Template>();
 
         [BsonIgnore]
@@ -83,6 +80,7 @@ namespace SAIL.Classes
         {
             var guild = Client.GetGuild(Id);
             var ch = guild.GetTextChannel(NotificationChannel);
+			if (ch == null) return;
             var embed = new EmbedBuilder()
                 .WithTitle(Event.Name)
                 .WithDescription(Event.Description)

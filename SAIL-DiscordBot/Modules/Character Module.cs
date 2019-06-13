@@ -759,7 +759,8 @@ namespace SAIL.Modules
             }
         }
         #endregion
-        #region Templates
+        
+		#region Templates
         [Command("SaveTemplate"),Alias("CreateTemplate")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
         [Summary("Saves your current character as a template for anyone in your guild to use.")]

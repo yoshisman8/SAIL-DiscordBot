@@ -17,7 +17,7 @@ namespace SAIL.Classes
         {
             if(_Message!=null) Message = _Message;
             if(_Pages!=null)Pages = _Pages.ToList();
-            if(_endmsg.NullorEmpty()) EndMessage =_endmsg;
+            if(!_endmsg.NullorEmpty()) EndMessage =_endmsg;
         }
         public int Index {get;set;} = 0;
         public List<Embed> Pages {get;set;} = new List<Embed>();
@@ -36,7 +36,7 @@ namespace SAIL.Classes
             }}
         public async Task<RestUserMessage> Start(SocketCommandContext Context,InteractiveService Interactive)
         {
-            if(Message==null)await Context.Channel.SendMessageAsync("Loading...");
+            if(Message==null) Message = await Context.Channel.SendMessageAsync("Loading...");
 
             await Message.AddReactionsAsync(Buttons);
             await Message.ModifyAsync(x=>x.Content = " ");
@@ -110,7 +110,6 @@ namespace SAIL.Classes
         }
         public string Name {get;set;}
         public string MenuInfo {get;set;}
-        public Menu PreviousMenu {get;set;} = null;
         public MenuOption[] Options {get;set;}
         public bool Active {get; private set;} = true;
 
@@ -119,9 +118,9 @@ namespace SAIL.Classes
 
         public object Storage {get;private set;}
         private int Index {get; set;} = 0;
-        private Emoji NextButton = new Emoji("⏭");
+        private Emoji NextButton = new Emoji("⏬");
         private Emoji SelectButton = new Emoji("⏏");
-        private Emoji PrevButton = new Emoji("⏮");
+        private Emoji PrevButton = new Emoji("⏫");
         private RestUserMessage Message {get;set;}
         private Task<object> Result {get;set;} = null;
         
@@ -209,7 +208,7 @@ namespace SAIL.Classes
             var returnstring = new StringBuilder().AppendLine(MenuInfo);
             for (int i = 0; i < Options.Length;i++)
             {
-                returnstring.AppendLine((Index==i?"💠 ":"🔹 ") + Options[i].Name);
+                returnstring.AppendLine(Options[i].Name + (Index == i ? "💠 " : "🔹 "));
             }
             return returnstring.ToString();
         }
@@ -219,12 +218,179 @@ namespace SAIL.Classes
                 .WithTitle(Name)
                 .WithColor(new Color(88, 196, 239))
                 .WithDescription(MenuInfo)
-                .WithFooter("Use "+PrevButton+" and "+NextButton+" to move the cursor and "+SelectButton+" to select the selected item.");
+                .WithFooter("Use "+PrevButton+"/"+NextButton+" to move the cursor and "+SelectButton+" to select.");
             for (int i = 0; i < Options.Length;i++)
             {
-                Embed.AddField((Index==i?"💠 ":"")+Options[i].Name,Options[i].Description==""?Options[i].Name:Options[i].Description,true);
+                Embed.AddField((Index==i?"💠 ":"")+Options[i].Name,Options[i].Description==""?Options[i].Name:Options[i].Description);
             }
             return Embed.Build();
         }
     }
+	public class PagedMenu
+	{
+		public PagedMenu(string _Name, string _Message, List<MenuOption[]> _Options, object obj = null)
+		{
+			Name = _Name;
+			MenuInfo = _Message;
+			Storage = obj;
+			Options = new MenuOption[_Options.Count][];
+			for (int i = 0;i<_Options.Count;i++)
+			{
+				Options[i] = _Options[i];
+			}
+		}
+		public string Name { get; set; }
+		public string MenuInfo { get; set; }
+		public MenuOption[][] Options { get; set; }
+		public bool Active { get; private set; } = true;
+
+		public SocketCommandContext Context { get; private set; }
+		public InteractiveService Interactive { get; private set; }
+
+		public object Storage { get; private set; }
+
+		private int Index { get; set; } = 0;
+		private int PageIndex { get; set; } = 0;
+		private Emoji NextPageButton = new Emoji("⏪");
+		private Emoji NextButton = new Emoji("⏬");
+		private Emoji SelectButton = new Emoji("⏏");
+		private Emoji PrevButton = new Emoji("⏫");
+		private Emoji PrevPageButton = new Emoji("⏩");
+		private Emoji[] Buttons
+		{
+			get
+			{
+				return new Emoji[] { PrevPageButton, PrevButton, SelectButton, NextButton, NextPageButton };
+			}
+		}
+		private RestUserMessage Message { get; set; }
+		private Task<object> Result { get; set; } = null;
+
+		public class MenuOption
+		{
+			public MenuOption(string _Name, Func<PagedMenu, int,int, Task<object>> _Logic = null, string _summary = "", bool _EndsMenu = true)
+			{
+				Name = _Name;
+				Logic = _Logic;
+				EndsMenu = _EndsMenu;
+				Description = _summary;
+			}
+			public string Name { get; set; }
+			public string Description { get; set; }
+			public bool EndsMenu { get; set; } = true;
+			public Func<PagedMenu,int,int, Task<object>> Logic { get; set; }
+		}
+		public async Task<object> StartMenu(SocketCommandContext _Context, InteractiveService _Interactive)
+		{
+			Context = _Context;
+			Interactive = _Interactive;
+			Message = await Context.Channel.SendMessageAsync("Loading...");
+			await ReloadMenu();
+			await Message.AddReactionsAsync(Buttons);
+
+			Interactive.AddReactionCallback(Message, new InlineReactionCallback(Interactive, Context,
+				new ReactionCallbackData("", null, false, false, TimeSpan.FromMinutes(2),
+				async (x) => { await Message.RemoveAllReactionsAsync(); Result = null; })
+					.WithCallback(PrevButton, async (x, y) => await SelectPrevious(y))
+					.WithCallback(SelectButton, (x, y) => SelectOption(y, Storage))
+					.WithCallback(NextButton, async (x, y) => await SelectNext(y))));
+
+			while (Active)
+			{
+				await Task.Delay(100);
+			}
+			await Message.DeleteAsync();
+			return Result.Result;
+		}
+		public async Task ReloadMenu()
+		{
+			if (Options.Any(x => x.Any(y=>y.Description != "")))
+			{
+				await Message.ModifyAsync(x => x.Content = " ");
+				await Message.ModifyAsync(x => x.Embed = BuildEmbeddedMenu());
+			}
+			else
+			{
+				await Message.ModifyAsync(x => x.Embed = null);
+				await Message.ModifyAsync(x => x.Content = BuildMenu());
+			}
+		}
+		public async Task SelectNext(SocketReaction r)
+		{
+			await Task.Delay(100);
+			await Message.RemoveReactionAsync(r.Emote, r.User.Value);
+			await Task.Delay(100);
+			if (Index + 1 >= Options[PageIndex].Length)
+			{
+				Index = 0;
+			}
+			else Index++;
+			await ReloadMenu();
+		}
+		public async Task SelectPrevious(SocketReaction r)
+		{
+			await Task.Delay(100);
+			await Message.RemoveReactionAsync(r.Emote, r.User.Value);
+			await Task.Delay(100);
+			if (Index - 1 < 0)
+			{
+				Index = Options[PageIndex].Length;
+			}
+			else Index--;
+			await ReloadMenu();
+		}
+		public async Task NextPage(SocketReaction r)
+		{
+			await Task.Delay(100);
+			await Message.RemoveReactionAsync(r.Emote, r.User.Value);
+			await Task.Delay(100);
+			if (PageIndex + 1 >= Options.GetLength(0))
+			{
+				Index = 0;
+			}
+			else PageIndex++;
+			await ReloadMenu();
+		}
+		public async Task PrevPage(SocketReaction r)
+		{
+			await Task.Delay(100);
+			await Message.RemoveReactionAsync(r.Emote, r.User.Value);
+			await Task.Delay(100);
+			if (PageIndex -1 < 0)
+			{
+				Index = 0;
+			}
+			else PageIndex--;
+			await ReloadMenu();
+		}
+		public async Task SelectOption(SocketReaction r, object input = null)
+		{
+			await Message.RemoveReactionAsync(r.Emote, r.User.Value);
+			Result = Options[PageIndex][Index].Logic.Invoke(this, PageIndex, Index);
+			Active = Options[PageIndex][Index].EndsMenu ? false : true;
+
+		}
+		public string BuildMenu()
+		{
+			var returnstring = new StringBuilder().AppendLine(MenuInfo);
+			for (int i = 0; i < Options.Length; i++)
+			{
+				returnstring.AppendLine(Options[PageIndex][i].Name + (Index == i ? "💠 " : "🔹 "));
+			}
+			return returnstring.ToString();
+		}
+		public Embed BuildEmbeddedMenu()
+		{
+			var Embed = new EmbedBuilder()
+				.WithTitle(Name)
+				.WithColor(new Color(88, 196, 239))
+				.WithDescription(MenuInfo)
+				.WithFooter("Use " + PrevButton + "/" + NextButton + " to move the cursor and " + SelectButton + " to select.");
+			for (int i = 0; i < Options.Length; i++)
+			{
+				Embed.AddField((Index == i ? "💠 " : "") + Options[PageIndex][i].Name, Options[PageIndex][i].Description == "" ? Options[PageIndex][i].Name : Options[PageIndex][i].Description);
+			}
+			return Embed.Build();
+		}
+	}
 }

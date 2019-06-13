@@ -31,7 +31,7 @@ namespace SAIL.Classes.Legacy
         }
         public List<LegacyCharacter> GetAll()
         {
-            var files = Directory.EnumerateFiles(Directory.GetCurrentDirectory()+@"/Data/Legacy/");
+            var files = Directory.EnumerateFiles(Path.Combine(Directory.GetCurrentDirectory(),"Data","Legacy/"));
             List<LegacyCharacter> db = new List<LegacyCharacter> { };
             foreach (string x in files)
             {
