@@ -35,6 +35,12 @@ namespace SAIL.Classes
             if(_string =="") return true;
             else return false;
         }
+		public static SocketTextChannel GetTextChannelByName(this SocketGuild Guild,string Name)
+		{
+			var results = Guild.TextChannels.Where(x => x.Name.ToLower() == Name.ToLower());
+			if (results == null || results.Count() == 0) return null;
+			else return results.FirstOrDefault();
+		}
         public static string ToRoman(this int number)
         {
             if ((number < 0) || (number > 3999)) throw new ArgumentOutOfRangeException("insert value betwheen 1 and 3999");
@@ -194,7 +200,7 @@ namespace SAIL.Classes
             if(usr.Roles.ToList().Exists(x=>x.Permissions.ManageGuild)) return Task.FromResult(PreconditionResult.FromSuccess());
             var G = Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id == context.Guild.Id);
             //If the module this command is from is disabled, Fail.
-            var module = G.CommandModules.Find(x=>x.Name == command.Module.Name).Value;
+            var module = G.CommandModules[command.Module.Name];
             if(!module) return Task.FromResult(PreconditionResult.FromError("This module is Disabled."));
             //If the server is in Blacklist mode and the channel this is being sent in is in the list, Fail.
             if(G.ListMode==ListMode.Blacklist && G.Channels.Contains(context.Channel.Id)) return Task.FromResult(PreconditionResult.FromError("This Channel is Blacklisted."));

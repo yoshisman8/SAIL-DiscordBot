@@ -75,9 +75,21 @@ namespace SAIL.Services
 
         private async Task UpdateModules(DiscordSocketClient discord, LiteDatabase database, CommandService commands)
         {
-            var col = database.GetCollection<SysGuild>("Guilds");
-            var servers = col.IncludeAll().FindAll().ToArray();
-            var modules = commands.Modules.Where(x=>!x.Attributes.Any(y=>y.GetType()==typeof(Exclude))).ToList();
+			SysGuild[] servers;
+			LiteCollection<SysGuild> col;
+			try
+			{
+				col = database.GetCollection<SysGuild>("Guilds");
+				servers = col.IncludeAll().FindAll().ToArray();
+			}
+			catch
+			{
+				database.DropCollection("Guilds");
+				col = database.GetCollection<SysGuild>("Guilds");
+				servers = col.FindAll().ToArray();
+			}			
+			var modules = commands.Modules.Where(y => !y.Attributes.Any(a => a.GetType() == typeof(Exclude))).ToList();
+
             foreach(var y in servers)
             {
                 var mds = y.CommandModules;
@@ -85,9 +97,9 @@ namespace SAIL.Services
                 {
                     foreach(var z in y.CommandModules)
                     {
-                        if (!modules.Any(m=>m.Name == z.Name)) mds.Remove(z);
+                        if (!modules.Any(m=>m.Name == z.Key)) mds.Remove(z.Key);
                     }
-                    if (!y.CommandModules.Any(m=>m.Name == x.Name)) y.CommandModules.Add(new SAIL.Classes.Module(){Name=x.Name,Summary = x.Summary});
+                    if (!y.CommandModules.Any(m=>m.Key == x.Name)) y.CommandModules.Add(x.Name,true);
                 }
                 
                 if(mds != y.CommandModules) y.CommandModules = mds;
@@ -107,7 +119,7 @@ namespace SAIL.Services
                     {
                         Id = x
                     });
-                    col.EnsureIndex("CommandModules","$.CommandModules[*].Name",false);
+                    col.EnsureIndex("CommandModules","$.CommandModules[*].Key",false);
                 }
             }
         }
@@ -278,6 +290,7 @@ namespace SAIL.Services
             if (reaction.UserId == _discord.CurrentUser.Id) return;
             var col = Program.Database.GetCollection<SAIL.Classes.Quote>("Quotes");
             var msg = await _msg.GetOrDownloadAsync();
+			if (msg== null) return;
             var context = new CommandContext(_discord,msg);
             var guild = context.Guild;
 

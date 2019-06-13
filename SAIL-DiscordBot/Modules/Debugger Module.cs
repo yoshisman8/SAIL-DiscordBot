@@ -70,14 +70,14 @@ namespace SAIL.Modules
         [Command("ResetSettings")] [RequireOwner]
         public async Task Resetto()
         {
+			Program.Database.DropCollection("Guilds");
             var guilds = Program.Database.GetCollection<SysGuild>("Guilds");
             foreach (var x in guilds.FindAll())
             {
-                var mds = new List<Module>();
-                foreach(var y in command.Modules.Where(y=>y.Attributes.Any(z=>z.GetType()==typeof(Exclude))))
+                var mds = new Dictionary<string,bool>();
+                foreach(var m in command.Modules.Where(y=>!y.Attributes.Any(a=>a.GetType()==typeof(Exclude))))
                 {
-                    if(y.Name.ToLower().Contains("debug")) continue;
-                    mds.Add(new Module(){Name=y.Name,Summary = y.Summary});
+                    mds.Add(m.Name,true);
                 }
                 x.CommandModules = mds;
                 guilds.Update(x);

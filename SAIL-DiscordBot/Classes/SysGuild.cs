@@ -28,44 +28,69 @@ namespace SAIL.Classes
         [BsonId]
         public ulong Id {get;set;}
         public string Prefix {get;set;} = "!";
-        public List<Module> CommandModules {get;set;} = new List<Module>();
+        public Dictionary<string,bool> CommandModules {get;set;} = new Dictionary<string, bool>();
         public ListMode ListMode {get;set;} = ListMode.None;
         public List<ulong> Channels {get;set;} = new List<ulong>();
-        public ulong NotificationChannel {get;set;} = 0;
-        public bool Notifications {get;set;} = true;
-        public List<Template> CharacterTemplates {get;set;} = new List<Template>();
+		public NotificationSettings Notifications { get; set; } = new NotificationSettings();
+		public List<Template> CharacterTemplates {get;set;} = new List<Template>();
+
 
         [BsonIgnore]
         private SocketGuild Guild {get;set;}
         [BsonIgnore]
-        private List<ITextChannel> LoadedChannels {get;set;} = new List<ITextChannel>();
-        public Embed GetSettingsPage(CommandService commandService)
+        public List<ITextChannel> LoadedChannels {get; private set;} = new List<ITextChannel>();
+        public Embed Summary(CommandService commandService)
         {
             var sb = new StringBuilder();
             var embed = new EmbedBuilder()
-                .WithTitle(Guild.Name+"'s Control Panel")
+                .WithTitle(Guild.Name)
                 .WithDescription("Current Prefix: `"+Prefix+"`.")
                 .WithThumbnailUrl(Guild.IconUrl);
-            switch (ListMode)
+			//White/Black list
+			sb.Clear();
+			switch (ListMode)
             {
                 case ListMode.None:
-                    if (LoadedChannels != null && LoadedChannels.Count > 0) embed.AddField("Currently not filtering based on channel.","```"+string.Join(", ",LoadedChannels.Select(x=>x.Mention)+"```",true));
-                    else embed.AddField("Currently not filtering based on channel.","The list is Empty.",true);
+                    sb.AppendLine("Currently listening for commands on all channels.");
                     break;
                 case ListMode.Whitelist:
-                    if (LoadedChannels != null && LoadedChannels.Count > 0) embed.AddField("Currently filtering using a Whitelist.","```"+string.Join(", ",LoadedChannels.Select(x=>x.Mention)+"```",true));
-                    else embed.AddField("Currently filtering using a Whitelist.","The list is Empty.",true);
-                    break;
-                case ListMode.Blacklist:
-                    if (LoadedChannels != null && LoadedChannels.Count > 0) embed.AddField("Currently filtering using a Blacklist.","```"+string.Join(", ",LoadedChannels.Select(x=>x.Mention)+"```",true));
-                    else embed.AddField("Currently filtering using a Blacklist.","The list is Empty.",true);
-                    break;
+					sb.AppendLine("Currently only listening for commands on the following channels:");
+					sb.AppendLine(string.Join("\n", LoadedChannels.Select(x => x.Name)));
+					break;
+				case ListMode.Blacklist:
+					sb.AppendLine("Currently ignoring commands on the following channels:");
+					sb.AppendLine(string.Join("\n", LoadedChannels.Select(x => x.Name)));
+					break;
             }
-            embed.AddField(Notifications?"Notifications Active ✅":"Notifications Disabled ⛔",NotificationChannel==0?"No channel has been set.":Guild.GetTextChannel(NotificationChannel).Mention);
-            foreach(var x in CommandModules)
+			embed.AddField("Command Listening", sb.ToString());
+
+			//Notifications
+			sb.Clear();
+			sb.AppendLine("Notifications " + (Notifications.Module ? "Enabled." : "Disabled"));
+			sb.AppendLine((Notifications.LoadedNotifChannel != null) ? "Notifications being sent to "+Notifications.LoadedNotifChannel.Name : "No channel is set to receive notifications.");
+			sb.AppendLine("User Joined Message: " + (Notifications.JoinedMsg==""?"Disabled":Notifications.JoinedMsg));
+			sb.AppendLine("User Left Message: " + (Notifications.LeftMsg == "" ? "Disabled" : Notifications.LeftMsg));
+			embed.AddField("Notification Settings",sb.ToString());
+
+			//Statistics
+			sb.Clear();
+			var E = Program.Database.GetCollection<GuildEvent>("Events").Find(x => x.Server.Id == Id);
+			sb.AppendLine("Events: "+ ((E != null) ? E.Count().ToString():"0"));
+
+			var C = Program.Database.GetCollection<Character>("Characters").Find(x => x.Guild == Id);
+			sb.AppendLine("Characters: " + ((C != null) ? C.Count().ToString() : "0"));
+
+			var Q = Program.Database.GetCollection<Quote>("Quotes").Find(x => x.Guild == Id);
+			sb.AppendLine("Quotes: " + ((Q != null) ? Q.Count().ToString() : "0"));
+
+			//Module Listing
+			sb.Clear();
+			foreach(var x in CommandModules)
             {
-                embed.AddField(x.Name+" "+(x.Value? "✅":"⛔"),"```"+x.Summary+"```",true);
+                sb.AppendLine(x.Key+" "+(x.Value? @" \✅":@" \⛔"));
             }
+			embed.AddField("Command Modules", sb.ToString(),true);
+
             return embed.Build();
         }
         public void Load(SocketCommandContext context)
@@ -75,11 +100,12 @@ namespace SAIL.Classes
             {
                 LoadedChannels.Add(Guild.GetTextChannel(x));
             }
+			Notifications.LoadedNotifChannel = Guild.GetTextChannel(Notifications.NotificationChannel);	
         }
         public async Task PrintEvent(DiscordSocketClient Client,GuildEvent Event)
         {
             var guild = Client.GetGuild(Id);
-            var ch = guild.GetTextChannel(NotificationChannel);
+            var ch = guild.GetTextChannel(Notifications.NotificationChannel);
 			if (ch == null) return;
             var embed = new EmbedBuilder()
                 .WithTitle(Event.Name)
@@ -103,13 +129,15 @@ namespace SAIL.Classes
             await ch.SendMessageAsync("",false,embed.Build());
         }
     }
-
-    public class Module
-    {
-        public string Name {get;set;}
-        public string Summary {get;set;}
-        public bool Value {get;set;} = true;
-    }
-    public enum ListMode {Blacklist, Whitelist, None}
+	public class NotificationSettings
+	{
+		public bool Module { get; set; } = true;
+		public ulong NotificationChannel { get; set; } = 0;
+		public string JoinedMsg { get; set; } = "{user} Has joined the server!";
+		public string LeftMsg { get; set; } = "";
+		[BsonIgnore]
+		public ITextChannel LoadedNotifChannel { get; set; }
+	}
+	public enum ListMode {Blacklist, Whitelist, None}
     public enum RepeatingState {Unset = -1,Weekly, Monhtly,Anually,Once}
 }
