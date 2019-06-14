@@ -292,11 +292,8 @@ namespace SAIL.Classes
 					.WithCallback(NextButton, async (x, y) => await SelectNext(y))
 					.WithCallback(NextPageButton, async (x, y) => await NextPage(y))
 					.WithCallback(SelectButton, async (x,y) => await SelectOption(y));
-			var IRea = new InlineReactionCallback(Interactive, Context, CBData, new EnsureSourceUserCriterion());
-
+			var IRea = new InlineReactionCallback(Interactive, Context, CBData);
 			Interactive.AddReactionCallback(Message, IRea);
-
-			
 
 			while (Active)
 			{

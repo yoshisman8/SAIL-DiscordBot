@@ -27,7 +27,7 @@ namespace SAIL.Modules
 
 		[Command("Overview"), Alias("Summary")]
 		[Summary("Shows the current settings and what modules are on or off")]
-		[RequireUserPermission(GuildPermission.ManageGuild)]
+		[RequireContext(ContextType.Guild)]
 		public async Task SummaryPanel()
 		{
 			var col = Program.Database.GetCollection<SysGuild>("Guilds");

@@ -48,9 +48,32 @@ namespace SAIL.Services
             _discord.MessageUpdated += OnMessageUpdated;
             _discord.JoinedGuild += OnJoinedGuild;
             _discord.Ready += OnReady;
+			_discord.UserJoined += _discord_UserJoined;
+			_discord.UserLeft += _discord_UserLeft;
         }
 
-        public async Task OnJoinedGuild(SocketGuild arg)
+		private async Task _discord_UserLeft(SocketGuildUser arg)
+		{
+			
+			var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==arg.Guild.Id);
+			if(guild!= null && guild.Notifications.Module && !guild.Notifications.JoinedMsg.NullorEmpty())
+			{
+				var ch = arg.Guild.GetTextChannel(guild.Notifications.NotificationChannel);
+				await ch.SendMessageAsync(guild.Notifications.JoinedMsg.Replace("{user}", arg.Mention));
+			}
+		}
+
+		private async Task _discord_UserJoined(SocketGuildUser arg)
+		{
+			var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x => x.Id == arg.Guild.Id);
+			if (guild != null && guild.Notifications.Module && !guild.Notifications.JoinedMsg.NullorEmpty())
+			{
+				var ch = arg.Guild.GetTextChannel(guild.Notifications.NotificationChannel);
+				await ch.SendMessageAsync(guild.Notifications.LeftMsg.Replace("{user}", arg.Mention));
+			}
+		}
+
+		public async Task OnJoinedGuild(SocketGuild arg)
         {
             var col = Program.Database.GetCollection<SysGuild>("Guilds");
             if(col.Exists(x=>x.Id==arg.Id))
