@@ -57,6 +57,7 @@ namespace SAIL
                 .AddLogging()
                 .AddSingleton<LogService>()
                 // Extra
+				.AddSingleton(new HelpService(_client))
                 .AddSingleton(_config)
                 .AddSingleton<GlobalTimer>()
                 .AddSingleton<ScheduleService>()

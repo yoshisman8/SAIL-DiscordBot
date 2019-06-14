@@ -13,6 +13,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.2.0" />
     <PackageReference Include="Discord.Addons.PassiveInteractive" Version="2.0.4" />
     <PackageReference Include="Discord.Addons.CommandCache" Version="2.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="OnePlat.DiceNotation" Version="2.0.2" />
     <PackageReference Include="OnePlat.DiceNotation.ExtendedDieRollers" Version="2.0.1" />
   </ItemGroup>
