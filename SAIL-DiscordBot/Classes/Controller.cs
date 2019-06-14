@@ -261,7 +261,7 @@ namespace SAIL.Classes
 			}
 		}
 		private RestUserMessage Message { get; set; }
-		private object Result { get; set; } = null;
+		private Task<object> Result { get; set; } = null;
 		public bool tick { get; set; } = false;
 		public class MenuOption
 		{
@@ -301,7 +301,7 @@ namespace SAIL.Classes
 				if(tick) await ReloadMenu();
 			}
 			await Message.DeleteAsync();
-			return Result;
+			return Result.Result;
 		}
 		public async Task ReloadMenu()
 		{
@@ -377,7 +377,7 @@ namespace SAIL.Classes
 		public async Task SelectOption(SocketReaction r, object input = null)
 		{
 			await Message.RemoveReactionAsync(r.Emote, r.User.Value);
-			Result = await Options[PageIndex][Index].Logic.Invoke(this, PageIndex, Index);
+			Result = Options[PageIndex][Index].Logic.Invoke(this, PageIndex, Index);
 			Active = Options[PageIndex][Index].EndsMenu ? false : true;
 			
 		}

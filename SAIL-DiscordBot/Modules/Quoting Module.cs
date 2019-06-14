@@ -173,7 +173,7 @@ namespace SAIL.Modules
             }
             Pages.Add(StaticMethods.EmbedMessage(c,quote.Context.Channel,quote.Context.Message));
 
-            await new Controller(Pages,"Finished Reading Context a Quote.",msg).Start(Context,Interactive);
+            await new Controller(Pages,"Finished looking at the context of a Quote.",msg).Start(Context,Interactive);
 
             await msg.ModifyAsync(x=> x.Content = "Showing the last 5 messages before this Quote.");
         }
