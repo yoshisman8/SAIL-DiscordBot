@@ -3,3 +3,5 @@
 ################################################################################
 
 /.vs
+/Discord.Addons.Interactive/bin/Debug
+/Discord.Addons.Interactive/obj

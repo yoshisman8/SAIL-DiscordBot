@@ -123,7 +123,7 @@ namespace SAIL.Classes
         private Emoji SelectButton = new Emoji("⏏");
         private Emoji PrevButton = new Emoji("⏫");
         private RestUserMessage Message {get;set;}
-        private Task<object> Result {get;set;} = null;
+        private object Result {get;set;} = null;
         
         public class MenuOption
         {
@@ -155,10 +155,10 @@ namespace SAIL.Classes
 
             while (Active)
             {
-                await Task.Delay(100);
+                await Task.Delay(1000);
             }
             await Message.DeleteAsync();
-            return Result.Result; 
+            return Result; 
         }
         public async Task ReloadMenu()
         {
@@ -175,9 +175,8 @@ namespace SAIL.Classes
         }
         public async Task SelectNext(SocketReaction r)
         {
-            await Task.Delay(100);
             await Message.RemoveReactionAsync(r.Emote,r.User.Value);
-            await Task.Delay(100);
+            await Task.Delay(500);
             if(Index+1 >= Options.Length)
             {
                 Index = 0;
@@ -187,9 +186,8 @@ namespace SAIL.Classes
         }
         public async Task SelectPrevious(SocketReaction r)
         {
-            await Task.Delay(100);
             await Message.RemoveReactionAsync(r.Emote,r.User.Value);
-            await Task.Delay(100);
+            await Task.Delay(500);
             if(Index-1 < 0)
             {
                 Index = Options.Length-1;
@@ -200,9 +198,9 @@ namespace SAIL.Classes
         public async Task SelectOption(SocketReaction r,object input = null)
         {
             await Message.RemoveReactionAsync(r.Emote,r.User.Value);
-            Result = Options[Index].Logic.Invoke(this,Index);
+            Result = await Options[Index].Logic(this,Index);
+			await ReloadMenu();
             Active = Options[Index].EndsMenu? false : true;
-            
         }
         public string BuildMenu()
         {
@@ -261,7 +259,7 @@ namespace SAIL.Classes
 			}
 		}
 		private RestUserMessage Message { get; set; }
-		private Task<object> Result { get; set; } = null;
+		private object Result { get; set; } = null;
 		public bool tick { get; set; } = false;
 		public class MenuOption
 		{
@@ -298,10 +296,9 @@ namespace SAIL.Classes
 			while (Active)
 			{
 				await Task.Delay(1000);
-				if(tick) await ReloadMenu();
 			}
 			await Message.DeleteAsync();
-			return Result.Result;
+			return Result;
 		}
 		public async Task ReloadMenu()
 		{
@@ -318,9 +315,8 @@ namespace SAIL.Classes
 		}
 		public async Task SelectNext(SocketReaction r)
 		{
-			await Task.Delay(100);
 			await Message.RemoveReactionAsync(r.Emote, r.User.Value);
-			await Task.Delay(100);
+			await Task.Delay(500);
 			if (Index + 1 >= Options[PageIndex].Length)
 			{
 				Index = 0;
@@ -330,9 +326,8 @@ namespace SAIL.Classes
 		}
 		public async Task SelectPrevious(SocketReaction r)
 		{
-			await Task.Delay(100);
 			await Message.RemoveReactionAsync(r.Emote, r.User.Value);
-			await Task.Delay(100);
+			await Task.Delay(500);
 			if (Index - 1 < 0)
 			{
 				Index = Options[PageIndex].Length-1;
@@ -342,9 +337,8 @@ namespace SAIL.Classes
 		}
 		public async Task NextPage(SocketReaction r)
 		{
-			await Task.Delay(100);
 			await Message.RemoveReactionAsync(r.Emote, r.User.Value);
-			await Task.Delay(100);
+			await Task.Delay(500);
 			if (PageIndex + 1 >= Options.GetLength(0))
 			{
 				Index = 0;
@@ -359,9 +353,8 @@ namespace SAIL.Classes
 		}
 		public async Task PrevPage(SocketReaction r)
 		{
-			await Task.Delay(100);
 			await Message.RemoveReactionAsync(r.Emote, r.User.Value);
-			await Task.Delay(100);
+			await Task.Delay(500);
 			if (PageIndex - 1 < 0)
 			{
 				PageIndex = (Options.GetLength(0) - 1);
@@ -377,9 +370,10 @@ namespace SAIL.Classes
 		public async Task SelectOption(SocketReaction r, object input = null)
 		{
 			await Message.RemoveReactionAsync(r.Emote, r.User.Value);
-			Result = Options[PageIndex][Index].Logic.Invoke(this, PageIndex, Index);
+			await Task.Delay(500);
+			Result = await Options[PageIndex][Index].Logic(this, PageIndex, Index);
+			await ReloadMenu();
 			Active = Options[PageIndex][Index].EndsMenu ? false : true;
-			
 		}
 		public string BuildMenu()
 		{

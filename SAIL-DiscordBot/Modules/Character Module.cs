@@ -843,7 +843,7 @@ namespace SAIL.Modules
                 Name = CharacterName,
                 Pages = temp.Pages
             };
-
+			col.Insert(character);
             plr.Active=character;
             plrs.Update(plr);
 
