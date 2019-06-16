@@ -846,7 +846,6 @@ namespace SAIL.Modules
 			col.Insert(character);
             plr.Active=character;
             plrs.Update(plr);
-			col.Insert(character);
 
             var msg = await ReplyAsync("Created character **"+character.Name+"**. This character has also been assigned as your active character for all edit commands.");
             CommandCache.Add(Context.Message.Id,msg.Id);
