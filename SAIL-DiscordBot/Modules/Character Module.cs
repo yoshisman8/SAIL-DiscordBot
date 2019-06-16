@@ -841,7 +841,9 @@ namespace SAIL.Modules
             var character = new Character()
             {
                 Name = CharacterName,
-                Pages = temp.Pages
+                Pages = temp.Pages,
+				Guild = Context.Guild.Id,
+				Owner = Context.User.Id
             };
 			col.Insert(character);
             plr.Active=character;
