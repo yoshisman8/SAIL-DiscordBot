@@ -363,7 +363,6 @@ namespace SAIL.Services
             var Guild = (context.Guild==null)?null:Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==context.Guild.Id);
 
             int argPos = 0;
-            if (Guild == null && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos))return;
             if (Guild!= null && !message.HasStringPrefix(Guild.Prefix, ref argPos) && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
 
             if(DateTime.Now.Month == 4 && DateTime.Now.Day == 1)

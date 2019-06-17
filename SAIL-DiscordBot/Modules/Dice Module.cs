@@ -28,7 +28,7 @@ namespace SAIL.Modules
 			{
 				var result = Parser.Parse(DiceExpression, new DiceConfiguration() { DefaultDieSides = 20 }, new MathNetDieRoller());
 				if (cache.Any(x => x.Key == Context.Message.Id)) cache.Remove(Context.Message.Id);
-				await Context.Message.DeleteAsync();
+				if(Context.Guild!=null)await Context.Message.DeleteAsync();
 				var breakdown = new StringBuilder();
 				foreach (var x in result.Results)
 				{
@@ -54,7 +54,7 @@ namespace SAIL.Modules
 				var result = Parser.Parse(DiceExpression, new DiceConfiguration() { DefaultDieSides = 20 }, new MaxDieRoller());
 				if (cache.Any(x => x.Key == Context.Message.Id)) cache.Remove(Context.Message.Id);
 
-				await Context.Message.DeleteAsync();
+				if (Context.Guild != null) await Context.Message.DeleteAsync();
 				await ReplyAsync(Context.User.Mention + ", Maximum result for [" + DiceExpression + "] ⇒ " + result.Value);
 			}
 			catch (Exception e)
@@ -73,7 +73,7 @@ namespace SAIL.Modules
 				var result = Parser.Parse(DiceExpression, new DiceConfiguration() { DefaultDieSides = 20 }, new ConstantDieRoller(1));
 				if (cache.Any(x => x.Key == Context.Message.Id)) cache.Remove(Context.Message.Id);
 
-				await Context.Message.DeleteAsync();
+				if (Context.Guild != null) await Context.Message.DeleteAsync();
 				await ReplyAsync(Context.User.Mention + ", Minimum result for [" + DiceExpression + "] ⇒ " + result.Value);
 			}
 			catch (Exception e)

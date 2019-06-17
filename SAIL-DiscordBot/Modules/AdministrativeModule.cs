@@ -25,8 +25,8 @@ namespace SAIL.Modules
 		public IServiceProvider Provider { get; set; }
 		public CommandService command { get; set; }
 
-		[Command("Overview"), Alias("Summary")]
-		[Summary("Shows the current settings and what modules are on or off")]
+		[Command("Guild"), Alias("Server", "Summary", "ServerInfo")]
+		[Summary("Shows the current settings and what modules are on or off, and other miscellaneous details.")]
 		[RequireContext(ContextType.Guild)]
 		public async Task SummaryPanel()
 		{
@@ -35,6 +35,30 @@ namespace SAIL.Modules
 			guild.Load(Context);
 
 			var msg = await ReplyAsync("", embed: guild.Summary(command));
+			Cache.Add(Context.Message.Id, msg.Id);
+		}
+		[Command("WhoIs"), Alias("User")]
+		[Summary("Prints some info about the user.")]
+		[RequireContext(ContextType.Guild)]
+		public async Task WhoIs([Remainder] SocketGuildUser Username)
+		{
+			var col = Program.Database.GetCollection<SysGuild>("Guilds");
+			var guild = col.FindOne(x => x.Id == Context.Guild.Id);
+			var characters = Program.Database.GetCollection<Character>("Characters").Find(x => x.Owner == Username.Id && x.Guild==Context.Guild.Id).Select(x=>x.Name);
+			var Templates = guild.CharacterTemplates.Where(x => x.Owner == Username.Id).Select(x => x.Name);
+
+			string c = characters.Count()==0? Username.Username + " has made no characters.": string.Join(", ", characters);
+			string t = Templates.Count()==0 ? Username.Username + " has made no templates.": string.Join(", ", Templates);
+			string roles = Username.Roles.Count > 0 ? string.Join(", ", Username.Roles.Select(x => x.Mention)) : Username.Username+" has no roles.";
+			var embed = new EmbedBuilder()
+				.WithTitle(Username.Username)
+				.WithThumbnailUrl(Username.GetAvatarUrl())
+				.WithUrl(Username.GetAvatarUrl())
+				.AddField("Joined " + Context.Guild.Name + " at.", Username.JoinedAt.Value.ToString("MM/dd/yyyy h:mm tt"), true)
+				.AddField("Roles", roles, true)
+				.AddField("Characters", c, true)
+				.AddField("Templates", t, true);
+			var msg = await ReplyAsync("", embed: embed.Build());
 			Cache.Add(Context.Message.Id, msg.Id);
 		}
 		[Command("Configure"), Alias("Settings","SetUp","Config")]

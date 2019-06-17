@@ -232,4 +232,12 @@ namespace SAIL.Classes
     }
     public class Exclude : Attribute {}
     public class Untoggleable : Attribute {}
+	public class Document : Attribute
+	{
+		public string DocumentName { get; }
+		public Document(string Name)
+		{
+			DocumentName = Name;
+		}
+	}
 }

@@ -62,15 +62,15 @@ namespace SAIL.Classes
 					sb.AppendLine(string.Join("\n", LoadedChannels.Select(x => x.Name)));
 					break;
             }
-			embed.AddField("Command Listening", sb.ToString());
+			embed.AddField("Command Listening", sb.ToString(), true);
 
 			//Notifications
 			sb.Clear();
 			sb.AppendLine("Notifications " + (Notifications.Module ? "Enabled." : "Disabled"));
 			sb.AppendLine((Notifications.LoadedNotifChannel != null) ? "Notifications being sent to "+Notifications.LoadedNotifChannel.Name : "No channel is set to receive notifications.");
-			sb.AppendLine("User Joined Message: " + (Notifications.JoinedMsg==""?"Disabled":Notifications.JoinedMsg));
-			sb.AppendLine("User Left Message: " + (Notifications.LeftMsg == "" ? "Disabled" : Notifications.LeftMsg));
-			embed.AddField("Notification Settings",sb.ToString());
+			sb.AppendLine("User Joined Message: \n" + (Notifications.JoinedMsg== "" ? "Disabled": "`\""+Notifications.JoinedMsg+ "\"`"));
+			sb.AppendLine("User Left Message: \n" + (Notifications.LeftMsg == "" ? "Disabled" : "`\""+Notifications.LeftMsg+ "\"`"));
+			embed.AddField("Notification Settings",sb.ToString(), true);
 
 			//Statistics
 			sb.Clear();
@@ -80,9 +80,12 @@ namespace SAIL.Classes
 			var C = Program.Database.GetCollection<Character>("Characters").Find(x => x.Guild == Id);
 			sb.AppendLine("Characters: " + ((C != null) ? C.Count().ToString() : "0"));
 
+			sb.AppendLine("Character Templates: " + CharacterTemplates.Count);
+
 			var Q = Program.Database.GetCollection<Quote>("Quotes").Find(x => x.Guild == Id);
 			sb.AppendLine("Quotes: " + ((Q != null) ? Q.Count().ToString() : "0"));
 
+			embed.AddField("Statistics", sb.ToString(), true);
 			//Module Listing
 			sb.Clear();
 			foreach(var x in CommandModules)
@@ -90,7 +93,11 @@ namespace SAIL.Classes
                 sb.AppendLine(x.Key+" "+(x.Value? @" \✅":@" \⛔"));
             }
 			embed.AddField("Command Modules", sb.ToString(),true);
-
+			//List Templates if any
+			if(CharacterTemplates.Count>0)
+			{
+				embed.AddField("Character Templates", string.Join("/n", CharacterTemplates.Select(x => x.Name)),true);
+			}
             return embed.Build();
         }
         public void Load(SocketCommandContext context)
