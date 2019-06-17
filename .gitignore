@@ -5,3 +5,5 @@
 /.vs
 /Discord.Addons.Interactive/bin/Debug
 /Discord.Addons.Interactive/obj
+/Discord.Addon.InteractiveMenus/bin/Debug/netcoreapp2.2
+/Discord.Addon.InteractiveMenus/obj
