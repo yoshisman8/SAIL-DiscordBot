@@ -29,12 +29,17 @@ namespace SAIL.Modules
 				var result = Parser.Parse(DiceExpression, new DiceConfiguration() { DefaultDieSides = 20 }, new MathNetDieRoller());
 				if (cache.Any(x => x.Key == Context.Message.Id)) cache.Remove(Context.Message.Id);
 				await Context.Message.DeleteAsync();
+				var breakdown = new StringBuilder();
+				foreach (var x in result.Results)
+				{
+					breakdown.Append(x.Value+"+");
+				}
 
-				await ReplyAsync("[" + DiceExpression + "] ⇒ " + result.Value);
+				await ReplyAsync(Context.User.Mention+", [" + DiceExpression + "] ⇒ " +breakdown.Remove(breakdown.Length-1,1).ToString()+" = "+ result.Value);
 			}
 			catch (Exception e)
 			{
-				var msg = await ReplyAsync("Error, your dice expression is incorrect!");
+				var msg = await ReplyAsync(Context.User.Mention + ", Error, your dice expression is incorrect!");
 				cache.Add(Context.Message.Id, msg.Id);
 			}
         }
@@ -50,11 +55,11 @@ namespace SAIL.Modules
 				if (cache.Any(x => x.Key == Context.Message.Id)) cache.Remove(Context.Message.Id);
 
 				await Context.Message.DeleteAsync();
-				await ReplyAsync("Maximum result for [" + DiceExpression + "] ⇒ " + result.Value);
+				await ReplyAsync(Context.User.Mention + ", Maximum result for [" + DiceExpression + "] ⇒ " + result.Value);
 			}
 			catch (Exception e)
 			{
-				var msg = await ReplyAsync("Error, your dice expression is incorrect!");
+				var msg = await ReplyAsync(Context.User.Mention + ", Error, your dice expression is incorrect!");
 				cache.Add(Context.Message.Id, msg.Id);
 			}
 		}
@@ -69,11 +74,11 @@ namespace SAIL.Modules
 				if (cache.Any(x => x.Key == Context.Message.Id)) cache.Remove(Context.Message.Id);
 
 				await Context.Message.DeleteAsync();
-				await ReplyAsync("Minimum result for [" + DiceExpression + "] ⇒ " + result.Value);
+				await ReplyAsync(Context.User.Mention + ", Minimum result for [" + DiceExpression + "] ⇒ " + result.Value);
 			}
 			catch (Exception e)
 			{
-				var msg = await ReplyAsync("Error, your dice expression is incorrect!");
+				var msg = await ReplyAsync(Context.User.Mention + ", Error, your dice expression is incorrect!");
 				cache.Add(Context.Message.Id, msg.Id);
 			}
 		}
