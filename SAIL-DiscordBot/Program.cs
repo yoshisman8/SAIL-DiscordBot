@@ -6,17 +6,16 @@ using Discord.WebSocket;
 using Discord.Commands;
 using Discord.Addons.Interactive;
 using Discord.Addons.CommandCache;
+using Discord.Addon.InteractiveMenus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using LiteDB;
 using SAIL.Services;
-using System.Reflection;
 
 namespace SAIL
 {
-    
-    class Program
+
+	class Program
     {
         public static LiteDatabase Database = new LiteDatabase(Path.Combine(Directory.GetCurrentDirectory(),"Data","Database.db"));
         static void Main(string[] args)
@@ -63,7 +62,7 @@ namespace SAIL
                 .AddSingleton<ScheduleService>()
                 .AddSingleton(new CommandCacheService(_client))
                 .AddSingleton(new InteractiveService(_client))
-                
+				.AddSingleton(new MenuService(_client))
                 // Add additional services here...
                 .BuildServiceProvider();
         }

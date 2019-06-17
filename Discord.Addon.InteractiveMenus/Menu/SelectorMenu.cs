@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
@@ -31,9 +32,7 @@ namespace Discord.Addon.InteractiveMenus
 			ListedOptions = Options;
 			Objects = Container;
 			StoredType = Objects[0].GetType();
-			Buttons.Add(new Emoji("⏫"), PreviousOptionAsync());
-			Buttons.Add(new Emoji("⏏"), SelectAsync());
-			Buttons.Add(new Emoji("⏬"), NextOptionAsync());
+			
 		}
 		public override async Task<bool> HandleButtonPress(SocketReaction reaction)
 		{
@@ -46,6 +45,10 @@ namespace Discord.Addon.InteractiveMenus
 		public override async Task<RestUserMessage> Initialize(SocketCommandContext commandContext,MenuService service)
 		{
 			Message = await base.Initialize(commandContext,service);
+			Buttons.Add(new Emoji("⏫"), PreviousOptionAsync());
+			Buttons.Add(new Emoji("⏏"), SelectAsync());
+			Buttons.Add(new Emoji("⏬"), NextOptionAsync());
+			await Message.AddReactionsAsync(Buttons.Select(x => x.Key).ToArray());
 			await ReloadMenu();
 			return Message;
 		}

@@ -9,6 +9,7 @@ using SAIL.Classes;
 using LiteDB;
 using Discord.Addons.CommandCache;
 using Discord.Addons.Interactive;
+using Discord.Addon.InteractiveMenus;
 using Discord.Commands;
 using Discord.WebSocket;
 using Discord.Rest;
@@ -21,6 +22,7 @@ namespace SAIL.Modules
     public class CharacterModule : InteractiveBase<SocketCommandContext>
     {
         public CommandCacheService CommandCache {get;set;}
+		public MenuService MenuService { get; set; }
 
         #region CoreCommands
         [Command("Character"),Alias("Char")]
@@ -31,27 +33,18 @@ namespace SAIL.Modules
             Character character = null;
             if(Name.Length >1)
             {
-                var options = new List<Menu.MenuOption>();
-                foreach(var x in Name)
-                {
-                    options.Add(new Menu.MenuOption(x.Name,async(Menu,index) =>
-                    {
-                        var list = (Character[])Menu.Storage;
-                        return list.ElementAt(index); 
-                    },x.Pages[0].Summary));
-                }
-                var menu = new Menu("Multiple Characters found.",
-                    "Multiple results were found, please specify which one you're trying to see:",
-                    options.ToArray(),Name);
-                character = (Character)await menu.StartMenu(Context,Interactive);
+				string[] options = Name.Select(x => x.Name).ToArray(); 
+                var menu = new SelectorMenu("Multiple results were found, please specify which one you're trying to see:",options,Name);
+				await MenuService.CreateMenu(Context, menu, true);
+				character = (Character)await menu.GetSelectedObject();
                
             }
             else
             {
                 character=Name.FirstOrDefault();
             }
-
-            var msg = await new Controller(character.PagesToEmbed(Context),"Finished Looking at "+character.Name+"'s sheet.").Start(Context,Interactive);
+			var PagedMenu = new PagedEmbed(character.Name+"'s Sheet.",character.PagesToEmbed(Context).ToArray());
+			var msg = await MenuService.CreateMenu(Context, PagedMenu, false);
             
             CommandCache.Add(Context.Message.Id,msg.Id);
         }
@@ -75,8 +68,8 @@ namespace SAIL.Modules
                 .WithDescription(String.Join("\n",names))
                 .Build());
             }
-            
-           var msg = await new Controller(pages,"Finished Browsing all characters.").Start(Context,Interactive);
+			var menu = new PagedEmbed("All Characters.", pages.ToArray());
+			var msg = await MenuService.CreateMenu(Context,menu,false);
             CommandCache.Add(Context.Message.Id,msg.Id);
         }
         [Command("CurrentCharacter"),Alias("CurrentChar","Char","Character")]
@@ -102,9 +95,9 @@ namespace SAIL.Modules
                 return;
             }
 
-            var msg = await new Controller(plr.Active.PagesToEmbed(Context),"Finished Looking at "+plr.Active.Name+"'s sheet.").Start(Context,Interactive);
-            
-            CommandCache.Add(Context.Message.Id,msg.Id);
+			var menu = new PagedEmbed("All Characters.", plr.Active.PagesToEmbed(Context).ToArray());
+			var msg = await MenuService.CreateMenu(Context, menu, false);
+			CommandCache.Add(Context.Message.Id,msg.Id);
         }
         [Command("NewCharacter"), Alias("AddCharacter","CreateCharacter","NewChar","AddChar","CreateChar")]
         [Summary("Create a new character.")] [RequireGuildSettings] [RequireContext(ContextType.Guild)]
@@ -154,20 +147,11 @@ namespace SAIL.Modules
             Character character = null;
             if(Name.Length >1)
             {
-                var options = new List<Menu.MenuOption>();
-                foreach(var x in Name)
-                {
-                    options.Add(new Menu.MenuOption(x.Name, async(Menu,index) =>
-                    {
-                        var list = (Character[])Menu.Storage;
-                        return list.ElementAt(index); 
-                    }));
-                }
-                var menu = new Menu("Multiple Characters found.",
-                    "Multiple results were found, please specify which one you're trying to see:",
-                    options.ToArray(),Name);
-                character = (Character)await menu.StartMenu(Context,Interactive);
-            }
+				string[] options = Name.Select(x => x.Name).ToArray();
+				var menu = new SelectorMenu("Multiple results were found, please specify which one you're trying to see:", options, Name);
+				await MenuService.CreateMenu(Context, menu, true);
+				character = (Character)await menu.GetSelectedObject();
+			}
             else
             {
                 character=Name.FirstOrDefault();
@@ -220,21 +204,11 @@ namespace SAIL.Modules
             Character character = null;
             if(Name.Length >1)
             {
-                var options = new List<Menu.MenuOption>();
-                foreach(var x in Name)
-                {
-                    options.Add(new Menu.MenuOption(x.Name,async (Menu,index) =>
-                    {
-                        var list = (Character[])Menu.Storage;
-                        return list.ElementAt(index); 
-                    }));
-                }
-                var menu = new Menu("Multiple Characters found.",
-                    "Multiple results were found, please specify which one you're trying to assign:",
-                    options.ToArray(),Name);
-                character = (Character)await menu.StartMenu(Context,Interactive);
-               
-            }
+				string[] options = Name.Select(x => x.Name).ToArray();
+				var menu = new SelectorMenu("Multiple results were found, please specify which one you're trying to see:", options, Name);
+				await MenuService.CreateMenu(Context, menu, true);
+				character = (Character)await menu.GetSelectedObject();
+			}
             else
             {
                 character=Name.FirstOrDefault();
@@ -392,39 +366,30 @@ namespace SAIL.Modules
                 return;
             }
             var EditPage = character.Pages[Page-1];
-            var Options = new List<Menu.MenuOption>();
+            var Options = new List<EditorMenu.EditorOption>();
 
             foreach(var x in EditPage.Fields)
             {
-                Options.Add(new Menu.MenuOption(x.Title,
-                async (menu,idx) =>
+                Options.Add(new EditorMenu.EditorOption(x.Title,x.Content,
+                async (mContext) =>
                 {
-                    var prompt =  await menu.Context.Channel.SendMessageAsync("Please reply with the new contents of this field.");
-                    SocketMessage result = await menu.Interactive.NextMessageAsync(menu.Context,true,true,TimeSpan.FromMinutes(3));
+                    var prompt =  await mContext.CommandContext.Channel.SendMessageAsync("Please reply with the new contents of this field.");
+                    SocketMessage result = await mContext.MenuService.NextMessageAsync(mContext.CommandContext,TimeSpan.FromMinutes(3));
                     
                     await prompt.DeleteAsync();
                     
-                    ((Field[])menu.Storage)[idx].Content = result.Content;
+                    ((Field[])mContext.EditableObject)[mContext.CurrentIndex].Content = result.Content;
                     
                     await result.DeleteAsync();
 
-                    menu.Options[idx].Description = result.Content;
+                    mContext.CurrentOption.Description = result.Content;
                     return null;
-                },x.Content,false));
+                }));
             }
-            Options.Add(new Menu.MenuOption("Save Changes",
-            async (Menu,idx)=>
-            {
-                return Menu.Storage;
-            },"Save Changes and update your Character",true));
-            Options.Add(new Menu.MenuOption("Discard Changes",
-            async (Menu,idx) =>
-            {
-                return null;
-            },"Discard all changes and stop editing.",true));
-            
-            Menu editmenu = new Menu("Editing Page "+Page+" of "+character.Name+"'s sheet.","Use the cursor to select the field you want to edit, or press Save/Discard to either save the chanes or discard all changes.",Options.ToArray(),EditPage.Fields.ToArray());
-            Field[] fields = (Field[])await editmenu.StartMenu(Context,Interactive);
+
+			var menu = new EditorMenu("Editing Page " + Page + " of " + character.Name + "'s Sheet", character.Pages[Page], Options.ToArray());
+			await MenuService.CreateMenu(Context, menu,true);
+			Field[] fields = (Field[])await menu.GetObject();
 
             if (fields==null)
             {
@@ -476,16 +441,11 @@ namespace SAIL.Modules
             Field field = null;
             if (fields.Count>1)
             {
-                var options = new List<Menu.MenuOption>();
-                foreach(var x in fields)
-                {
-                    options.Add(new Menu.MenuOption(x.Content,
-                    async (Menu,idx)=>
-                    {
-                        return ((Field[])Menu.Storage)[idx];
-                    },x.Content));
-                }
-                field = (Field)await new Menu("Multiple Fields located","There are multiple fields that start with \""+FieldName+"\". Select which one you want to delete or select cancel to cancel.",options.ToArray(),fields).StartMenu(Context,Interactive);
+				string[] options = fields.Select(x => x.Title).ToArray();
+				var menu = new SelectorMenu("Multiple results were found, please specify which one you're trying to delete:", options, fields.ToArray());
+				await MenuService.CreateMenu(Context, menu, true);
+				field = (Field)await menu.GetSelectedObject();
+
             }
             else field = fields.FirstOrDefault();
 
@@ -533,17 +493,11 @@ namespace SAIL.Modules
             Field field = null;
             if (fields.Count>1)
             {
-                var options = new List<Menu.MenuOption>();
-                foreach(var x in fields)
-                {
-                    options.Add(new Menu.MenuOption(x.Content,
-                    async (Menu,idx)=>
-                    {
-                        return ((Field[])Menu.Storage)[idx];
-                    },x.Content));
-                }
-                field = (Field)await new Menu("Multiple Fields located","There are multiple fields that start with \""+OldName+"\". Select which one you want to delete or select cancel to cancel.",options.ToArray(),fields).StartMenu(Context,Interactive);
-            }
+				string[] options = fields.Select(x => x.Title).ToArray();
+				var menu = new SelectorMenu("Multiple results were found, please specify which one you're trying to delete:", options, fields.ToArray());
+				await MenuService.CreateMenu(Context, menu, true);
+				field = (Field)await menu.GetSelectedObject();
+			}
             else field = fields.FirstOrDefault();
 
             var index = character.Pages[Page-1].Fields.IndexOf(field);
@@ -662,86 +616,78 @@ namespace SAIL.Modules
 
             var pagetoedit = character.Pages[index];
 
-            var MenuOption = new Menu.MenuOption[]
+            var MenuOption = new EditorMenu.EditorOption[]
             {
-                new Menu.MenuOption("Change Page description",
-                async (m,i)=>
+                new EditorMenu.EditorOption("Change Page description",pagetoedit.Summary,
+				async (m)=>
                 {
-                    var prompt =  await m.Context.Channel.SendMessageAsync("Please reply with the new description for this page.");
-                    SocketMessage result = await m.Interactive.NextMessageAsync(m.Context,true,true,TimeSpan.FromMinutes(3));
+                    var prompt =  await m.CommandContext.Channel.SendMessageAsync("Please reply with the new description for this page.");
+                    SocketMessage result = await m.MenuService.NextMessageAsync(m.CommandContext,TimeSpan.FromMinutes(3));
                     
                     await prompt.DeleteAsync();
                     
-                    ((CharPage)m.Storage).Summary = result.Content;
+                    ((CharPage)m.EditableObject).Summary = result.Content;
                     
                     await result.DeleteAsync();
 
-                    m.Options[i].Description = "Current Description:\n"+result.Content;
+                    m.CurrentOption.Description = "Current Description:\n"+result.Content;
                     return null;
-                },"Current Description:\n"+pagetoedit.Summary,false),
-                new Menu.MenuOption("Set page's thumnail image",
-                async (m,i)=>
+                }),
+                new EditorMenu.EditorOption("Set page's thumnail image","Current thumbnail: "+pagetoedit.Thumbnail,
+				async (m)=>
                 {
-                    var prompt =  await m.Context.Channel.SendMessageAsync("Please reply with the new thumbnail image url for this page or set it to any non-url text to remove it.");
-                    SocketMessage result = await m.Interactive.NextMessageAsync(m.Context,true,true,TimeSpan.FromMinutes(3));
+                    var prompt =  await m.CommandContext.Channel.SendMessageAsync("Please reply with the new thumbnail image url for this page or set it to any non-url text to remove it.");
+                    SocketMessage result = await m.MenuService.NextMessageAsync(m.CommandContext,TimeSpan.FromMinutes(3));
                     
                     await prompt.DeleteAsync();
                     
-                    ((CharPage)m.Storage).Thumbnail = result.Content;
+                    ((CharPage)m.EditableObject).Thumbnail = result.Content;
                     
                     await result.DeleteAsync();
 
-                    m.Options[i].Description = "Current thumbnail: "+result.Content;
+                    m.CurrentOption.Description = "Current thumbnail: "+result.Content;
                     return null;
-                },"Current thumbnail: "+pagetoedit.Thumbnail,false),
-                new Menu.MenuOption("Set page's Large image",
-                async (m,i)=>
+                }),
+                new EditorMenu.EditorOption("Set page's Large image","Current image: "+pagetoedit.Image,
+				async (m)=>
                 {
-                    var prompt =  await m.Context.Channel.SendMessageAsync("Please reply with the new image url for this page or set it to any non-url text to remove it.");
-                    SocketMessage result = await m.Interactive.NextMessageAsync(m.Context,true,true,TimeSpan.FromMinutes(3));
+                    var prompt =  await m.CommandContext.Channel.SendMessageAsync("Please reply with the new image url for this page or set it to any non-url text to remove it.");
+                    SocketMessage result = await m.MenuService.NextMessageAsync(m.CommandContext,TimeSpan.FromMinutes(3));
                     
                     await prompt.DeleteAsync();
                     
-                    ((CharPage)m.Storage).Image = result.Content;
+                    ((CharPage)m.EditableObject).Image = result.Content;
                     
                     await result.DeleteAsync();
 
-                    m.Options[i].Description = "Current image: "+result.Content;
+                    m.CurrentOption.Description = "Current image: "+result.Content;
                     return null;
-                },"Current image: "+pagetoedit.Image,false),
-                new Menu.MenuOption("Set Page Color",
-                async (m,i)=>
+                }),
+				// -------------------
+                new EditorMenu.EditorOption("Set Page Color","[Color Picker](https://www.rapidtables.com/web/color/html-color-codes.html).",
+				async (m)=>
                 {
-                    var prompt =  await m.Context.Channel.SendMessageAsync("Please send the __Hex code__ (ie: 00BFFF, not including the #) of the color you want to set. Invalid Hex Codes will be ignored.");
-                    SocketMessage result = await m.Interactive.NextMessageAsync(m.Context,true,true,TimeSpan.FromMinutes(3));
+                    var prompt =  await m.CommandContext.Channel.SendMessageAsync("Please send the __Hex code__ (ie: 00BFFF, not including the #) of the color you want to set. Invalid Hex Codes will be ignored.");
+                    SocketMessage result = await m.MenuService.NextMessageAsync(m.CommandContext,TimeSpan.FromMinutes(3));
                     
                     await prompt.DeleteAsync();
 
                     if(uint.TryParse(result.Content,NumberStyles.HexNumber,null,out uint colorvalue))
                     {
                         var color = new Color(colorvalue);
-                        ((CharPage)m.Storage).Color = (int)color.RawValue;
-                        m.Options[i].Description = "[Color Picker](https://www.rapidtables.com/web/color/html-color-codes.html).\nColor Assigned: "+color.R+", "+color.G+", "+color.B+".";
+                        ((CharPage)m.EditableObject).Color = (int)color.RawValue;
+                        m.CurrentOption.Description = "[Color Picker](https://www.rapidtables.com/web/color/html-color-codes.html).\nColor Assigned: "+color.R+", "+color.G+", "+color.B+".";
                     }
                     await result.DeleteAsync();
 
                     return null;
-                },"[Color Picker](https://www.rapidtables.com/web/color/html-color-codes.html).",false),
-                new Menu.MenuOption("Save Changes",
-                async (Menu,idx)=>
-                {
-                    return Menu.Storage;
-                },"Save Changes and update your Character",true),
-                new Menu.MenuOption("Discard Changes",
-                async (Menu,idx) =>
-                {
-                    return null;
-                },"Discard all changes and stop editing.",true)
+                })
             };
 
-            var menu = await new Menu("Editing page "+PageNumber+" of "+character.Name+"'s sheet."," ",MenuOption,pagetoedit).StartMenu(Context,Interactive);
-
-            if (menu == null)
+            var menu = new EditorMenu("Editing page "+PageNumber+" of "+character.Name+"'s sheet.",pagetoedit,MenuOption);
+			await MenuService.CreateMenu(Context, menu, true);
+			var pag = await menu.GetObject();
+            if (pag == null)
             {
                 var msg1 = await ReplyAsync("Discarded all changes.");
                 CommandCache.Add(Context.Message.Id,msg1.Id);
@@ -749,7 +695,7 @@ namespace SAIL.Modules
             }
             else
             {
-                character.Pages[index] = (CharPage)menu;
+                character.Pages[index] = (CharPage)pag;
 
                 var col = Program.Database.GetCollection<Character>("Characters");
                 col.Update(character);
@@ -824,18 +770,11 @@ namespace SAIL.Modules
             var templates  = guild.CharacterTemplates.FindAll(x=>x.Name.ToLower().StartsWith(TemplateName.ToLower()));
             if(templates.Count>1)
             {
-                var options = new List<Menu.MenuOption>();
-                foreach(var x in templates)
-                {
-                    options.Add(new Menu.MenuOption(x.Name,
-                    async(m,i)=>
-                    {
-                        return ((Template[])m.Storage)[i];
-                    }));
-                }
-
-                templates[0] = (Template)await new Menu("Multiple Templates Found.","Multiple Templates found, please choose one.",options.ToArray(),templates.ToArray()).StartMenu(Context,Interactive);
-            }
+				string[] options = templates.Select(x => x.Name).ToArray();
+				var menu = new SelectorMenu("Multiple templates were found, please specify which one you're trying to copy from:", options, templates.ToArray());
+				await MenuService.CreateMenu(Context, menu, true);
+				templates[0] = (Template)await menu.GetSelectedObject();
+			}
             Template temp = templates[0];
 
             var character = new Character()

@@ -36,20 +36,25 @@ namespace Discord.Addon.InteractiveMenus
 			StoredObject = Objec_To_Edit;
 			Options = Editor_Options.ToList();
 
-			Buttons.Add(new Emoji("⏫"), PreviousOptionAsync());
-			Buttons.Add(new Emoji("⏏"), SelectAsync());
-			Buttons.Add(new Emoji("⏬"), NextOptionAsync());
-
-			Options.Add(new EditorOption("Save Changes","Save all changes made.",null));
-			Options.Add(new EditorOption("Discard Changes", "Discard all changes made.", null));
+			
 		}
 		public override async Task<RestUserMessage> Initialize(SocketCommandContext commandContext,MenuService menuService)
 		{
 			Message = await base.Initialize(commandContext, menuService);
+			Buttons.Add(new Emoji("⏫"), PreviousOptionAsync());
+			Buttons.Add(new Emoji("⏏"), SelectAsync());
+			Buttons.Add(new Emoji("⏬"), NextOptionAsync());
+
+			await Message.AddReactionsAsync(Buttons.Select(x => x.Key).ToArray());
+			Options.Add(new EditorOption("Save Changes", "Save all changes made.", null));
+			Options.Add(new EditorOption("Discard Changes", "Discard all changes made.", null));
 			await ReloadMenu();
 			return Message;
 		}
-
+		/// <summary>
+		/// Returns the Object being edited or Null if changes are discarded.
+		/// </summary>
+		/// <returns>Object being edited or Null</returns>
 		public async Task<object> GetObject()
 		{
 			while (Active) await Task.Delay(1000);
@@ -75,7 +80,7 @@ namespace Discord.Addon.InteractiveMenus
 					Active = false;
 					return true;
 				default:
-					var context = new OptionContext(Context, Service, StoredObject);
+					var context = new OptionContext(Context, Service, ref StoredObject,Cursor,ref Options);
 					StoredObject = await Options[Cursor].Logic(context);
 					break;
 			}
@@ -102,7 +107,7 @@ namespace Discord.Addon.InteractiveMenus
 		}
 		public class EditorOption
 		{
-			public Func<OptionContext, Task<object>> Logic;
+			public Func<OptionContext, Task<object>> Logic { get; private set; }
 			public string Name;
 			public string Description;
 			/// <summary>
@@ -132,11 +137,21 @@ namespace Discord.Addon.InteractiveMenus
 			/// The object being edited.
 			/// </summary>
 			public object EditableObject { get; set; }
-			public OptionContext(SocketCommandContext commandContext, MenuService service, object editable)
+			/// <summary>
+			/// The current Cursor Index of the editor.
+			/// </summary>
+			public int CurrentIndex { get; private set; }
+			/// <summary>
+			/// The currently selected option. Changes done here are affect the menu.
+			/// </summary>
+			public EditorOption CurrentOption { get; set; }
+			public OptionContext(SocketCommandContext commandContext, MenuService service, ref object editable, int Index,ref List<EditorOption> option)
 			{
 				CommandContext = commandContext;
 				MenuService = service;
 				EditableObject = editable;
+				CurrentIndex = Index;
+				CurrentOption = option[Index];
 			}
 		}
 	}
