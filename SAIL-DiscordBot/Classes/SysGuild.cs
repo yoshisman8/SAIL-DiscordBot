@@ -33,7 +33,7 @@ namespace SAIL.Classes
         public List<ulong> Channels {get;set;} = new List<ulong>();
 		public NotificationSettings Notifications { get; set; } = new NotificationSettings();
 		public List<Template> CharacterTemplates {get;set;} = new List<Template>();
-
+		public List<ulong> AssignableRoles { get; set; } = new List<ulong>();
 
         [BsonIgnore]
         private SocketGuild Guild {get;set;}

@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using LiteDB;
 using Discord.Addons.CommandCache;
 using Discord.Addons.Interactive;
+using Discord.Addon.InteractiveMenus;
 using Discord.Commands;
 using Discord.WebSocket;
 using Discord.Rest;
@@ -22,7 +22,7 @@ namespace SAIL.Modules
     public class QuoteModule : InteractiveBase<SocketCommandContext>
     {
         public CommandCacheService CommandCache {get;set;}
-        
+        public MenuService MenuService { get; set; }
 
         [Command("Quote"),Alias("Q")]
         [RequireGuildSettings]
@@ -48,8 +48,8 @@ namespace SAIL.Modules
                 var msg = await Context.Channel.SendMessageAsync("",embed: emb);
                 
                 CommandCache.Add(Context.Message.Id,msg.Id);
-                var callback = new ReactionCallbackData("",emb,false,false,TimeSpan.FromMinutes(3));
-                callback.WithCallback(emote, async (C,R) => await GetContext(Context,R,msg,Interactive,Quote,callback));
+                var callback = new ReactionCallbackData("",emb,true,true);
+                callback.WithCallback(emote, async (C,R) => await GetContext(C,msg,MenuService,Quote));
                 Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,callback));
                 await msg.AddReactionAsync(emote);
             }
@@ -89,7 +89,9 @@ namespace SAIL.Modules
                         await x.GenerateContext(Context);
                         Pages.Add(StaticMethods.EmbedMessage(Context,x.Context.Channel,x.Context.Message));
                     }
-                    var msg = await new Controller(Pages,"Done reading quotes.").Start(Context,Interactive);
+					var menu = new PagedEmbed("Quote Search Results for \"" + Query + "\"", Pages.ToArray());
+
+					var msg = await MenuService.CreateMenu(Context, menu, false);
                     CommandCache.Add(Context.Message.Id,msg.Id);
                 }
                 else
@@ -144,8 +146,8 @@ namespace SAIL.Modules
                     var msg = await Context.Channel.SendMessageAsync("",embed: emb);
                     
                     CommandCache.Add(Context.Message.Id,msg.Id);
-                    var callback = new ReactionCallbackData("",emb,false,false,TimeSpan.FromMinutes(3));
-                    callback.WithCallback(emote, async (C,R) => await GetContext(Context,R,msg,Interactive,Quote,callback));
+                    var callback = new ReactionCallbackData("",emb,true,true);
+                    callback.WithCallback(emote, async (C,R) => await GetContext(C,msg,MenuService,Quote));
                     Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,callback));
                     await msg.AddReactionAsync(emote);
                 }
@@ -158,10 +160,9 @@ namespace SAIL.Modules
             }
         }
 
-        public async Task GetContext(SocketCommandContext c, SocketReaction r, RestUserMessage msg, InteractiveService interactive, Quote quote, ReactionCallbackData callback)
+        public async Task GetContext(SocketCommandContext c, RestUserMessage msg, MenuService menuService, Quote quote)
         {
             await msg.RemoveAllReactionsAsync();
-            interactive.RemoveReactionCallback(msg);
 
             var channel = c.Guild.GetTextChannel(quote.Context.Channel.Id);
             var raw = await quote.Context.Channel.GetMessagesAsync(quote.Context.Message.Id,Direction.Before,5).FlattenAsync();
@@ -173,9 +174,8 @@ namespace SAIL.Modules
             }
             Pages.Add(StaticMethods.EmbedMessage(c,quote.Context.Channel,quote.Context.Message));
 
-            await new Controller(Pages,"Finished looking at the context of a Quote.",msg).Start(Context,Interactive);
-
-            await msg.ModifyAsync(x=> x.Content = "Showing the last 5 messages before this Quote.");
+            var menu = new PagedEmbed("Context for a quote.", Pages.ToArray());
+			await menuService.CreateMenu(c, menu, false);
         }
     }
 }

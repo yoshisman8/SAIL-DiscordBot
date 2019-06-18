@@ -1,9 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Discord.Addons.PassiveInteractive" Version="2.0.4" />
     <PackageReference Include="Discord.Net" Version="2.1.1" />
     <PackageReference Include="LiteDB" Version="4.1.4" />
     <PackageReference Include="MathNet.Numerics" Version="4.8.1" />
@@ -15,8 +16,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="OnePlat.DiceNotation" Version="2.0.2" />
     <PackageReference Include="OnePlat.DiceNotation.ExtendedDieRollers" Version="2.0.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Discord.Addons.Interactive\Discord.Addons.Interactive.csproj" />
+    <PackageReference Include="Discord.Addon.InteractiveMenus" Version="1.0.0"/>
   </ItemGroup>
 </Project>

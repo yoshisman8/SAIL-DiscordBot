@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.28803.202
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SAIL-DiscordBot", "SAIL-DiscordBot\SAIL-DiscordBot.csproj", "{F1CAB033-A05A-4087-B16F-53BAE9AFD699}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Discord.Addons.Interactive", "Discord.Addons.Interactive\Discord.Addons.Interactive.csproj", "{A1FD8521-DAF6-4084-B118-32360A71CE30}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{F1CAB033-A05A-4087-B16F-53BAE9AFD699}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1CAB033-A05A-4087-B16F-53BAE9AFD699}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1CAB033-A05A-4087-B16F-53BAE9AFD699}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A1FD8521-DAF6-4084-B118-32360A71CE30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A1FD8521-DAF6-4084-B118-32360A71CE30}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A1FD8521-DAF6-4084-B118-32360A71CE30}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A1FD8521-DAF6-4084-B118-32360A71CE30}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -10,7 +10,7 @@ using System.Text;
 using Discord.Rest;
 using System.Reflection;
 
-namespace SAIL.Classes
+namespace SAIL.Classes.Legacy
 {
     public class Controller
     {

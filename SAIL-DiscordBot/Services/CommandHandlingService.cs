@@ -115,13 +115,13 @@ namespace SAIL.Services
 
             foreach(var y in servers)
             {
-                var mds = y.CommandModules;
+                var mds = new Dictionary<string,bool>(y.CommandModules);
                 foreach (var x in modules)
                 {
-                    foreach(var z in y.CommandModules)
-                    {
-                        if (!modules.Any(m=>m.Name == z.Key)) mds.Remove(z.Key);
-                    }
+					foreach (var z in y.CommandModules)
+					{
+						if (!modules.Any(m => m.Name == z.Key)) mds.Remove(z.Key);
+					}
                     if (!y.CommandModules.Any(m=>m.Key == x.Name)) y.CommandModules.Add(x.Name,true);
                 }
                 
