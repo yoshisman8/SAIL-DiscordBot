@@ -309,7 +309,7 @@ namespace SAIL.Modules
 			if (guild.AssignableRoles.Contains(Role.Id))
 			{
 				var user = (SocketGuildUser)Context.User;
-				if (user.Roles.Contains(Role))
+				if (!user.Roles.Contains(Role))
 				{
 					await user.AddRoleAsync(Role);
 					var msg = await ReplyAsync(Context.User.Mention + ", you've been asigned the role " + Role.Name);
