@@ -297,7 +297,7 @@ namespace SAIL.Modules
 				Cache.Add(Context.Message.Id, msg.Id);
 			}
 		}
-		[Command("Role"),Alias("SelfAssign")]
+		[Command("Role"),Alias("SelfAssign")] [Priority(0)]
 		[RequireBotPermission(GuildPermission.ManageRoles)]
 		[Summary("Assigns you one of the self-assignable roles")]
 		public async Task SelfAssign([Remainder]SocketRole Role)
@@ -309,11 +309,26 @@ namespace SAIL.Modules
 			if (guild.AssignableRoles.Contains(Role.Id))
 			{
 				var user = (SocketGuildUser)Context.User;
-				await user.AddRoleAsync(Role);
-				var msg = await ReplyAsync(Context.User.Mention+", you've been asigned the role "+Role.Name);
+				if (user.Roles.Contains(Role))
+				{
+					await user.AddRoleAsync(Role);
+					var msg = await ReplyAsync(Context.User.Mention + ", you've been asigned the role " + Role.Name);
+					Cache.Add(Context.Message.Id, msg.Id);
+				}
+				else
+				{
+					await user.RemoveRoleAsync(Role);
+					var msg = await ReplyAsync(Context.User.Mention + ", you resigned the role " + Role.Name);
+					Cache.Add(Context.Message.Id, msg.Id);
+				}
+			}
+			else
+			{
+				var msg = await ReplyAsync(Context.User.Mention + ", this role isn't self-assignable.");
+				Cache.Add(Context.Message.Id, msg.Id);
 			}
 		}
-		[Command("Role"), Alias("SelfAssign")]
+		[Command("Role"), Alias("SelfAssign")] [Priority(1)]
 		[RequireUserPermission(GuildPermission.ManageGuild)]
 		[RequireBotPermission(GuildPermission.ManageRoles)]
 		[Summary("Sets up a role for self-assigment.")]
