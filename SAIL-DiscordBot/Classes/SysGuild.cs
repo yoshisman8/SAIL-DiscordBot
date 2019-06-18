@@ -93,11 +93,15 @@ namespace SAIL.Classes
                 sb.AppendLine(x.Key+" "+(x.Value? @" \✅":@" \⛔"));
             }
 			embed.AddField("Command Modules", sb.ToString(),true);
-			//List Templates if any
-			if(CharacterTemplates.Count>0)
+			//Self Assigned roles
+			sb.Clear();
+			foreach(var x in AssignableRoles)
 			{
-				embed.AddField("Character Templates", string.Join("/n", CharacterTemplates.Select(x => x.Name)),true);
+				var r = Guild.GetRole(x);
+				sb.AppendLine(r.Name);
 			}
+			if (sb.ToString() == "") sb.Append("There are no self-assignable roles.");
+			embed.AddField("Self-Assignable Roles", sb.ToString(), true);
             return embed.Build();
         }
         public void Load(SocketCommandContext context)
