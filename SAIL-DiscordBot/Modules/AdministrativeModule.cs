@@ -104,7 +104,7 @@ namespace SAIL.Modules
 							m.CurrentOption.Description = "Currently looking for commands on all channels";
 						break;
 					}
-					return null;
+					return m.EditableObject;
 				}),
 				// -------------------------------------------------------------------
 				new EditorMenu.EditorOption("Set Channels to be White/Black listed",
@@ -127,7 +127,7 @@ namespace SAIL.Modules
 
 					await response.DeleteAsync();
 					await prompt.DeleteAsync();
-					return null;
+					return C.EditableObject;
 				}),
 			};
 			var menu = new EditorMenu("Black/Whitelist settings for " + Context.Guild.Name, guild, options);
@@ -163,7 +163,7 @@ namespace SAIL.Modules
 				{
 					((SysGuild)menu.EditableObject).Notifications.Module ^= true;
 					menu.CurrentOption.Description = "Currently: "+(((SysGuild)menu.EditableObject).Notifications.Module?"Enablbed ✅":"Disabled ⛔");
-					return null;
+					return menu.EditableObject;
 				}),
 				// -------------------------------------------------------------------
 				new EditorMenu.EditorOption("Set Notification Channel","Notification channel: "+not,
@@ -183,7 +183,7 @@ namespace SAIL.Modules
 					}
 					await response.DeleteAsync();
 					await prompt.DeleteAsync();
-					return null;
+					return menu.EditableObject;
 				}),
 				// -------------------------------------------------------------------
 				new EditorMenu.EditorOption("Set User Joined/Welcome Message","Currently: "+(guild.Notifications.JoinedMsg==""?"Disabled ⛔":guild.Notifications.JoinedMsg),
@@ -201,7 +201,7 @@ namespace SAIL.Modules
 
 					await response.DeleteAsync();
 					await prompt.DeleteAsync();
-					return null;
+					return menu.EditableObject;
 				}),
 				// -------------------------------------------------------------------
 				new EditorMenu.EditorOption("Set User Left/Farewell Message","Currently: "+(guild.Notifications.JoinedMsg==""?"Disabled ⛔":guild.Notifications.JoinedMsg),
@@ -219,7 +219,7 @@ namespace SAIL.Modules
 
 					await response.DeleteAsync();
 					await prompt.DeleteAsync();
-					return null;
+					return menu.EditableObject;
 				})
 			};
 
@@ -260,7 +260,7 @@ namespace SAIL.Modules
 						{
 							((SysGuild)Ctx.EditableObject).CommandModules[x.Name] ^= true;
 							Ctx.CurrentOption.Description = "Currently " + (((SysGuild)Ctx.EditableObject).CommandModules[x.Name] ? "Enablbed ✅" : "Disabled ⛔");
-							return null;
+							return Ctx.EditableObject;
 						}));
 			}
 

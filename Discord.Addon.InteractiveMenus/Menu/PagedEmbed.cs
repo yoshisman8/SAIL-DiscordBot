@@ -28,22 +28,22 @@ namespace Discord.Addon.InteractiveMenus
 		public async override Task<RestUserMessage> Initialize(SocketCommandContext commandContext, MenuService service)
 		{
 			Message = await base.Initialize(commandContext, service);
-			Buttons.Add(new Emoji("⏮"), FirstPageAsync());
-			Buttons.Add(new Emoji("⏪"), PreviousPageAsync());
-			Buttons.Add(new Emoji("⏯"), Minimize());
-			Buttons.Add(new Emoji("⏩"), NextPageAsync());
-			Buttons.Add(new Emoji("⏭"), LastPageAsync());
+			Buttons.Add(new Emoji("⏮"), FirstPageAsync);
+			Buttons.Add(new Emoji("⏪"), PreviousPageAsync);
+			Buttons.Add(new Emoji("⏯"), Minimize);
+			Buttons.Add(new Emoji("⏩"), NextPageAsync);
+			Buttons.Add(new Emoji("⏭"), LastPageAsync);
 			await Message.AddReactionsAsync(Buttons.Select(x => x.Key).ToArray());
 			await RefeshEmbed();
 			return Message;
 		}
 		public async override Task<bool> HandleButtonPress(SocketReaction reaction)
 		{
-			if (!Buttons.TryGetValue(reaction.Emote, out Task<bool> Logic))
+			if (!Buttons.TryGetValue(reaction.Emote, out Func<Task<bool>> Logic))
 			{
 				return false;
 			}
-			return await Logic;
+			return await Logic();
 		}
 
 		public async Task<bool> FirstPageAsync()
@@ -81,7 +81,10 @@ namespace Discord.Addon.InteractiveMenus
 		public async Task RefeshEmbed()
 		{
 			await Message.ModifyAsync(x => x.Content = " ");
-			if (Minimized) await Message.ModifyAsync(x=>x.Embed=new EmbedBuilder().WithDescription("Minimized \"" + _Name + "\".").Build());
+			if (Minimized)
+			{
+				await Message.ModifyAsync(x => x.Embed = new EmbedBuilder().WithDescription("Minimized \"" + _Name + "\".").Build());
+			}
 			else
 			{
 				await Message.ModifyAsync(x => x.Embed = _Pages[Index]);

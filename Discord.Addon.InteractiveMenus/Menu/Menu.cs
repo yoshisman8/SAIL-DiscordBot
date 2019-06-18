@@ -11,7 +11,7 @@ namespace Discord.Addon.InteractiveMenus
 	public abstract class Menu
 	{
 		public ICriteria<SocketReaction>[] Criterias { get; set; }
-		public Dictionary<IEmote,Task<bool>> Buttons = new Dictionary<IEmote, Task<bool>>();
+		public Dictionary<IEmote, Func<Task<bool>>> Buttons = new Dictionary<IEmote, Func<Task<bool>>>();
 		public SocketCommandContext Context;
 		public RestUserMessage Message;
 		public MenuService Service;
@@ -28,7 +28,7 @@ namespace Discord.Addon.InteractiveMenus
 		{
 			if (Criterias == null || Criterias.Length == 0) return true;
 			bool[] results = new bool[Criterias.Length];
-			for(int i = 0;i<=results.Length;i++)
+			for(int i = 0;i<results.Length;i++)
 			{
 				results[i] = await Criterias[i].JudgeCriteria(reaction);
 			}

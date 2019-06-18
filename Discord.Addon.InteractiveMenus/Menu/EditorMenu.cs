@@ -18,11 +18,11 @@ namespace Discord.Addon.InteractiveMenus
 		private bool Active = true;
 		public async override Task<bool> HandleButtonPress(SocketReaction reaction)
 		{
-			if (!Buttons.TryGetValue(reaction.Emote, out Task<bool> Logic))
+			if (!Buttons.TryGetValue(reaction.Emote, out Func<Task<bool>> Logic))
 			{
 				return false;
 			}
-			return await Logic;
+			return await Logic();
 		}
 		/// <summary>
 		/// A menu that allows you to edit a single object.
@@ -41,9 +41,9 @@ namespace Discord.Addon.InteractiveMenus
 		public override async Task<RestUserMessage> Initialize(SocketCommandContext commandContext,MenuService menuService)
 		{
 			Message = await base.Initialize(commandContext, menuService);
-			Buttons.Add(new Emoji("⏫"), PreviousOptionAsync());
-			Buttons.Add(new Emoji("⏏"), SelectAsync());
-			Buttons.Add(new Emoji("⏬"), NextOptionAsync());
+			Buttons.Add(new Emoji("⏫"), PreviousOptionAsync);
+			Buttons.Add(new Emoji("⏏"), SelectAsync);
+			Buttons.Add(new Emoji("⏬"), NextOptionAsync);
 
 			await Message.AddReactionsAsync(Buttons.Select(x => x.Key).ToArray());
 			Options.Add(new EditorOption("Save Changes", "Save all changes made.", null));
@@ -58,12 +58,13 @@ namespace Discord.Addon.InteractiveMenus
 		public async Task<object> GetObject()
 		{
 			while (Active) await Task.Delay(1000);
+			await Message.DeleteAsync();
 			return StoredObject;
 		}
 		private async Task<bool> NextOptionAsync()
 		{
 			if (Cursor + 1 >= Options.Count) Cursor = 0;
-			else Cursor--;
+			else Cursor++;
 			await ReloadMenu();
 			return false;
 		}
@@ -82,6 +83,7 @@ namespace Discord.Addon.InteractiveMenus
 				default:
 					var context = new OptionContext(Context, Service, ref StoredObject,Cursor,ref Options);
 					StoredObject = await Options[Cursor].Logic(context);
+					await ReloadMenu();
 					break;
 			}
 			return false;

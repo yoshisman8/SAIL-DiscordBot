@@ -95,7 +95,7 @@ namespace SAIL.Modules
                 return;
             }
 
-			var menu = new PagedEmbed("All Characters.", plr.Active.PagesToEmbed(Context).ToArray());
+			var menu = new PagedEmbed(plr.Active.Name+"'s sheet.", plr.Active.PagesToEmbed(Context).ToArray());
 			var msg = await MenuService.CreateMenu(Context, menu, false);
 			CommandCache.Add(Context.Message.Id,msg.Id);
         }
@@ -383,11 +383,11 @@ namespace SAIL.Modules
                     await result.DeleteAsync();
 
                     mContext.CurrentOption.Description = result.Content;
-                    return null;
+                    return mContext.EditableObject;
                 }));
             }
 
-			var menu = new EditorMenu("Editing Page " + Page + " of " + character.Name + "'s Sheet", character.Pages[Page], Options.ToArray());
+			var menu = new EditorMenu("Editing Page " + Page + " of " + character.Name + "'s Sheet", character.Pages[Page].Fields.ToArray(), Options.ToArray());
 			await MenuService.CreateMenu(Context, menu,true);
 			Field[] fields = (Field[])await menu.GetObject();
 
@@ -631,7 +631,7 @@ namespace SAIL.Modules
                     await result.DeleteAsync();
 
                     m.CurrentOption.Description = "Current Description:\n"+result.Content;
-                    return null;
+                    return m.EditableObject;
                 }),
                 new EditorMenu.EditorOption("Set page's thumnail image","Current thumbnail: "+pagetoedit.Thumbnail,
 				async (m)=>
@@ -646,7 +646,7 @@ namespace SAIL.Modules
                     await result.DeleteAsync();
 
                     m.CurrentOption.Description = "Current thumbnail: "+result.Content;
-                    return null;
+                    return m.EditableObject;
                 }),
                 new EditorMenu.EditorOption("Set page's Large image","Current image: "+pagetoedit.Image,
 				async (m)=>
@@ -661,7 +661,7 @@ namespace SAIL.Modules
                     await result.DeleteAsync();
 
                     m.CurrentOption.Description = "Current image: "+result.Content;
-                    return null;
+                    return m.EditableObject;
                 }),
 				// -------------------
                 new EditorMenu.EditorOption("Set Page Color","[Color Picker](https://www.rapidtables.com/web/color/html-color-codes.html).",
@@ -680,7 +680,7 @@ namespace SAIL.Modules
                     }
                     await result.DeleteAsync();
 
-                    return null;
+                    return m.EditableObject;
                 })
             };
 

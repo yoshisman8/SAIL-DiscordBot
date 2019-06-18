@@ -36,18 +36,18 @@ namespace Discord.Addon.InteractiveMenus
 		}
 		public override async Task<bool> HandleButtonPress(SocketReaction reaction)
 		{
-			if (!Buttons.TryGetValue(reaction.Emote, out Task<bool> Logic))
+			if (!Buttons.TryGetValue(reaction.Emote, out Func<Task<bool>> Logic))
 			{
 				return false;
 			}
-			return await Logic;
+			return await Logic();
 		}
 		public override async Task<RestUserMessage> Initialize(SocketCommandContext commandContext,MenuService service)
 		{
 			Message = await base.Initialize(commandContext,service);
-			Buttons.Add(new Emoji("⏫"), PreviousOptionAsync());
-			Buttons.Add(new Emoji("⏏"), SelectAsync());
-			Buttons.Add(new Emoji("⏬"), NextOptionAsync());
+			Buttons.Add(new Emoji("⏫"), PreviousOptionAsync);
+			Buttons.Add(new Emoji("⏏"), SelectAsync);
+			Buttons.Add(new Emoji("⏬"), NextOptionAsync);
 			await Message.AddReactionsAsync(Buttons.Select(x => x.Key).ToArray());
 			await ReloadMenu();
 			return Message;
@@ -69,7 +69,7 @@ namespace Discord.Addon.InteractiveMenus
 		private async Task<bool> SelectAsync()
 		{
 			Active = false;
-			await Message.ModifyAsync(x => x.Content = "Selected `" + ListedOptions[Cursor] + "`.");
+			await Message.DeleteAsync();
 			return true;
 		}
 		private async Task ReloadMenu()
@@ -79,7 +79,7 @@ namespace Discord.Addon.InteractiveMenus
 			{
 				sb.AppendLine(i==Cursor?"> "+ListedOptions[i]+" <": ListedOptions[i]);
 			}
-			await Message.ModifyAsync(x => x.Content = sb.ToString());
+			await Message.ModifyAsync(x => x.Content =MenuMessage+"\n"+ sb.ToString());
 		}
 		/// <summary>
 		/// Gets the option selected by the user.

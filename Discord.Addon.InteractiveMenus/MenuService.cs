@@ -21,6 +21,7 @@ namespace Discord.Addon.InteractiveMenus
 		{
 			discord = _discord;
 			discord.ReactionAdded += HandleReaction;
+			Menus = new Dictionary<ulong, Menu>();
 			DefaultTimeout = ResponseTimeout ?? TimeSpan.FromMinutes(1);
 		}
 		/// <summary>
@@ -141,12 +142,13 @@ namespace Discord.Addon.InteractiveMenus
 			// Let the menu handle the reaction
 			_ = Task.Run(async () =>
 			   {
-				   await message.Value.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
-				   if(await menu.HandleButtonPress(reaction))
-				   {
-					   Menus.Remove(message.Id);
-				   }
-				   await Task.Delay(500);
+					var msg =  (RestUserMessage)await channel.GetMessageAsync(message.Id);
+				   msg?.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
+					if(await menu.HandleButtonPress(reaction))
+					{
+						Menus.Remove(message.Id);
+					}
+					await Task.Delay(500);
 			   });
 		}
 	}
