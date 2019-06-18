@@ -195,7 +195,7 @@ namespace SAIL.Modules
             }
         }
 
-        [Command("SetActive"),Alias("ActiveCharacter","ActiveChar")]
+        [Command("SetActive"),Alias("ActiveCharacter","ActiveChar","Active","Lock")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
         [Summary("Set your current active character in order to edit its sheet.")]
         
@@ -791,6 +791,34 @@ namespace SAIL.Modules
             var msg = await ReplyAsync("Created character **"+character.Name+"**. This character has also been assigned as your active character for all edit commands.");
             CommandCache.Add(Context.Message.Id,msg.Id);
         }
+		[Command("Templates"),Alias("ListTemplates")]
+		[Summary("Shows all the templates currently in this guild.")]
+		[RequireGuildSettings] [RequireContext(ContextType.Guild)]
+		public async Task AllTemplates()
+		{
+			var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x => x.Id == Context.Guild.Id);
+			if (guild.CharacterTemplates.Count==0)
+			{
+				var msg = await ReplyAsync("There are no templates in this server.");
+				CommandCache.Add(Context.Message.Id, msg.Id);
+			}
+			else
+			{
+				var sb = new StringBuilder();
+				foreach (var x in guild.CharacterTemplates)
+				{
+					var author = Context.Guild.GetUser(x.Owner);
+					sb.AppendLine(x.Name + "(By: " + author.Username+")");
+				}
+				var embed = new EmbedBuilder()
+					.WithTitle("Character templates of " + Context.Guild.Name)
+					.WithCurrentTimestamp()
+					.WithDescription(sb.ToString())
+					.Build();
+				var msg = await ReplyAsync("", false, embed);
+				CommandCache.Add(Context.Message.Id, msg.Id);
+			}
+		}
         #endregion
     }
 }

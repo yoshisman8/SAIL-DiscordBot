@@ -39,6 +39,22 @@ namespace SAIL.Modules
 			var msg = await ReplyAsync("", embed: guild.Summary(command));
 			Cache.Add(Context.Message.Id, msg.Id);
 		}
+		[Command("SetPrefix")]
+		[Summary("Sets the guild prefix.")]
+		[RequireContext(ContextType.Guild)]
+		public async Task SetPrefix([Remainder]string Prefix)
+		{
+			var col = Program.Database.GetCollection<SysGuild>("Guilds");
+			var guild = col.FindOne(x => x.Id == Context.Guild.Id);
+			guild.Load(Context);
+
+			guild.Prefix = Prefix.Substring(0, 1);
+			col.Update(guild);
+
+			var msg = await ReplyAsync("Server prefix for commands set to `"+guild.Prefix+"`.");
+			Cache.Add(Context.Message.Id, msg.Id);
+		}
+
 		[Command("WhoIs"), Alias("User")]
 		[Summary("Prints some info about the user.")]
 		[RequireContext(ContextType.Guild)]
@@ -281,30 +297,69 @@ namespace SAIL.Modules
 				Cache.Add(Context.Message.Id, msg.Id);
 			}
 		}
-        //private async Task<Embed> GenerateEmbedPage(SocketCommandContext ctx, CommandService cmd,IServiceProvider _provider, Module _module,SysGuild guild)
-        //{
-            
-        //    var module = command.Modules.Single(y => y.Name == _module.Name);
-        //        var embed = new EmbedBuilder()
-        //        .WithTitle("Commands Available on "+Context.Guild)
-        //        .WithDescription("Parameters surounded by [] are optional, Parameters surrounded by <> are mandatory."
-        //            +"\nOnly commands you can use will be shown.")
-        //        .WithThumbnailUrl(Context.Guild.IconUrl)
-        //        .AddField(module.Name,module.Summary,false);
-        //    foreach (var c in module.Commands)
-        //    {
-        //        var result = await c.CheckPreconditionsAsync(ctx,_provider);
-        //        if (!result.IsSuccess) continue;
-                
-        //        string arguments = "";
-        //        if(c.Parameters.Count > 0) {
-        //            foreach(var p in c.Parameters){
-        //            arguments += p.IsOptional? "["+p.Name+"] ":"<"+p.Name+"> ";
-        //            }
-        //        }
-        //        embed.AddField(guild.Prefix+c.Name+" "+arguments,(c.Aliases.Count > 0 ? "Aliases: "+string.Join(",",c.Aliases)+"\n":"")+c.Summary,true);
-        //    }
-        //    return embed.Build();
-        //}
-    }
+		[Command("Role"),Alias("SelfAssign")]
+		[RequireBotPermission(GuildPermission.ManageRoles)]
+		[Summary("Assigns you one of the self-assignable roles")]
+		public async Task SelfAssign([Remainder]SocketRole Role)
+		{
+			var col = Program.Database.GetCollection<SysGuild>("Guilds");
+			var guild = col.FindOne(x => x.Id == Context.Guild.Id);
+			guild.Load(Context);
+
+			if (guild.AssignableRoles.Contains(Role.Id))
+			{
+				var user = (SocketGuildUser)Context.User;
+				await user.AddRoleAsync(Role);
+				var msg = await ReplyAsync(Context.User.Mention+", you've been asigned the role "+Role.Name);
+			}
+		}
+		[Command("Role"), Alias("SelfAssign")]
+		[RequireUserPermission(GuildPermission.ManageGuild)]
+		[RequireBotPermission(GuildPermission.ManageRoles)]
+		[Summary("Sets up a role for self-assigment.")]
+		public async Task setSelfAssign([Remainder]SocketRole Role)
+		{
+			var col = Program.Database.GetCollection<SysGuild>("Guilds");
+			var guild = col.FindOne(x => x.Id == Context.Guild.Id);
+			guild.Load(Context);
+
+			if (guild.AssignableRoles.Contains(Role.Id))
+			{
+				guild.AssignableRoles.Remove(Role.Id);
+				col.Update(guild);
+				var msg = await ReplyAsync("Role "+Role.Name + " is no longer self-assignable." );
+			}
+			else
+			{
+				guild.AssignableRoles.Add(Role.Id);
+				col.Update(guild);
+				var msg = await ReplyAsync("Role " + Role.Name + " is now self-assignable.");	
+			}
+		}
+		//private async Task<Embed> GenerateEmbedPage(SocketCommandContext ctx, CommandService cmd,IServiceProvider _provider, Module _module,SysGuild guild)
+		//{
+
+		//    var module = command.Modules.Single(y => y.Name == _module.Name);
+		//        var embed = new EmbedBuilder()
+		//        .WithTitle("Commands Available on "+Context.Guild)
+		//        .WithDescription("Parameters surounded by [] are optional, Parameters surrounded by <> are mandatory."
+		//            +"\nOnly commands you can use will be shown.")
+		//        .WithThumbnailUrl(Context.Guild.IconUrl)
+		//        .AddField(module.Name,module.Summary,false);
+		//    foreach (var c in module.Commands)
+		//    {
+		//        var result = await c.CheckPreconditionsAsync(ctx,_provider);
+		//        if (!result.IsSuccess) continue;
+
+		//        string arguments = "";
+		//        if(c.Parameters.Count > 0) {
+		//            foreach(var p in c.Parameters){
+		//            arguments += p.IsOptional? "["+p.Name+"] ":"<"+p.Name+"> ";
+		//            }
+		//        }
+		//        embed.AddField(guild.Prefix+c.Name+" "+arguments,(c.Aliases.Count > 0 ? "Aliases: "+string.Join(",",c.Aliases)+"\n":"")+c.Summary,true);
+		//    }
+		//    return embed.Build();
+		//}
+	}
 }
