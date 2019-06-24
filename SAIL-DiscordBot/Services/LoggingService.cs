@@ -27,7 +27,11 @@ namespace SAIL.Services
             _discord.Log += LogDiscord;
             _commands.Log += LogCommand;
         }
-
+		public Task Log(LogLevel logLevel,string message)
+		{
+			_discordLogger.Log(logLevel, message);
+			return Task.CompletedTask;
+		}
         private ILoggerFactory ConfigureLogging(ILoggerFactory factory)
         {
             factory.AddConsole();

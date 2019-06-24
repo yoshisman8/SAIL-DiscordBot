@@ -24,21 +24,21 @@ namespace SAIL.Services
         private readonly DiscordSocketClient _discord;
         private readonly CommandService _commands;
         private IServiceProvider _provider;
-        private InteractiveService _interactive;
         private readonly IConfiguration _config;
         private CommandCacheService _cache;
         private GlobalTimer _timer;
         private bool Ready = false;
+		private readonly LogService _logService;
 
-        public CommandHandlingService(IConfiguration config, IServiceProvider provider, DiscordSocketClient discord, CommandService commands, CommandCacheService cache,InteractiveService interactive,GlobalTimer timer)
+        public CommandHandlingService(LogService Logger,IConfiguration config, IServiceProvider provider, DiscordSocketClient discord, CommandService commands, CommandCacheService cache,GlobalTimer timer)
         {
             _discord = discord;
             _commands = commands;
             _provider = provider;
             _config = config;
-            _interactive = interactive;
             _cache = cache;
             _timer = timer;
+			_logService = Logger;
             
             _discord.MessageReceived += MessageReceived;
             _discord.ReactionAdded += OnReactAdded;
@@ -50,7 +50,16 @@ namespace SAIL.Services
             _discord.Ready += OnReady;
 			_discord.UserJoined += _discord_UserJoined;
 			_discord.UserLeft += _discord_UserLeft;
+			_discord.Disconnected += OnDisconnectedAsync;
         }
+
+		private async Task OnDisconnectedAsync(Exception arg)
+		{
+			await _logService.Log(Microsoft.Extensions.Logging.LogLevel.Warning, "Disconnected from Discord, Attempting reconnection in 5 seconds.");
+			await Task.Delay(5000);
+			await _discord.LoginAsync(TokenType.Bot, _config["token"]);
+			await _discord.StartAsync();
+		}
 
 		private async Task _discord_UserLeft(SocketGuildUser arg)
 		{
