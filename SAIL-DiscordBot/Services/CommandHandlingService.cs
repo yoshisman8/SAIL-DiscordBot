@@ -50,16 +50,8 @@ namespace SAIL.Services
             _discord.Ready += OnReady;
 			_discord.UserJoined += _discord_UserJoined;
 			_discord.UserLeft += _discord_UserLeft;
-			_discord.Disconnected += OnDisconnectedAsync;
         }
 
-		private async Task OnDisconnectedAsync(Exception arg)
-		{
-			await _logService.Log(Microsoft.Extensions.Logging.LogLevel.Warning, "Disconnected from Discord, Attempting reconnection in 5 seconds.");
-			await Task.Delay(5000);
-			await _discord.LoginAsync(TokenType.Bot, _config["token"]);
-			await _discord.StartAsync();
-		}
 
 		private async Task _discord_UserLeft(SocketGuildUser arg)
 		{
