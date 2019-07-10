@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using SAIL.Classes;
 using LiteDB;
-using Discord.Addons.CommandCache;
+
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -17,9 +17,8 @@ using Discord;
 namespace SAIL.Modules
 {
     [Name("Debugger Module")][Exclude]
-    public class Debugger : InteractiveBase<SocketCommandContext>
+    public class Debugger : SailBase<SocketCommandContext>
     {
-        public CommandCacheService CommandCache {get;set;}
         public IServiceProvider Provider {get;set;}
         public CommandService command {get;set;}
         

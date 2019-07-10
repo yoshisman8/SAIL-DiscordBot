@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using SAIL.Classes;
 using LiteDB;
-using Discord.Addons.CommandCache;
+
 using Discord.Addons.Interactive;
 using Discord.Addon.InteractiveMenus;
 using Discord.Commands;
@@ -19,9 +19,8 @@ namespace SAIL.Modules
 {
     [Name("Character Module")]
     [Summary("Create and store character sheets for roleplay and similar purposes!\nUsers with the permission to Manage Messages are considered Character Admins who can delete other people's characters.")]
-    public class CharacterModule : InteractiveBase<SocketCommandContext>
+    public class CharacterModule : SailBase<SocketCommandContext>
     {
-        public CommandCacheService CommandCache {get;set;}
 		public MenuService MenuService { get; set; }
 
         #region CoreCommands
@@ -46,7 +45,7 @@ namespace SAIL.Modules
 			var PagedMenu = new PagedEmbed(character.Name+"'s Sheet.",character.PagesToEmbed(Context).ToArray());
 			var msg = await MenuService.CreateMenu(Context, PagedMenu, false);
             
-            CommandCache.Add(Context.Message.Id,msg.Id);
+            
         }
         [Command("Characters"),Alias("Chars")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
@@ -70,7 +69,7 @@ namespace SAIL.Modules
             }
 			var menu = new PagedEmbed("All Characters.", pages.ToArray());
 			var msg = await MenuService.CreateMenu(Context,menu,false);
-            CommandCache.Add(Context.Message.Id,msg.Id);
+            
         }
         [Command("CurrentCharacter"),Alias("CurrentChar","Char","Character")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
@@ -91,13 +90,13 @@ namespace SAIL.Modules
             if(plr.Active == null)
             {
                 var msg2 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
-                CommandCache.Add(Context.Message.Id,msg2.Id);
+                
                 return;
             }
 
 			var menu = new PagedEmbed(plr.Active.Name+"'s sheet.", plr.Active.PagesToEmbed(Context).ToArray());
 			var msg = await MenuService.CreateMenu(Context, menu, false);
-			CommandCache.Add(Context.Message.Id,msg.Id);
+			
         }
         [Command("NewCharacter"), Alias("AddCharacter","CreateCharacter","NewChar","AddChar","CreateChar")]
         [Summary("Create a new character.")] [RequireGuildSettings] [RequireContext(ContextType.Guild)]
@@ -109,7 +108,7 @@ namespace SAIL.Modules
             if (All.Any(x=>x.Name.ToLower() == Name.ToLower()))
             {
                 var msg2 = await ReplyAsync("There's already a character whose name is \""+Name+"\", please choose a different name.");
-                CommandCache.Add(Context.Message.Id,msg2.Id);
+                
                 return;
             }
             var character = new Character()
@@ -136,7 +135,7 @@ namespace SAIL.Modules
             plrs.Update(plr);
 
             var msg = await ReplyAsync("Created character **"+Name+"**. This character has also been assigned as your active character for all edit commands.");
-            CommandCache.Add(Context.Message.Id,msg.Id);
+            
         }
 
         [Command("DeleteCharater"),Alias("DelCharacter","RemoveCharacter","DelChar","RemoveChar","RemChar")] [RequireGuildSettings]
@@ -160,7 +159,7 @@ namespace SAIL.Modules
             if(character.Owner!=user.Id && !user.GuildPermissions.ManageMessages)
             {
                 var msg1 = await ReplyAsync("This isn't your character, you cannot delete it.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             var confirm = new Emoji("✅"); 
@@ -185,13 +184,13 @@ namespace SAIL.Modules
                 col.Delete(character.Id);
                 await msg.RemoveAllReactionsAsync();
                 await msg.ModifyAsync(x=>x.Content ="Deleted character "+character.Name+"!");
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                
             }
             else
             {
                 await msg.RemoveAllReactionsAsync();
                 await msg.ModifyAsync(x=>x.Content ="Character was **not** deleted.");
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                
             }
         }
 
@@ -225,7 +224,7 @@ namespace SAIL.Modules
             plrs.Update(plr);
 
             var msg1 = await ReplyAsync("You have assigned **"+character.Name+"** as your active character.");
-            CommandCache.Add(Context.Message.Id,msg1.Id);
+            
         }
         [Command("RenameCharacter"),Alias("RenameChar","RenCharacter","RenChar")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
@@ -245,13 +244,13 @@ namespace SAIL.Modules
             if(plr.Active == null)
             {
                 var msg = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                
                 return;
             }
             if (col.Exists(x=>x.Name == NewName.ToLower()))
             {
                 var msg2 = await ReplyAsync("There's already a character whose name is \""+NewName+"\", please choose a different name.");
-                CommandCache.Add(Context.Message.Id,msg2.Id);
+                
                 return;
             }
 
@@ -261,7 +260,7 @@ namespace SAIL.Modules
             col.Update(character);
 
             var msg1 = await ReplyAsync("You have renamed "+character.Name+" to **"+NewName+"**.");
-            CommandCache.Add(Context.Message.Id,msg1.Id);
+            
         }
         
         [Command("UpdateCharacter"),Alias("UpdateChar")]
@@ -282,7 +281,7 @@ namespace SAIL.Modules
             if(plr.Active == null)
             {
                 var msg = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                
                 return;
             }
 
@@ -292,7 +291,7 @@ namespace SAIL.Modules
             col.Update(character);
 
             var msg1 = await ReplyAsync("You have updated **"+character.Name+"** sheet.");
-            CommandCache.Add(Context.Message.Id,msg1.Id);
+            
         }
         #endregion
 
@@ -312,7 +311,6 @@ namespace SAIL.Modules
             if(plr.Active == null)
             {
                 var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
                 return;
             }
             var character = plr.Active;
@@ -320,12 +318,11 @@ namespace SAIL.Modules
             if (page > character.Pages.Count)
             {
                 var msg1 = await ReplyAsync("Error! You're trying to add field to a page that doesn't exist. "+character.Name+"'s sheet only has "+character.Pages.Count+" page(s).");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
-            }
+				return;
+			}
             if(character.Pages[index].Fields.Count>=20)
             {
                 var msg1 = await ReplyAsync("You already have too many fields on page "+(page+1)+" of "+character.Name+"'s sheet. Try making a new using `"+guild.Prefix+"NewPage PageName`.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
                 return;
             }
             character.Pages[index].Fields.Add(
@@ -339,13 +336,12 @@ namespace SAIL.Modules
             var col = Program.Database.GetCollection<Character>("Characters");
             col.Update(character);
             var msg2 = await ReplyAsync("Created new field "+FieldName+" on page "+page+" of "+character.Name+"'s sheet",false,character.GetPage(index,Context));
-            CommandCache.Add(Context.Message.Id,msg2.Id);
         }
 
         [Command("EditFields"),Alias("ModifyFields","UpdateFields")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
         [Summary("Opens a menu that lets you edit the fields in a page of your character's sheet. Defaults to page 1.")]
-        public async Task EditField(int Page = 1)
+        public async Task EditFields(int Page = 1)
         {
             Page = Math.Abs(Page);
             var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==Context.Guild.Id);
@@ -355,14 +351,14 @@ namespace SAIL.Modules
             if(plr.Active == null)
             {
                 var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             var character = plr.Active;
             if (Page>character.Pages.Count)
             {
                 var msg1 = await ReplyAsync("Your character doesn't have as that many pages. "+character.Name+" only has "+character.Pages.Count+" page(s).");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             var EditPage = character.Pages[Page-1];
@@ -394,7 +390,7 @@ namespace SAIL.Modules
             if (fields==null)
             {
                 var msg1 = await ReplyAsync("You have discarded all changes to "+character.Name+"'s sheet.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             else
@@ -404,13 +400,13 @@ namespace SAIL.Modules
                 col.Update(character);
 
                 var msg1 = await ReplyAsync("💾 Saved chanes to "+character.Name+"'s sheet!");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
         }
         [Command("DeleteField"), Alias("RemoveField","DelField","RemField")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
-        [Summary("Deletes one of the fields in a page. Defaults to page 1.")]
+        [Summary("Deletes one of the fields in a page. Defaults to page 1. The name of the field has to be wrapped around quotation marks \"Like this\".")]
         public async Task DelField(string FieldName, int Page = 1)
         {
             Page = Math.Abs(Page);
@@ -421,20 +417,20 @@ namespace SAIL.Modules
             if(plr.Active == null)
             {
                 var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             var character = plr.Active;
             if (Page>character.Pages.Count)
             {
                 var msg1 = await ReplyAsync("Your character doesn't have as that many pages. "+character.Name+" only has "+character.Pages.Count+" page(s).");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             if(!character.Pages[Page-1].Fields.Exists(x=>x.Title.ToLower().StartsWith(FieldName.ToLower())))
             {
                 var msg1 = await ReplyAsync("There is no such field on page "+Page+" of "+character.Name+"'s sheet.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             var fields = character.Pages[Page-1].Fields.FindAll(x=>x.Title.ToLower().StartsWith(FieldName.ToLower()));
@@ -455,7 +451,7 @@ namespace SAIL.Modules
             var col = Program.Database.GetCollection<Character>("Characters");
             col.Update(character);
             var msg = await ReplyAsync("Deleted field "+field.Title+" from "+character.Name+"'s sheet on page "+Page+".");
-            CommandCache.Add(Context.Message.Id,msg.Id);
+            
             return;
             
         }
@@ -473,20 +469,20 @@ namespace SAIL.Modules
             if(plr.Active == null)
             {
                 var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             var character = plr.Active;
             if (Page>character.Pages.Count)
             {
                 var msg1 = await ReplyAsync("Your character doesn't have as that many pages. "+character.Name+" only has "+character.Pages.Count+" page(s).");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             if(!character.Pages[Page-1].Fields.Exists(x=>x.Title.ToLower().StartsWith(OldName.ToLower())))
             {
                 var msg1 = await ReplyAsync("There is no such field on page "+Page+" of "+character.Name+"'s sheet.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             var fields = character.Pages[Page-1].Fields.FindAll(x=>x.Title.ToLower().StartsWith(OldName.ToLower()));
@@ -506,9 +502,57 @@ namespace SAIL.Modules
             var col = Program.Database.GetCollection<Character>("Characters");
             col.Update(character);
             var msg = await ReplyAsync("Renamed field "+field.Title+" to "+NewName+" on "+character.Name+"'s sheet on page "+Page+".");
-            CommandCache.Add(Context.Message.Id,msg.Id);
+            
             return;
         }
+		[Command("EditField"),Alias("UpdateField")]
+		[RequireGuildSettings] [RequireContext(ContextType.Guild)]
+		[Summary("Directly edit the conents of a field on any given page. Defaults to page 1. Both the field name and contents must be wrapped around quotation marks \"like this\".")]
+		public async Task EditField(string Name, string Contents, int Page = 1)
+		{
+			Page = Math.Abs(Page);
+			var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindById(Context.Guild.Id);
+			var plrs = Program.Database.GetCollection<SysUser>("Users").IncludeAll();
+			if (!plrs.Exists(x => x.Id == Context.User.Id)) plrs.Insert(new SysUser() { Id = Context.User.Id });
+			var plr = plrs.FindOne(x => x.Id == Context.User.Id);
+			if (plr.Active == null)
+			{
+				var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `" + guild.Prefix + "SetActive CharacterName`.");
+				
+				return;
+			}
+			var character = plr.Active;
+			if (Page > character.Pages.Count)
+			{
+				var msg1 = await ReplyAsync("Your character doesn't have as that many pages. " + character.Name + " only has " + character.Pages.Count + " page(s).");
+				
+				return;
+			}
+			var fields = character.Pages[Page - 1].Fields.FindAll(x => x.Title.ToLower().StartsWith(Name.ToLower()));
+			Field field = null;
+			if (fields!=null || fields.Count==0)
+			{
+				var msg1 = await ReplyAsync("There is no such field on page " + Page + " of " + character.Name + "'s sheet.");
+				
+				return;
+			}
+			if (fields.Count > 1)
+			{
+				string[] options = fields.Select(x => x.Title).ToArray();
+				var menu = new SelectorMenu("Multiple results were found, please specify which one you're trying to delete:", options, fields.ToArray());
+				await MenuService.CreateMenu(Context, menu, true);
+				field = (Field)await menu.GetSelectedObject();
+			}
+			else field = fields.FirstOrDefault();
+
+			var index = character.Pages[Page - 1].Fields.IndexOf(field);
+			character.Pages[Page - 1].Fields[index].Content = Contents;
+
+			var col = Program.Database.GetCollection<Character>("Characters");
+			col.Update(character);
+			var msg = await ReplyAsync("Updated field " + field.Title +" on " + character.Name + "'s sheet on page " + Page + ".");
+			
+		}
         #endregion
 
         #region PageManagement
@@ -524,7 +568,7 @@ namespace SAIL.Modules
             if(plr.Active == null)
             {
                 var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             var character = plr.Active;
@@ -533,7 +577,7 @@ namespace SAIL.Modules
             var col = Program.Database.GetCollection<Character>("Characters");
             col.Update(character);
             var msg2 = await ReplyAsync("Created a new page to "+character.Name+"'s sheet.");
-            CommandCache.Add(Context.Message.Id,msg2.Id);
+            
         }
         [Command("DeletePage"),Alias("DelPage")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
@@ -548,7 +592,7 @@ namespace SAIL.Modules
             if(plr.Active == null)
             {
                 var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             var character = plr.Active;
@@ -576,21 +620,21 @@ namespace SAIL.Modules
 
                 await msg.ModifyAsync(x=>x.Embed = null);
                 await msg.ModifyAsync(x=>x.Content=("Deleted page "+PageNumber+" from "+character.Name+"'s sheet."));
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                
                 return;
             }
             else
             {
                 await msg.ModifyAsync(x=>x.Embed = null);
                 await msg.ModifyAsync(x=>x.Content="You decided to keep page "+PageNumber+" of "+character.Name+"'s sheet.");
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                
                 return;
             }
         }
 
         [Command("EditPage")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
-        [Summary("Adds a new page to your active character's sheet.")]
+        [Summary("Opens the editor menu for one of the pages of your active character's sheet.")]
         public async Task Editpage([Remainder] int PageNumber = 1)
         {
             PageNumber = Math.Abs(PageNumber);
@@ -602,7 +646,7 @@ namespace SAIL.Modules
             if(plr.Active == null)
             {
                 var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             var character = plr.Active;
@@ -610,7 +654,7 @@ namespace SAIL.Modules
             if (PageNumber > character.Pages.Count)
             {
                 var msg1 = await ReplyAsync("Error! You're trying to edit a page that doesn't exist. "+character.Name+"'s sheet only has "+character.Pages.Count+" page(s).");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
 
@@ -690,7 +734,7 @@ namespace SAIL.Modules
             if (pag == null)
             {
                 var msg1 = await ReplyAsync("Discarded all changes.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             else
@@ -700,7 +744,7 @@ namespace SAIL.Modules
                 var col = Program.Database.GetCollection<Character>("Characters");
                 col.Update(character);
                 var msg1 = await ReplyAsync("💾 Saved chanes to "+character.Name+"'s sheet!");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
         }
@@ -719,14 +763,14 @@ namespace SAIL.Modules
             if(plr.Active == null)
             {
                 var msg1 = await ReplyAsync("You have no active character. Please set your active character by using `"+guild.Prefix+"SetActive CharacterName`.");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             var character = plr.Active;
             if(guild.CharacterTemplates.Exists(x=>x.Name.ToLower()==TemplateName.ToLower()))
             {
                 var msg1 = await ReplyAsync("There's already a template in this server that has that exact name!");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             
@@ -741,7 +785,7 @@ namespace SAIL.Modules
             col.Update(guild);
 
             var msg = await ReplyAsync("Created new template \""+TemplateName+"\".");
-            CommandCache.Add(Context.Message.Id,msg.Id);
+            
             return;
         }
         [Command("CopyTemplate"),Alias("FromTemplate")]
@@ -758,13 +802,13 @@ namespace SAIL.Modules
             if (All.Any(x=>x.Name.ToLower() == CharacterName.ToLower()))
             {
                 var msg2 = await ReplyAsync("There's already a character whose name is \""+CharacterName+"\", please choose a different name.");
-                CommandCache.Add(Context.Message.Id,msg2.Id);
+                
                 return;
             }
             if(!guild.CharacterTemplates.Exists(x=>x.Name.ToLower().StartsWith(TemplateName.ToLower())))
             {
                 var msg1 = await ReplyAsync("There's no template on this server whose name starts with \""+TemplateName+"\".");
-                CommandCache.Add(Context.Message.Id,msg1.Id);
+                
                 return;
             }
             var templates  = guild.CharacterTemplates.FindAll(x=>x.Name.ToLower().StartsWith(TemplateName.ToLower()));
@@ -789,7 +833,7 @@ namespace SAIL.Modules
             plrs.Update(plr);
 
             var msg = await ReplyAsync("Created character **"+character.Name+"**. This character has also been assigned as your active character for all edit commands.");
-            CommandCache.Add(Context.Message.Id,msg.Id);
+            
         }
 		[Command("Templates"),Alias("ListTemplates")]
 		[Summary("Shows all the templates currently in this guild.")]
@@ -800,7 +844,7 @@ namespace SAIL.Modules
 			if (guild.CharacterTemplates.Count==0)
 			{
 				var msg = await ReplyAsync("There are no templates in this server.");
-				CommandCache.Add(Context.Message.Id, msg.Id);
+				
 			}
 			else
 			{
@@ -816,7 +860,7 @@ namespace SAIL.Modules
 					.WithDescription(sb.ToString())
 					.Build();
 				var msg = await ReplyAsync("", false, embed);
-				CommandCache.Add(Context.Message.Id, msg.Id);
+				
 			}
 		}
         #endregion

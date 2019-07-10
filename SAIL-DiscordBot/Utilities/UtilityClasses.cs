@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using LiteDB;
-using Discord.Addons.CommandCache;
+
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;

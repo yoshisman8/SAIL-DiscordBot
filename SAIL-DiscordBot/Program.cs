@@ -5,7 +5,6 @@ using Discord;
 using Discord.WebSocket;
 using Discord.Commands;
 using Discord.Addons.Interactive;
-using Discord.Addons.CommandCache;
 using Discord.Addon.InteractiveMenus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -60,7 +59,6 @@ namespace SAIL
                 .AddSingleton(_config)
                 .AddSingleton<GlobalTimer>()
                 .AddSingleton<ScheduleService>()
-                .AddSingleton(new CommandCacheService(_client))
                 .AddSingleton(new InteractiveService(_client))
 				.AddSingleton(new MenuService(_client))
                 // Add additional services here...

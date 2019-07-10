@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Discord.Addons.CommandCache;
+
 using Discord.Addons.Interactive;
 using Discord.Addon.InteractiveMenus;
 using Discord.Commands;
@@ -19,9 +19,8 @@ namespace SAIL.Modules
     
     [Name("Message Quoting")]
     [Summary("This module contains all commands related to Finding Quotes! Keep in mind that even if you disable this module, existing quotes will not be deleted.")]
-    public class QuoteModule : InteractiveBase<SocketCommandContext>
+    public class QuoteModule : SailBase<SocketCommandContext>
     {
-        public CommandCacheService CommandCache {get;set;}
         public MenuService MenuService { get; set; }
 
         [Command("Quote"),Alias("Q")]
@@ -34,7 +33,7 @@ namespace SAIL.Modules
             if (All.Count() == 0)
             {
                 var msg = await ReplyAsync("This server has no recorded quotes. React with 📌 on a message said by someone on the server to add the first quote.");
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                
                 return;
             }
             var rnd = new Random().Next(0,All.Count()-1);
@@ -47,7 +46,7 @@ namespace SAIL.Modules
 
                 var msg = await Context.Channel.SendMessageAsync("",embed: emb);
                 
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                
                 var callback = new ReactionCallbackData("",emb,true,true);
                 callback.WithCallback(emote, async (C,R) => await GetContext(C,msg,MenuService,Quote));
                 Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,callback));
@@ -57,7 +56,7 @@ namespace SAIL.Modules
             {
                 Program.Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Quote.Message);
                 var msg = await ReplyAsync("It seems like this quote has returned the error `"+e.Message+"` and has beed deleted from the databanks, Appologies!");
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                
             }
         }
         [Command("Quote"),Alias("Q")]
@@ -70,14 +69,14 @@ namespace SAIL.Modules
             if (col.Count() == 0)
             {
                 var msg = await ReplyAsync("This server has no recorded quotes. React with 📌 on a message said by someone on the server to add the first quote.");
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                
                 return;
             }
             var results = col.Where(x => x.SearchText.ToLower().Contains(Query.ToLower()));
             if (results.Count() == 0) 
             {
                 var msg = await ReplyAsync("There are no quotes that contain the text \""+Query+"\".");
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                
             }
             else
             {
@@ -92,7 +91,7 @@ namespace SAIL.Modules
 					var menu = new PagedEmbed("Quote Search Results for \"" + Query + "\"", Pages.ToArray());
 
 					var msg = await MenuService.CreateMenu(Context, menu, false);
-                    CommandCache.Add(Context.Message.Id,msg.Id);
+                    
                 }
                 else
                 {
@@ -102,13 +101,13 @@ namespace SAIL.Modules
                         await Q.GenerateContext(Context);
                         var embed = StaticMethods.EmbedMessage(Context,Q.Context.Channel,Q.Context.Message);
                         var msg = await ReplyAsync("Found one result for '"+Query+"'.",embed: embed);
-                        CommandCache.Add(Context.Message.Id,msg.Id);
+                        
                     }
                     catch (Exception e)
                     {
                         Program.Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Q.Message);
                         var msg = await ReplyAsync("It seems like this quote has returned the error `"+e.Message+"` and has beed deleted from the databanks, Appologies!");
-                        CommandCache.Add(Context.Message.Id,msg.Id);
+                        
                     }
                 }
             }
@@ -123,14 +122,14 @@ namespace SAIL.Modules
             if (col.Count() == 0)
             {
                 var msg = await ReplyAsync("This server has no recorded quotes. React with 📌 on a message said by someone on the server to add the first quote.");
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                
                 return;
             }
             var results = col.Where(x => x.Channel == channel.Id);
             if (results.Count() == 0) 
             {
                 var msg = await ReplyAsync("There are no quotes from "+channel+" on record.");
-                CommandCache.Add(Context.Message.Id,msg.Id);
+                
             }
             else
             {
@@ -145,7 +144,7 @@ namespace SAIL.Modules
 
                     var msg = await Context.Channel.SendMessageAsync("",embed: emb);
                     
-                    CommandCache.Add(Context.Message.Id,msg.Id);
+                    
                     var callback = new ReactionCallbackData("",emb,true,true);
                     callback.WithCallback(emote, async (C,R) => await GetContext(C,msg,MenuService,Quote));
                     Interactive.AddReactionCallback(msg,new InlineReactionCallback(Interactive,Context,callback));
@@ -155,7 +154,7 @@ namespace SAIL.Modules
                 {
                     Program.Database.GetCollection<Quote>("Quotes").Delete(x => x.Message == Quote.Message);
                     var msg = await ReplyAsync("It seems like this quote has returned the error `"+e.Message+"` and has beed deleted from the databanks, Appologies!");
-                    CommandCache.Add(Context.Message.Id,msg.Id);
+                    
                 }
             }
         }

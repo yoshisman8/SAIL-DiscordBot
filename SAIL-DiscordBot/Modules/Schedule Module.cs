@@ -3,7 +3,7 @@
 //using System.Collections.Generic;
 //using System.Threading.Tasks;
 //using LiteDB;
-//using Discord.Addons.CommandCache;
+//
 //using Discord.Addons.Interactive;
 //using Discord.Commands;
 //using Discord.WebSocket;
@@ -19,7 +19,7 @@
 //{
 //    [Name("Schedule Module")]
 //    [Summary("This module allows for the use of the Weekly Scheduler. It requires a channel to be set as the Notification Channel and for said function to be turned on. Users need the Manage Roles permission in order to use the add/remove event commands.")]
-//    public class ScheduleModule : InteractiveBase<SocketCommandContext>
+//    public class ScheduleModule : SailBase<SocketCommandContext>
 //    {
 //        public CommandCacheService Cache {get;set;}
 //        private readonly System.Threading.EventWaitHandle waitHandle = new System.Threading.AutoResetEvent(false);
@@ -32,7 +32,7 @@
 //        {
 //            var col = Program.Database.GetCollection<GuildEvent>("Events").IncludeAll();
 //            var guild = Program.Database.GetCollection<SysGuild>().FindOne(x=>x.Id == Context.Guild.Id);
-            
+
 //            if(col.Exists(x=>x.Name==EventName.ToLower()&& x.Server.Id==guild.Id))
 //            {
 //                var msg2 = await ReplyAsync("There's an event with that exact name already.");

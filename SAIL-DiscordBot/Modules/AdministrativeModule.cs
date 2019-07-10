@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using LiteDB;
 using SAIL.Classes;
-using Discord.Addons.CommandCache;
+
 using Discord.Addons.Interactive;
 using Discord.Addon.InteractiveMenus;
 using Discord.Commands;
@@ -20,9 +20,8 @@ namespace SAIL.Modules
 {
 	[Name("Administrative Module")] [Untoggleable]
 	[Summary("This module contains a series of Administrative commands for the bot. It cannot be dissabled.")]
-	public class AdministrativeModule : InteractiveBase<SocketCommandContext>
+	public class AdministrativeModule : SailBase<SocketCommandContext>
 	{
-		public CommandCacheService Cache { get; set; }
 		public IServiceProvider Provider { get; set; }
 		public CommandService command { get; set; }
 		public MenuService MenuService { get; set; }
@@ -37,7 +36,6 @@ namespace SAIL.Modules
 			guild.Load(Context);
 
 			var msg = await ReplyAsync("", embed: guild.Summary(command));
-			Cache.Add(Context.Message.Id, msg.Id);
 		}
 		[Command("SetPrefix")]
 		[Summary("Sets the guild prefix.")]
@@ -52,7 +50,6 @@ namespace SAIL.Modules
 			col.Update(guild);
 
 			var msg = await ReplyAsync("Server prefix for commands set to `"+guild.Prefix+"`.");
-			Cache.Add(Context.Message.Id, msg.Id);
 		}
 
 		[Command("WhoIs"), Alias("User")]
@@ -77,7 +74,6 @@ namespace SAIL.Modules
 				.AddField("Characters", c, true)
 				.AddField("Templates", t, true);
 			var msg = await ReplyAsync("", embed: embed.Build());
-			Cache.Add(Context.Message.Id, msg.Id);
 		}
 		[Command("ConfigWhitelist"),Alias("EditBlacklist","EditWhitelsit","ConfigBlacklist")]
 		[Summary("Configure the server's White/Blacklist settings")]
@@ -152,14 +148,12 @@ namespace SAIL.Modules
 			if (g == null)
 			{
 				var msg = await ReplyAsync("🗑 Discarted all changes to " + Context.Guild.Name + "'s Settings.");
-				Cache.Add(Context.Message.Id, msg.Id);
 				return;
 			}
 			else
 			{
 				col.Update(g);
 				var msg = await ReplyAsync("💾 Saved all changes to " + Context.Guild.Name + "'s Settings.");
-				Cache.Add(Context.Message.Id, msg.Id);
 			}
 		}
 		[Command("ConfigNotifcations"),Alias("NotificationSettings", "EditNotifications","Notifications")]
@@ -246,14 +240,12 @@ namespace SAIL.Modules
 			if (g == null)
 			{
 				var msg = await ReplyAsync("🗑 Discard all changes to " + Context.Guild.Name + "'s Settings.");
-				Cache.Add(Context.Message.Id, msg.Id);
 				return;
 			}
 			else
 			{
 				col.Update(g);
 				var msg = await ReplyAsync("💾 Saved all changes to " + Context.Guild.Name + "'s Settings.");
-				Cache.Add(Context.Message.Id, msg.Id);
 			}
 		}
 		[Command("ConfigModules"), Alias("ToggleModules","ConfigureModules")]
@@ -287,14 +279,12 @@ namespace SAIL.Modules
 			if (g == null)
 			{
 				var msg = await ReplyAsync("🗑 Discard all changes to " + Context.Guild.Name + "'s Settings.");
-				Cache.Add(Context.Message.Id, msg.Id);
 				return;
 			}
 			else
 			{
 				col.Update(g);
 				var msg = await ReplyAsync("💾 Saved all changes to " + Context.Guild.Name + "'s Settings.");
-				Cache.Add(Context.Message.Id, msg.Id);
 			}
 		}
 		[Command("Role"),Alias("SelfAssign")] [Priority(0)]
@@ -313,19 +303,16 @@ namespace SAIL.Modules
 				{
 					await user.AddRoleAsync(Role);
 					var msg = await ReplyAsync(Context.User.Mention + ", you've been asigned the role " + Role.Name);
-					Cache.Add(Context.Message.Id, msg.Id);
 				}
 				else
 				{
 					await user.RemoveRoleAsync(Role);
 					var msg = await ReplyAsync(Context.User.Mention + ", you resigned the role " + Role.Name);
-					Cache.Add(Context.Message.Id, msg.Id);
 				}
 			}
 			else
 			{
 				var msg = await ReplyAsync(Context.User.Mention + ", this role isn't self-assignable.");
-				Cache.Add(Context.Message.Id, msg.Id);
 			}
 		}
 		[Command("Role"), Alias("SelfAssign")] [Priority(1)]
@@ -351,30 +338,5 @@ namespace SAIL.Modules
 				var msg = await ReplyAsync("Role " + Role.Name + " is now self-assignable.");	
 			}
 		}
-		//private async Task<Embed> GenerateEmbedPage(SocketCommandContext ctx, CommandService cmd,IServiceProvider _provider, Module _module,SysGuild guild)
-		//{
-
-		//    var module = command.Modules.Single(y => y.Name == _module.Name);
-		//        var embed = new EmbedBuilder()
-		//        .WithTitle("Commands Available on "+Context.Guild)
-		//        .WithDescription("Parameters surounded by [] are optional, Parameters surrounded by <> are mandatory."
-		//            +"\nOnly commands you can use will be shown.")
-		//        .WithThumbnailUrl(Context.Guild.IconUrl)
-		//        .AddField(module.Name,module.Summary,false);
-		//    foreach (var c in module.Commands)
-		//    {
-		//        var result = await c.CheckPreconditionsAsync(ctx,_provider);
-		//        if (!result.IsSuccess) continue;
-
-		//        string arguments = "";
-		//        if(c.Parameters.Count > 0) {
-		//            foreach(var p in c.Parameters){
-		//            arguments += p.IsOptional? "["+p.Name+"] ":"<"+p.Name+"> ";
-		//            }
-		//        }
-		//        embed.AddField(guild.Prefix+c.Name+" "+arguments,(c.Aliases.Count > 0 ? "Aliases: "+string.Join(",",c.Aliases)+"\n":"")+c.Summary,true);
-		//    }
-		//    return embed.Build();
-		//}
 	}
 }

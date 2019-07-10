@@ -7,15 +7,13 @@ using Microsoft.Extensions.Configuration;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Discord.Addons.Interactive;
-using Discord.Addons.CommandCache;
 using LiteDB;
-using SAIL.Modules;
 using SAIL.Classes;
 using SAIL.Classes.Legacy;
-using Newtonsoft.Json;
+using Dice;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace SAIL.Services
 {
@@ -25,18 +23,17 @@ namespace SAIL.Services
         private readonly CommandService _commands;
         private IServiceProvider _provider;
         private readonly IConfiguration _config;
-        private CommandCacheService _cache;
         private GlobalTimer _timer;
         private bool Ready = false;
 		private readonly LogService _logService;
 
-        public CommandHandlingService(LogService Logger,IConfiguration config, IServiceProvider provider, DiscordSocketClient discord, CommandService commands, CommandCacheService cache,GlobalTimer timer)
+		public Dictionary<ulong, ulong> Cache { get; set; } = new Dictionary<ulong, ulong>();
+        public CommandHandlingService(LogService Logger,IConfiguration config, IServiceProvider provider, DiscordSocketClient discord, CommandService commands,GlobalTimer timer)
         {
             _discord = discord;
             _commands = commands;
             _provider = provider;
             _config = config;
-            _cache = cache;
             _timer = timer;
 			_logService = Logger;
             
@@ -265,9 +262,9 @@ namespace SAIL.Services
 
             var col = Program.Database.GetCollection<SAIL.Classes.Quote>("Quotes");
             
-            if(_cache.TryGetValue(NewMsg.Id, out var CacheMsg))
+            if(Cache.TryGetValue(NewMsg.Id, out var CacheMsg))
             {
-                var reply = await Channel.GetMessageAsync(CacheMsg.First());
+                var reply = await Channel.GetMessageAsync(CacheMsg);
                 await reply.DeleteAsync();
             }
             await MessageReceived(NewMsg);
@@ -333,7 +330,6 @@ namespace SAIL.Services
                 {
                     var prompt = await channel.SendMessageAsync("This message has no text in it, which will make it impossible to lookup outside of the Random Quote command.\n"+
                     "Please consider editing this message's contents in order to make it searchable in the future.");
-                    _cache.Add(msg.Id,prompt.Id);
                 }
                 col.Insert(Q);
                 col.EnsureIndex(x => x.Message);
@@ -354,16 +350,35 @@ namespace SAIL.Services
             // Add additional initialization code here...
         }
 
-        private async Task MessageReceived(SocketMessage rawMessage)
-        {
-            // Ignore system messages and messages from bots
-            if (!(rawMessage is SocketUserMessage message)) return;
-            if (message.Source != MessageSource.User) return;
+		private async Task MessageReceived(SocketMessage rawMessage)
+		{
+			// Ignore system messages and messages from bots
+			if (!(rawMessage is SocketUserMessage message)) return;
+			if (message.Source != MessageSource.User) return;
 
-            var context = new SocketCommandContext(_discord, message);
-            var Guild = (context.Guild==null)?null:Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==context.Guild.Id);
+			var context = new SocketCommandContext(_discord, message);
+			var Guild = (context.Guild == null) ? null : Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x => x.Id == context.Guild.Id);
 
-            int argPos = 0;
+			if (Guild!=null && Guild.CommandModules["Dice Roller"] && Regex.IsMatch(message.Content, @"\[\[(.*?)\]\]"))
+			{
+				try
+				{
+					var rolls = Regex.Matches(message.Content, @"\[\[(.*?)\]\]");
+					var sb = new StringBuilder();
+					foreach (Match x in rolls)
+					{
+						var die = Roller.Roll(x.Groups[1].Value);
+						sb.AppendLine("[" + die.Expression + "] " + die.ToString().Split("=>")[1] + " ⇒ **" + die.Value + "**.");
+					}
+					await message.Channel.SendMessageAsync(message.Author.Mention + "\n" + sb.ToString());
+				}
+				catch
+				{
+					await message.AddReactionsAsync(new Emoji[]{ new Emoji("🎲"),new Emoji("❔")});
+				}
+			}
+
+			int argPos = 0;
             if (Guild!= null && !message.HasStringPrefix(Guild.Prefix, ref argPos) && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
 
             if(DateTime.Now.Month == 4 && DateTime.Now.Day == 1)
@@ -384,8 +399,9 @@ namespace SAIL.Services
             if (result.Error.HasValue && result.Error.Value == CommandError.ObjectNotFound)
             {
                 var msg = await context.Channel.SendMessageAsync("Sorry. "+result.ErrorReason);
-                _cache.Add(context.Message.Id,msg.Id);
+                Cache.Add(context.Message.Id,msg.Id);
             }
+			
         }
     }
 }
