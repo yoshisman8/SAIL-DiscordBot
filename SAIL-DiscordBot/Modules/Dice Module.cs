@@ -7,8 +7,7 @@ using Discord.Commands;
 using Discord.Addons.CommandCache;
 using System.Text.RegularExpressions;
 using SAIL.Classes;
-using OnePlat.DiceNotation;
-using OnePlat.DiceNotation.DieRoller;
+using Dice;
 
 namespace SAIL.Modules
 {
@@ -17,7 +16,6 @@ namespace SAIL.Modules
     public class DiceModule : ModuleBase<SocketCommandContext>
     {
 		public CommandCacheService cache { get; set; }
-		DiceParser Parser = new DiceParser();
 
         [Command("Roll"), Alias("r")]
         [RequireGuildSettings]
@@ -26,16 +24,12 @@ namespace SAIL.Modules
         {
 			try
 			{
-				var result = Parser.Parse(DiceExpression, new DiceConfiguration() { DefaultDieSides = 20 }, new MathNetDieRoller());
-				if (cache.Any(x => x.Key == Context.Message.Id)) cache.Remove(Context.Message.Id);
-				if(Context.Guild!=null)await Context.Message.DeleteAsync();
-				var breakdown = new StringBuilder();
-				foreach (var x in result.Results)
-				{
-					breakdown.Append(x.Value+"+");
-				}
+				var result = Roller.Roll(DiceExpression);
 
-				await ReplyAsync(Context.User.Mention+", [" + DiceExpression + "] ⇒ " +breakdown.Remove(breakdown.Length-1,1).ToString()+" = "+ result.Value);
+
+				if (cache.Any(x => x.Key == Context.Message.Id	)) cache.Remove(Context.Message.Id);
+				if(Context.Guild!=null)await Context.Message.DeleteAsync();
+				await ReplyAsync(Context.User.Mention+", ["+result.Expression+ "] " + result.ToString().Split("=>")[1] + " ⇒ **" +result.Value+"**.");
 			}
 			catch (Exception e)
 			{
@@ -51,11 +45,11 @@ namespace SAIL.Modules
 		{
 			try
 			{
-				var result = Parser.Parse(DiceExpression, new DiceConfiguration() { DefaultDieSides = 20 }, new MaxDieRoller());
+				var result = Roller.Max(DiceExpression);
 				if (cache.Any(x => x.Key == Context.Message.Id)) cache.Remove(Context.Message.Id);
 
 				if (Context.Guild != null) await Context.Message.DeleteAsync();
-				await ReplyAsync(Context.User.Mention + ", Maximum result for [" + DiceExpression + "] ⇒ " + result.Value);
+				await ReplyAsync(Context.User.Mention + ", Maximum result for [" + result.Expression + "] "+ result.ToString().Split("=>")[1] + " ⇒ **" +result.Value+"**.");
 			}
 			catch (Exception e)
 			{
@@ -70,11 +64,11 @@ namespace SAIL.Modules
 		{
 			try
 			{
-				var result = Parser.Parse(DiceExpression, new DiceConfiguration() { DefaultDieSides = 20 }, new ConstantDieRoller(1));
+				var result = Roller.Min(DiceExpression);
 				if (cache.Any(x => x.Key == Context.Message.Id)) cache.Remove(Context.Message.Id);
 
 				if (Context.Guild != null) await Context.Message.DeleteAsync();
-				await ReplyAsync(Context.User.Mention + ", Minimum result for [" + DiceExpression + "] ⇒ " + result.Value);
+				await ReplyAsync(Context.User.Mention + ", Minimum result for [" + result.Expression + "] "+ result.ToString().Split("=>")[1] + " ⇒ **" +result.Value+"**.");
 			}
 			catch (Exception e)
 			{
@@ -88,11 +82,4 @@ namespace SAIL.Modules
 		}
     }
 
-	public class MaxDieRoller : RandomDieRollerBase
-	{
-		protected override int GetNextRandom(int sides)
-		{
-			return sides;
-		}
-	}
 }
