@@ -54,10 +54,10 @@ namespace SAIL.Services
 		{
 			
 			var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==arg.Guild.Id);
-			if(guild!= null && guild.Notifications.Module && !guild.Notifications.JoinedMsg.NullorEmpty())
+			if(guild!= null && guild.Notifications.Module && !guild.Notifications.LeftMsg.NullorEmpty())
 			{
 				var ch = arg.Guild.GetTextChannel(guild.Notifications.NotificationChannel);
-				await ch.SendMessageAsync(guild.Notifications.JoinedMsg.Replace("{user}", arg.Mention));
+				await ch.SendMessageAsync(guild.Notifications.LeftMsg.Replace("{user}", arg.Mention));
 			}
 		}
 
@@ -67,7 +67,7 @@ namespace SAIL.Services
 			if (guild != null && guild.Notifications.Module && !guild.Notifications.JoinedMsg.NullorEmpty())
 			{
 				var ch = arg.Guild.GetTextChannel(guild.Notifications.NotificationChannel);
-				await ch.SendMessageAsync(guild.Notifications.LeftMsg.Replace("{user}", arg.Mention));
+				await ch.SendMessageAsync(guild.Notifications.JoinedMsg.Replace("{user}", arg.Mention));
 			}
 		}
 
@@ -120,7 +120,6 @@ namespace SAIL.Services
                     if (!y.CommandModules.Any(m=>m.Key == x.Name)) y.CommandModules.Add(x.Name,true);
                 }
                 
-                if(mds != y.CommandModules) y.CommandModules = mds;
                 col.Update(y);
             }
         }
