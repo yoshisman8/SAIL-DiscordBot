@@ -341,9 +341,9 @@ namespace SAIL.Modules
         [Command("EditFields"),Alias("ModifyFields","UpdateFields")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
         [Summary("Opens a menu that lets you edit the fields in a page of your character's sheet. Defaults to page 1.")]
-        public async Task EditFields(int Page = 0)
+        public async Task EditFields(int Page = 1)
         {
-            Page = Math.Abs(Page);
+            Page = Math.Abs(Page) - 1;
             var guild = Program.Database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==Context.Guild.Id);
             var plrs = Program.Database.GetCollection<SysUser>("Users").IncludeAll();
             if (!plrs.Exists(x=>x.Id==Context.User.Id)) plrs.Insert(new SysUser(){Id=Context.User.Id});
