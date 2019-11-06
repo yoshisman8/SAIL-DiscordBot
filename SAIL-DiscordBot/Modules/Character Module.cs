@@ -138,7 +138,7 @@ namespace SAIL.Modules
             
         }
 
-        [Command("DeleteCharater"),Alias("DelCharacter","RemoveCharacter","DelChar","RemoveChar","RemChar")] [RequireGuildSettings]
+        [Command("DeleteCharater"),Alias("DelCharacter","RemoveCharacter","DelChar","RemoveChar","RemChar","DeleteChar")] [RequireGuildSettings]
         [RequireContext(ContextType.Guild)]
         [Summary("Deletes a character you own. Administrators can delete other people's characters.")]
         public async Task DeleteCharater([Remainder] Character[] Name)
@@ -166,13 +166,13 @@ namespace SAIL.Modules
             var cancel = new Emoji("❎");
             object Confirmed = null;
             var msg = await InlineReactionReplyAsync(new ReactionCallbackData("Are you sure you want to delete "+character.Name+"?",null,true,true,TimeSpan.FromMinutes(1),async (ctx)=>{Confirmed= false;})
-                .WithCallback(confirm, async (ctx,r) =>
+				.WithCallback(cancel, async (ctx, r) =>
+				{
+					Confirmed = false;
+				})
+				.WithCallback(confirm, async (ctx,r) =>
                 {
                     Confirmed = true;
-                })
-                .WithCallback(cancel,async (ctx,r) =>
-                {
-                    Confirmed = false;
                 }));
             while(Confirmed==null)
             {
