@@ -80,6 +80,7 @@ namespace SAIL.Services
                 return;
             }
             col.Insert(new SysGuild() {Id=arg.Id});
+			await UpdateModules(_discord, Program.Database,_commands);
         }
 
 
@@ -87,10 +88,6 @@ namespace SAIL.Services
         {
             await InitializeGuildsDB(_discord, Program.Database);
             await UpdateModules(_discord,Program.Database,_commands);
-            if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(),"Data","Old.db")))
-            {
-                await Migrate(Program.Database,_discord);
-            }
             Ready = true;
         }
 
@@ -144,116 +141,7 @@ namespace SAIL.Services
                 }
             }
         }
-        private async Task Migrate(LiteDatabase database, DiscordSocketClient discord)
-        {
-            database.DropCollection("Characters");
-            var legacydb = new LiteDatabase(Path.Combine(Directory.GetCurrentDirectory(),"Data","Old.db"));
-            var AllChars = legacydb.GetCollection<SAIL.Classes.Legacy.Character>("Characters").IncludeAll().FindAll();
-            var guild = discord.GetGuild(311970313158262784);
-            var sguild = database.GetCollection<SysGuild>("Guilds").FindOne(x=>x.Id==311970313158262784);
-            var AllLegacyChar = new LegacyCharacter().GetAll();
-            var CharCol = database.GetCollection<SAIL.Classes.Character>("Characters");
-            foreach(var x in AllLegacyChar)
-            {
-                var c = new SAIL.Classes.Character()
-                {
-                    Name = x.Name,
-                    Guild = 311970313158262784
-                };
-                if(guild.Users.ToList().Exists(a=>a.ToString() == x.Owner))
-                {
-                    c.Owner = guild.Users.Single(a=>a.ToString() == x.Owner).Id;
-                }
-                else
-                {
-                    c.Owner = guild.OwnerId;
-                }
-                c.Pages.Add(new CharPage());
-                c.Pages[0].Fields.Add(new Field()
-                {
-                    Title= "Sheet",
-                    Content=x.Sheet
-                });
-            }
-            foreach(var x in AllChars)
-            {
-                x.Inventory.buildInv(legacydb);
-                var c = new SAIL.Classes.Character()
-                {
-                    Name = x.Name,
-                    Guild = 311970313158262784,
-                    Owner = x.Owner,
-                };
-                var p1 = new CharPage()
-                {
-                    Thumbnail = x.ImageUrl,
-                    Summary = "Basic Character Info",
-                    Fields = new List<Field>()
-                    {
-                        new Field()
-                        {
-                            Title = "Basic info",
-                            Content = "Class: " + x.Class + "\nRace: " + x.Race + "\nStress: " + x.BuildStress(x)
-                        },
-                        new Field()
-                        {
-                            Title = "Gear",
-                            Content = x.Buildequip(x)
-                        },
-                        new Field()
-                        {
-                            Title = "Afflictions",
-                            Content = x.BuildAfflictions(x)
-                        },
-                        new Field()
-                        {
-                            Title = x.ITrait.Name,
-                            Content = x.ITrait.Description
-                        },
-                        new Field()
-                        {
-                            Title = "Traits",
-                            Content = x.BuildTraits(x)
-                        }
-                    }
-                };
-                c.Pages.Add(p1);
-                var p2 = new CharPage()
-                {
-                    Summary = "Character Skills",
-                };
-                foreach(var s in x.Skills)
-                {
-                    p2.Fields.Add(new Field()
-                    {
-                        Title = s.Name+" ["+s.Level.ToRoman()+"]",
-                        Content = s.Description
-                    });
-                }
-                c.Pages.Add(p2);
-                var p3 = new CharPage()
-                {
-                    Summary = "Character Inventory",
-                    Thumbnail = "https://image.flaticon.com/icons/png/128/179/179507.png"
-                };
-                foreach(var i in x.Inventory.Items)
-                {
-                    p3.Fields.Add(new Field()
-                    {
-                        Title = i.BaseItem.Name,
-                        Content = "Amount: "+i.Quantity+"\n"+i.BaseItem.Description,
-                        Inline = true
-                    });
-                }
-                c.Pages.Add(p3);
-                CharCol.Insert(c);
-				CharCol.EnsureIndex("Name", "LOWER($.Name)");
-            }
-            legacydb.Dispose();
-
-            File.Move(Path.Combine(Directory.GetCurrentDirectory(),"Data","Old.db"),Path.Combine(Directory.GetCurrentDirectory(),"Data","Old.db.migrated"));
-            
-        }
+        
         public async Task OnMessageUpdated(Cacheable<IMessage, ulong> _OldMsg, SocketMessage NewMsg, ISocketMessageChannel Channel)
         {
             var OldMsg = await _OldMsg.DownloadAsync();
