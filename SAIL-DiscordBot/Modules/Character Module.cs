@@ -300,7 +300,7 @@ namespace SAIL.Modules
         [Command("AddField"),Alias("NewField")]
         [RequireGuildSettings] [RequireContext(ContextType.Guild)]
         [Summary("Adds a field to your active character sheet. By default, it adds it to the first page.")]
-        public async Task CreateField(string FieldName, string Contents, bool Inline = false, int page = 1)
+        public async Task CreateField(string FieldName, string Contents, int page = 1, bool Inline = false)
         {
             page = Math.Abs(page);
             var index = page-1;
