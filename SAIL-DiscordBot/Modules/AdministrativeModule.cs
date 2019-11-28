@@ -338,5 +338,38 @@ namespace SAIL.Modules
 				var msg = await ReplyAsync("Role " + Role.Name + " is now self-assignable.");	
 			}
 		}
+		[Command("Role"), Alias("Roles")]
+		[Summary("List all the self-assignable roles.")]
+		public async Task ListRoles()
+		{
+			var col = Program.Database.GetCollection<SysGuild>("Guilds");
+			var guild = col.FindOne(x => x.Id == Context.Guild.Id);
+			guild.Load(Context);
+
+			if (guild.AssignableRoles.Count == 0)
+			{
+				await ReplyAsync("This server has no self-assignable roles!");
+				return;
+			}
+
+			List<string> roles = new List<string>();
+
+			foreach(var x in guild.AssignableRoles)
+			{
+				var r = Context.Guild.GetRole(x);
+				if (r!=null) roles.Add(r.Mention);
+			}
+
+			if (guild.AssignableRoles.Count == 0)
+			{
+				await ReplyAsync("This server has no self-assignable roles!");
+				return;
+			}
+			var embed = new EmbedBuilder()
+				.WithCurrentTimestamp()
+				.WithTitle("Self Assignable Roles")
+				.WithDescription("The following roles are self-assignable:\n"+string.Join(", ",roles));
+			await ReplyAsync("", embed.Build());
+		}
 	}
 }
