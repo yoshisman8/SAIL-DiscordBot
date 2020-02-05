@@ -72,7 +72,7 @@ namespace SAIL.Modules
                 
                 return;
             }
-            var results = col.Where(x => x.SearchText.ToLower().Contains(Query.ToLower()));
+            var results = col.Where(x => !x.SearchText.NullorEmpty() && x.SearchText.ToLower().Contains(Query.ToLower()));
             if (results.Count() == 0) 
             {
                 var msg = await ReplyAsync("There are no quotes that contain the text \""+Query+"\".");
