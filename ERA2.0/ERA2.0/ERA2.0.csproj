@@ -36,7 +36,7 @@
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="2.0.1"/>
     <PackageReference Include="Microsoft.NETCore.Targets" Version="2.0.0"/>
     <PackageReference Include="NETStandard.Library" Version="2.0.1"/>
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1-beta1"/>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1"/>
     <PackageReference Include="Octokit" Version="0.28.0"/>
     <PackageReference Include="EdCanHack.DiceNotation" Version="0.2.0"/>
     <PackageReference Include="EdCanHack.DiceNotation.MathNet" Version="0.2.0"/>
